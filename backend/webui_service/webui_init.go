@@ -59,7 +59,7 @@ func (*WEBUI) Initialize(c *cli.Context) {
 	if config.webuicfg != "" {
 		factory.InitConfigFactory(config.webuicfg)
 	} else {
-		DefaultUdrConfigPath := path_util.Gofree5gcPath("free5gc/config/udrcfg.conf")
+		DefaultUdrConfigPath := path_util.Gofree5gcPath("free5gc/config/webuicfg.conf")
 		factory.InitConfigFactory(DefaultUdrConfigPath)
 	}
 
