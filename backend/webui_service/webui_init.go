@@ -7,7 +7,7 @@ import (
 	"free5gc/lib/MongoDBLibrary"
 	"free5gc/lib/path_util"
 	"free5gc/src/app"
-	"free5gc/src/udr/factory"
+	"free5gc/webconsole/backend/factory"
 	"free5gc/webconsole/backend/WebUI"
 	"free5gc/webconsole/backend/logger"
 	"free5gc/webconsole/backend/webui_context"
@@ -59,8 +59,8 @@ func (*WEBUI) Initialize(c *cli.Context) {
 	if config.webuicfg != "" {
 		factory.InitConfigFactory(config.webuicfg)
 	} else {
-		DefaultUdrConfigPath := path_util.Gofree5gcPath("free5gc/config/udrcfg.conf")
-		factory.InitConfigFactory(DefaultUdrConfigPath)
+		DefaultWebUIConfigPath := path_util.Gofree5gcPath("free5gc/config/webuicfg.conf")
+		factory.InitConfigFactory(DefaultWebUIConfigPath)
 	}
 
 	initLog.Traceln("WEBUI debug level(string):", app.ContextSelf().Logger.WEBUI.DebugLevel)
@@ -90,8 +90,8 @@ func (webui *WEBUI) FilterCli(c *cli.Context) (args []string) {
 }
 
 func (webui *WEBUI) Start() {
-	// get config file info from UdrConfig
-	mongodb := factory.UdrConfig.Configuration.Mongodb
+	// get config file info from WebUIConfig
+	mongodb := factory.WebUIConfig.Configuration.Mongodb
 
 	// Connect to MongoDB
 	MongoDBLibrary.SetMongoDB(mongodb.Name, mongodb.Url)
