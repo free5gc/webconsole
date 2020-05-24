@@ -7,7 +7,7 @@ import (
 	"free5gc/lib/MongoDBLibrary"
 	"free5gc/lib/path_util"
 	"free5gc/src/app"
-	"free5gc/webconsole/backend/factory"
+	"free5gc/src/webconsole/backend/factory"
 	"free5gc/webconsole/backend/WebUI"
 	"free5gc/webconsole/backend/logger"
 	"free5gc/webconsole/backend/webui_context"
