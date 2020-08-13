@@ -10,11 +10,10 @@ import SideBar from '../../components/SideBar';
 /**
  * Pages
  */
-import Dashboard from '../Dashboard';
 import Subscribers from '../Subscribers';
 import Tasks from '../Tasks';
 import UEInfo from '../UEInfo';
-import UEInfoDetail from  '../UEInfoDetail'
+import UEInfoDetail from '../UEInfoDetail'
 
 const Main = ({
                 mobileNavVisibility,
