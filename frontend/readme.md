@@ -20,6 +20,12 @@ Note that the default api server base request url is defined in:
 `webconsole/frontend/src/config/config.js`
 
 ## Run the Frontend Dev Web Server
+Run the frontend development server with file watcher
 ```bash
 yarn start
+```
+
+To specify backend server api url
+```
+REACT_APP_HTTP_API_URL=http://127.0.0.1:5000/api PORT=3000 yarn start
 ```
