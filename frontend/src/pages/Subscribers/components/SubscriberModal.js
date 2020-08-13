@@ -160,8 +160,8 @@ class SubscriberModal extends Component {
           ]
         },
         "subscribedUeAmbr": {
-          "downlink": "1000 Kbps",
-          "uplink": "1000 Kbps"
+          "downlink": "2 Gbps",
+          "uplink": "1 Gbps"
         },
       },
       "SessionManagementSubscriptionData": {
@@ -180,11 +180,11 @@ class SubscriberModal extends Component {
               "allowedSessionTypes": ["IPV4"]
             },
             "sessionAmbr": {
-              "uplink": "1000 Kbps",
-              "downlink": "1000 Kbps"
+              "uplink": "2 Gbps",
+              "downlink": "1 Gbps"
             },
             "5gQosProfile": {
-              "var5qi": 9,
+              "5qi": 9,
               "arp": {
                 "priorityLevel": 8
               },
