@@ -1,11 +1,11 @@
-import React, {Component, Fragment} from 'react';
-import {Button, Jumbotron} from "react-bootstrap";
-import {Link} from "react-router-dom";
-import { BootstrapTable, TableHeaderColumn } from 'react-bootstrap-table';
-import {withRouter} from "react-router-dom";
+import React, {Component} from 'react';
+import {Button} from "react-bootstrap";
+import {Link, withRouter} from "react-router-dom";
+import {BootstrapTable, TableHeaderColumn} from 'react-bootstrap-table';
 import {connect} from "react-redux";
 import UEInfoApiHelper from "../../util/UEInfoApiHelper"
 
+// eslint-disable-next-line no-unused-vars
 var products = [{
   supi: "imsi-2089300007487",
   status: "CONNECTED"
@@ -44,15 +44,15 @@ class DetailButton extends Component {
           // console.log(smContextRef)
           UEInfoApiHelper.fetchUEInfoDetailSMF(smContextRef).then()
         }
-        
-       
+
+
       });
  }
 
   render() {
         const { cell, row, rowIndex } = this.props;
         return (
-              
+
                 <Button
                     bsStyle="primary"
                     onClick={() => this.handleClick(cell, row, rowIndex)}
@@ -65,11 +65,6 @@ class DetailButton extends Component {
 }
 
 class UEInfo extends Component  {
-
-  constructor(props) {
-    super(props);
-
-  }
 
   componentDidMount() {
     UEInfoApiHelper.fetchRegisteredUE().then(() => {
@@ -90,7 +85,7 @@ class UEInfo extends Component  {
     // console.log(cell)
 
     if (cell.Status === "Registered") {
-      
+
       return {backgroundColor: "#4CBB17"};
     } else if (cell.Status === "Disconnected") {
 
@@ -133,6 +128,6 @@ class UEInfo extends Component  {
 export default withRouter(connect(state => ({
   registered_users: state.ueinfo.registered_users,
   get_registered_ue_err: state.ueinfo.get_registered_ue_err,
-  registered_ue_err_msg: state.ueinfo.registered_ue_err_msg, 
+  registered_ue_err_msg: state.ueinfo.registered_ue_err_msg,
   smContextRef: state.ueinfo.smContextRef
 }))(UEInfo));

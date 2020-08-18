@@ -2,7 +2,6 @@ import Http from './Http';
 import {store} from '../index';
 import ueinfoActions from "../redux/actions/ueinfoActions";
 import UEInfo from "../models/UEInfo";
-import UEInfoDetail from "../models/UEInfoDetail";
 
 class UeInfoApiHelper {
 
@@ -17,11 +16,11 @@ class UeInfoApiHelper {
             function(ue_context) {
 
               return new UEInfo(
-                ue_context.Supi, 
+                ue_context.Supi,
                 ue_context.CmState
               );
             });
-            
+
         store.dispatch(ueinfoActions.setRegisteredUE(registered_users));
         return true;
       } else {
@@ -60,14 +59,14 @@ class UeInfoApiHelper {
       let response = await Http.get(url);
       if (response.status === 200 && response.data) {
         //To do: implement set rgistered ue action
-        
+
         console.log(response.data)
 
         let ue_context = response.data[0]
         store.dispatch(ueinfoActions.setUEInfoDetailAMF(ue_context));
 
         let smContextRef = ue_context.PduSessions[0].SmContextRef
-    
+
         return [true, smContextRef];
       } else {
 
@@ -93,7 +92,7 @@ class UeInfoApiHelper {
         let smContext = response.data
         store.dispatch(ueinfoActions.setUEInfoDetailSMF(smContext));
 
-       
+
         return true;
       } else {
 
