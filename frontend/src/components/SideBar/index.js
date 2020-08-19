@@ -1,7 +1,6 @@
 import React, {Component} from 'react';
 import {withRouter} from 'react-router-dom';
 import {connect} from 'react-redux';
-import UserInfo from './UserInfo';
 import Nav from './Nav';
 import Free5gcLogo from "../../assets/images/free5gc_logo.png";
 

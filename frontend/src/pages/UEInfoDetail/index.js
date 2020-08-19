@@ -1,10 +1,8 @@
 import React, {Component} from 'react';
 import {withRouter} from "react-router-dom";
 import {connect} from "react-redux";
-import {Button, Jumbotron, Table} from "react-bootstrap";
-import {Link} from "react-router-dom";
+import {Table} from "react-bootstrap";
 import ApiHelper from "../../util/ApiHelper";
-import UEInfoApiHelper from "../../util/UEInfoApiHelper"
 
 class UEInfoDetail extends Component {
 
@@ -12,7 +10,7 @@ class UEInfoDetail extends Component {
 
         super(props);
 
-        this.getAMFUEContexts = this.getAMFUEContexts.bind(this)  
+        this.getAMFUEContexts = this.getAMFUEContexts.bind(this)
         this.getSMFInfo = this.getSMFInfo.bind(this)
         this.getPCFInfo = this.getPCFInfo.bind(this)
 
@@ -21,7 +19,7 @@ class UEInfoDetail extends Component {
     async deleteSubscriber(subscriber) {
         if (!window.confirm(`Delete subscriber ${subscriber.id}?`))
           return;
-    
+
         const result = await ApiHelper.deleteSubscriber(subscriber.id, subscriber.plmn);
         ApiHelper.fetchSubscribers().then();
         if (!result) {
@@ -38,6 +36,7 @@ class UEInfoDetail extends Component {
 
     getAMFUEContexts() {
 
+        var Arr = []
         var UEContexts = this.props.amfInfo
         var PduSessions = this.props.amfInfo.PduSessions
 
@@ -45,9 +44,8 @@ class UEInfoDetail extends Component {
             return Arr
         }
 
-        var Arr = []
         Object.getOwnPropertyNames(UEContexts).forEach(
-            function (key, idx, array) { 
+            function (key, idx, array) {
 
                 if (key !== "PduSessions") {
                     Arr.push(
@@ -57,11 +55,11 @@ class UEInfoDetail extends Component {
                         </tr>
                     )
                 }
-                
+
             });
-        
-        PduSessions.map( (obj) => { 
-            
+
+        PduSessions.forEach(obj => {
+
             for (var key in obj) {
 
                 Arr.push(
@@ -70,9 +68,9 @@ class UEInfoDetail extends Component {
                         <td>{obj[key]}</td>
                     </tr>
                 )
-            }  
+            }
         });
-          return Arr
+        return Arr
     }
 
     getSMFInfo() {
@@ -95,16 +93,16 @@ class UEInfoDetail extends Component {
         };
 
         Object.getOwnPropertyNames(smContext).forEach(
-            function (key) { 
+            function (key) {
 
 
-                //if key 
+                //if key
                 Arr.push(
                     <tr key={key}>
                         <td>{key}</td>
                         <td>{smContext[key]}</td>
                     </tr>
-                )   
+                )
         });
 
         return Arr;
@@ -115,11 +113,11 @@ class UEInfoDetail extends Component {
         var Arr = []
 
         Object.getOwnPropertyNames(AmPolicyData).forEach(
-            function (obj) { 
+            function (obj) {
 
                 switch (obj) {
-                    case "Triggers": 
-                    
+                    case "Triggers":
+
                     AmPolicyData[obj].forEach(
                             function(value, index, array) {
                                 var key = "Trigger " + (index+1).toString()
@@ -144,7 +142,7 @@ class UEInfoDetail extends Component {
                                 )
                             }
                         )
-                            
+
                     break;
 
                     default:
@@ -153,7 +151,7 @@ class UEInfoDetail extends Component {
                                 <td>{obj}</td>
                                 <td>{AmPolicyData[obj]}</td>
                             </tr>
-                        )   
+                        )
                 }
         });
         return Arr;
@@ -184,7 +182,7 @@ class UEInfoDetail extends Component {
                                     </Table>
                                 </div>
                                 <div className="pdu__Sessions">
-                            
+
                                 </div>
                             </div>
                             <div className="card">

@@ -1,8 +1,8 @@
-import React, { Component } from 'react';
-import { connect } from 'react-redux';
-import { toggleMobileNavVisibility } from '../../redux/reducers/layout';
-import { Navbar, Nav, NavItem, NavDropdown, MenuItem, FormGroup, FormControl } from 'react-bootstrap';
-import { withRouter } from 'react-router-dom';
+import React, {Component} from 'react';
+import {connect} from 'react-redux';
+import {toggleMobileNavVisibility} from '../../redux/reducers/layout';
+import {Nav, Navbar, NavItem} from 'react-bootstrap';
+import {withRouter} from 'react-router-dom';
 import AuthHelper from "../../util/AuthHelper";
 
 class Header extends Component {
