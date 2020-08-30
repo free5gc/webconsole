@@ -12,7 +12,7 @@ import SideBar from '../../components/SideBar';
  */
 import Subscribers from '../Subscribers';
 import Tasks from '../Tasks';
-import UEInfo from '../UEInfo';
+import UEInfo from '../Dashboard';
 import UEInfoDetail from '../UEInfoDetail'
 
 const Main = ({

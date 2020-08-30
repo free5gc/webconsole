@@ -33,17 +33,16 @@ class UeInfoApiHelper {
         if (response.data !== undefined){
           err_msg = response.data
         } else {
-          err_msg = "Fetch Registered UE Request fail"
+          err_msg = "Error fetching registered UEs"
         }
         store.dispatch(ueinfoActions.setRegisteredUEError(err_msg));
       }
     } catch (error) {
-        console.log(error)
         let err_msg;
         if (error.response !== undefined){
           err_msg = error.response.data.cause
         } else {
-          err_msg = "Fetch Registered UE Request fail"
+          err_msg = "Error fetching registered UEs"
         }
         store.dispatch(ueinfoActions.setRegisteredUEError(err_msg));
     }
