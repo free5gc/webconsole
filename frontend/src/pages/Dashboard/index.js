@@ -66,14 +66,20 @@ class DetailButton extends Component {
 }
 
 class UEInfo extends Component {
+  ueInfoFetcherTimer = null;
 
   componentDidMount() {
     UEInfoApiHelper.fetchRegisteredUE().then();
 
     // Fetch ue info per 2 seconds
-    // setInterval(async () => {
+    // this.ueInfoFetcherTimer = setInterval(async () => {
     //   await UEInfoApiHelper.fetchRegisteredUE();
     // }, 2000);
+  }
+
+  componentWillUnmount() {
+    // if (this.ueInfoFetcherTimer)
+    //   clearInterval(this.ueInfoFetcherTimer);
   }
 
   cellButton(cell, row, enumObject, rowIndex) {
