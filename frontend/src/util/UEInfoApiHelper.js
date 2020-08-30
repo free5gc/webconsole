@@ -7,8 +7,8 @@ class UeInfoApiHelper {
 
   static async fetchRegisteredUE() {
     try {
-      let url =  "http://localhost:5000/api/registered-ue-context"
-      console.log("Making request to ", url, " ....")
+      let url =  "registered-ue-context"
+      // console.log("Making request to ", url, " ....")
       let response = await Http.get(url);
       if (response.status === 200 && response.data) {
 
@@ -25,9 +25,8 @@ class UeInfoApiHelper {
         return true;
       } else {
 
-        console.log("Request fail")
-        console.log("Response Status: ", response.status)
-        console.log("Response Status: ", response.data)
+        console.log("Request failed, url:", url)
+        console.log("Response: ", response.status, response.data)
 
         let err_msg;
         if (response.data !== undefined){
@@ -52,8 +51,8 @@ class UeInfoApiHelper {
 
   static async fetchUEInfoDetail(supi) {
     try {
-      let url = `http://localhost:5000/api/registered-ue-context/${supi}`
-      console.log("Making request to ", url, " ....")
+      let url = `registered-ue-context/${supi}`
+      // console.log("Making request to ", url, " ....")
 
       let response = await Http.get(url);
       if (response.status === 200 && response.data) {
@@ -69,8 +68,8 @@ class UeInfoApiHelper {
         return [true, smContextRef];
       } else {
 
-        console.log("Request fail")
-        console.log("Response Status: ", response.status)
+        console.log("Request failed, url:", url)
+        console.log("Response: ", response.status, response.data)
       }
     } catch (error) {
         console.log(error)
@@ -81,8 +80,8 @@ class UeInfoApiHelper {
 
   static async fetchUEInfoDetailSMF(smContextRef) {
     try {
-      let  url = `http://localhost:5000/api/ue-pdu-session-info/${smContextRef}`
-      console.log("Making request to ", url, " ....")
+      let  url = `ue-pdu-session-info/${smContextRef}`
+      // console.log("Making request to ", url, " ....")
 
       let response = await Http.get(url);
       if (response.status === 200 && response.data) {
@@ -95,8 +94,8 @@ class UeInfoApiHelper {
         return true;
       } else {
 
-        console.log("Request fail")
-        console.log("Response Status: ", response.status)
+        console.log("Request failed, url:", url)
+        console.log("Response: ", response.status, response.data)
       }
     } catch (error) {
         console.log(error)
