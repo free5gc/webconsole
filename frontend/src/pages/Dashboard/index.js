@@ -36,7 +36,6 @@ class DetailButton extends Component {
 
   handleClick(cell, row, rowIndex) {
     UEInfoApiHelper.fetchUEInfoDetail(cell).then(result => {
-
       let success = result[0]
       let smContextRef = result[1]
 
@@ -45,15 +44,12 @@ class DetailButton extends Component {
         // console.log(smContextRef)
         UEInfoApiHelper.fetchUEInfoDetailSMF(smContextRef).then()
       }
-
-
     });
   }
 
   render() {
     const {cell, row, rowIndex} = this.props;
     return (
-
       <Button
         bsStyle="primary"
         onClick={() => this.handleClick(cell, row, rowIndex)}
@@ -82,6 +78,10 @@ class UEInfo extends Component {
     //   clearInterval(this.ueInfoFetcherTimer);
   }
 
+  refreshTable() {
+    UEInfoApiHelper.fetchRegisteredUE().then();
+  }
+
   cellButton(cell, row, enumObject, rowIndex) {
     return (
       <DetailButton cell={cell} row={row} rowIndex={rowIndex}/>
@@ -107,6 +107,10 @@ class UEInfo extends Component {
             <div className="card">
               <div className="header subscribers__header">
                 <h4>Registered UEs</h4>
+                <Button bsStyle={"primary"} className="subscribers__button"
+                        onClick={this.refreshTable.bind(this)}>
+                  Refresh
+                </Button>
               </div>
 
               <div className="content subscribers__content">
