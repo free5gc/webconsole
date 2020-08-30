@@ -6,6 +6,8 @@ import UEInfo from "../models/UEInfo";
 class UeInfoApiHelper {
 
   static async fetchRegisteredUE() {
+    const MSG_FETCH_ERROR = "Error fetching registered UEs. Is the core network up?";
+
     try {
       let url =  "registered-ue-context"
       // console.log("Making request to ", url, " ....")
@@ -21,6 +23,7 @@ class UeInfoApiHelper {
         }
 
         store.dispatch(ueinfoActions.setRegisteredUE(registered_users));
+        store.dispatch(ueinfoActions.unsetRegisteredUEError());
         return true;
       } else {
         console.log("Request failed, url:", url)
@@ -30,17 +33,18 @@ class UeInfoApiHelper {
         if (response.data !== undefined){
           err_msg = response.data
         } else {
-          err_msg = "Error fetching registered UEs"
+          err_msg = MSG_FETCH_ERROR
         }
         store.dispatch(ueinfoActions.setRegisteredUEError(err_msg));
       }
     } catch (error) {
         let err_msg;
-        if (error.response !== undefined){
-          err_msg = error.response.data.cause
+        if (error.response && error.response.data){
+          err_msg = error.response.data.cause || MSG_FETCH_ERROR
         } else {
-          err_msg = "Error fetching registered UEs"
+          err_msg = MSG_FETCH_ERROR
         }
+        console.log(error.response);
         store.dispatch(ueinfoActions.setRegisteredUEError(err_msg));
     }
 
