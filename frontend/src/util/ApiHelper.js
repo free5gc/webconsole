@@ -19,6 +19,18 @@ class ApiHelper {
     return false;
   }
 
+  static async fetchSubscriberById(id, plmn) {
+    try {
+      let response = await Http.get(`subscriber/${id}/${plmn}`);
+      if (response.status === 200 && response.data) {
+        return response.data;
+      }
+    } catch (error) {
+    }
+
+    return false;
+  }
+
   static async createSubscriber(subscriberData) {
     try {
       let response = await Http.post(
