@@ -10,21 +10,19 @@ class UeInfoApiHelper {
       let url =  "registered-ue-context"
       // console.log("Making request to ", url, " ....")
       let response = await Http.get(url);
-      if (response.status === 200 && response.data) {
 
-        const registered_users = response.data.map(
-            function(ue_context) {
+      if (response.status === 200) {
+        let registered_users = [];
 
-              return new UEInfo(
-                ue_context.Supi,
-                ue_context.CmState
-              );
-            });
+        if (response.data) {
+          registered_users = response.data.map(ue_context =>
+            new UEInfo(ue_context.Supi, ue_context.CmState)
+          );
+        }
 
         store.dispatch(ueinfoActions.setRegisteredUE(registered_users));
         return true;
       } else {
-
         console.log("Request failed, url:", url)
         console.log("Response: ", response.status, response.data)
 
