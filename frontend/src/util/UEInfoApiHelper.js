@@ -6,45 +6,45 @@ import UEInfo from "../models/UEInfo";
 class UeInfoApiHelper {
 
   static async fetchRegisteredUE() {
+    const MSG_FETCH_ERROR = "Error fetching registered UEs. Is the core network up?";
+
     try {
-      let url =  "http://localhost:5000/api/registered-ue-context"
-      console.log("Making request to ", url, " ....")
+      let url =  "registered-ue-context"
+      // console.log("Making request to ", url, " ....")
       let response = await Http.get(url);
-      if (response.status === 200 && response.data) {
 
-        const registered_users = response.data.map(
-            function(ue_context) {
+      if (response.status === 200) {
+        let registered_users = [];
 
-              return new UEInfo(
-                ue_context.Supi,
-                ue_context.CmState
-              );
-            });
+        if (response.data) {
+          registered_users = response.data.map(ue_context =>
+            new UEInfo(ue_context.Supi, ue_context.CmState)
+          );
+        }
 
         store.dispatch(ueinfoActions.setRegisteredUE(registered_users));
+        store.dispatch(ueinfoActions.unsetRegisteredUEError());
         return true;
       } else {
-
-        console.log("Request fail")
-        console.log("Response Status: ", response.status)
-        console.log("Response Status: ", response.data)
+        console.log("Request failed, url:", url)
+        console.log("Response: ", response.status, response.data)
 
         let err_msg;
         if (response.data !== undefined){
           err_msg = response.data
         } else {
-          err_msg = "Fetch Registered UE Request fail"
+          err_msg = MSG_FETCH_ERROR
         }
         store.dispatch(ueinfoActions.setRegisteredUEError(err_msg));
       }
     } catch (error) {
-        console.log(error)
         let err_msg;
-        if (error.response !== undefined){
-          err_msg = error.response.data.cause
+        if (error.response && error.response.data){
+          err_msg = error.response.data.cause || MSG_FETCH_ERROR
         } else {
-          err_msg = "Fetch Registered UE Request fail"
+          err_msg = MSG_FETCH_ERROR
         }
+        console.log(error.response);
         store.dispatch(ueinfoActions.setRegisteredUEError(err_msg));
     }
 
@@ -53,8 +53,8 @@ class UeInfoApiHelper {
 
   static async fetchUEInfoDetail(supi) {
     try {
-      let url = `http://localhost:5000/api/registered-ue-context/${supi}`
-      console.log("Making request to ", url, " ....")
+      let url = `registered-ue-context/${supi}`
+      // console.log("Making request to ", url, " ....")
 
       let response = await Http.get(url);
       if (response.status === 200 && response.data) {
@@ -70,8 +70,8 @@ class UeInfoApiHelper {
         return [true, smContextRef];
       } else {
 
-        console.log("Request fail")
-        console.log("Response Status: ", response.status)
+        console.log("Request failed, url:", url)
+        console.log("Response: ", response.status, response.data)
       }
     } catch (error) {
         console.log(error)
@@ -82,8 +82,8 @@ class UeInfoApiHelper {
 
   static async fetchUEInfoDetailSMF(smContextRef) {
     try {
-      let  url = `http://localhost:5000/api/ue-pdu-session-info/${smContextRef}`
-      console.log("Making request to ", url, " ....")
+      let  url = `ue-pdu-session-info/${smContextRef}`
+      // console.log("Making request to ", url, " ....")
 
       let response = await Http.get(url);
       if (response.status === 200 && response.data) {
@@ -96,8 +96,8 @@ class UeInfoApiHelper {
         return true;
       } else {
 
-        console.log("Request fail")
-        console.log("Response Status: ", response.status)
+        console.log("Request failed, url:", url)
+        console.log("Response: ", response.status, response.data)
       }
     } catch (error) {
         console.log(error)
