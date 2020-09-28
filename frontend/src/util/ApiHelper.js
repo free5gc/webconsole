@@ -67,7 +67,7 @@ class ApiHelper {
     }
 
     return false;
-  }
+  } 
 }
 
 export default ApiHelper;

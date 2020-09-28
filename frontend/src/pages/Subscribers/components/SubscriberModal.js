@@ -19,6 +19,13 @@ class SubscriberModal extends Component {
     rerenderCounter: 0,
   };
 
+  state = {
+    formData: undefined,
+    editMode: false,
+    // for force re-rendering json form
+    rerenderCounter: 0,
+  };
+
   schema = {
     // title: "A registration form",
     // "description": "A simple form example.",
@@ -64,6 +71,65 @@ class SubscriberModal extends Component {
         title: "Operator Code Value",
         default: "8e27b6af0e692e750f32667a3b14605d",
       },
+      defaultSingleNssais: {
+        type: "array",
+        title: "NSSAI - Default",
+        items: {
+          type: "object",
+          required: [
+            "sd",
+            "sst",
+          ],
+          properties: {
+            "sst": {
+              "type": "integer",
+              "title": "SST",
+            },
+            "sd": {
+              "type": "string",
+              "title": "SD",
+            },
+          }
+        },
+        default: [
+          {
+            "sst": 1,
+            "sd": "010203",
+          },
+          {
+            "sst": 1,
+            "sd": "112233",
+          },
+        ],
+      },
+      singleNssais: {
+        type: "array",
+        title: "NSSAI - Single",
+        items: {
+          type: "object",
+          required: ["sst", "sd"],
+          properties: {
+            "sst": {
+              "type": "integer",
+              "title": "SST",
+            },
+            "sd": {
+              "type": "string",
+              "title": "SD",
+            },
+          }
+        },
+        default: [
+          {
+            "sst": 1,
+            "sd": "010203",
+          },
+          {
+            "sst": 1,
+            "sd": "112233",
+          },
+        ],
+      },
     }
   };
 
@@ -74,6 +140,18 @@ class SubscriberModal extends Component {
     authenticationMethod: {
       "ui:widget": "select",
     },
+
+    defaultSingleNssais:{
+            "ui:options": {
+              "orderable": false
+          }
+        },
+
+        singleNssais:{
+          "ui:options": {
+            "orderable": false
+        }
+      }
   };
 
   componentDidUpdate(prevProps, prevState, snapshot) {
@@ -301,7 +379,11 @@ class SubscriberModal extends Component {
         </Modal.Body>
       </Modal>
     );
+
   }
+
+
+ 
 }
 
 export default SubscriberModal;

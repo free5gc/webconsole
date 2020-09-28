@@ -3,16 +3,17 @@ package webui_service
 import (
 	"bufio"
 	"fmt"
-	"github.com/gin-contrib/cors"
 	"free5gc/lib/MongoDBLibrary"
 	"free5gc/lib/path_util"
 	"free5gc/src/app"
-	"free5gc/webconsole/backend/factory"
 	"free5gc/webconsole/backend/WebUI"
+	"free5gc/webconsole/backend/factory"
 	"free5gc/webconsole/backend/logger"
 	"free5gc/webconsole/backend/webui_context"
 	"os/exec"
 	"sync"
+
+	"github.com/gin-contrib/cors"
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
@@ -101,8 +102,9 @@ func (webui *WEBUI) Start() {
 	router := WebUI.NewRouter()
 
 	router.Use(cors.New(cors.Config{
-		AllowMethods:     []string{"GET", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"},
-		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "User-Agent", "Referrer", "Host", "Token", "X-Requested-With"},
+		AllowMethods: []string{"GET", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"},
+		AllowHeaders: []string{"Origin", "Content-Length", "Content-Type", "User-Agent",
+			"Referrer", "Host", "Token", "X-Requested-With"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		AllowAllOrigins:  true,
@@ -155,7 +157,7 @@ func (webui *WEBUI) Exec(c *cli.Context) error {
 	}()
 
 	go func() {
-		if err := command.Start(); err != nil {
+		if errCmd := command.Start(); errCmd != nil {
 			fmt.Println("command.Start Fails!")
 		}
 		wg.Done()

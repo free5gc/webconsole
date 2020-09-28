@@ -1,6 +1,8 @@
 package WebUI
 
 import (
+	"free5gc/lib/logger_util"
+	"free5gc/webconsole/backend/logger"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +25,7 @@ type Routes []Route
 
 // NewRouter returns a new router.
 func NewRouter() *gin.Engine {
-	router := gin.Default()
+	router := logger_util.NewGinWithLogrus(logger.GinLog)
 	AddService(router)
 	return router
 }

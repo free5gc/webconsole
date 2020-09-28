@@ -4,6 +4,8 @@ export default class subscriberActions {
 
   /**
    * @param subscribers  {Subscriber}
+   * //Bajo 20200710
+   * @param subscribers  {subscriberData}
    */
   static setSubscribers(subscribers) {
     return {

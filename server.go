@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
 	"free5gc/src/app"
 	"free5gc/webconsole/backend/logger"
 	"free5gc/webconsole/backend/webui_service"
+	"github.com/sirupsen/logrus"
+	"github.com/urfave/cli"
 	"os"
 )
 

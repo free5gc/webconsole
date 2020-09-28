@@ -61,7 +61,8 @@
   "devDependencies": {
     "node-sass": "^4.9.0",
     "sass-loader": "^7.0.1",
-    "webpack-dev-server": "^2.9.7"
+    "webpack-dev-server": "2.9.7",
+    "ws": "3.3.2"
   },
   "scripts": {
     "start": "NODE_PATH=./src node scripts/start.js",

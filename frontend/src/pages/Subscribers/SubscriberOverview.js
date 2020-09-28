@@ -44,21 +44,34 @@ class SubscriberOverview extends Component {
     ApiHelper.fetchSubscribers().then();
   }
 
+  // async updateSubscriber(subscriberData) {
+  //   this.setState({subscriberModalOpen: false});
+
+  //   if (!await ApiHelper.updateSubscriber(subscriberData)) {
+  //     alert("Error creating new subscriber");
+  //   }
+  //   ApiHelper.fetchSubscribers().then();
+  // }
+
   /**
    * @param subscriber  {Subscriber}
    */
   async updateSubscriber(subscriber) {
-    const result = await ApiHelper.updateSubscriber(subscriber.id, subscriber.plmn);
-
-    if (!result) {
-      alert("Error updating subscriber: " + subscriber.id);
+      const result = await ApiHelper.updateSubscriber(subscriber.id, subscriber.plmn);
+  
+      if (!result) {
+        alert("Error updating subscriber: " + subscriber.id);
+      }
     }
-  }
+
+  
+
+
 
   /**
-   * @param subscriber  {Subscriber}
+  * @param subscriber  {Subscriber}
    */
-  async deleteSubscriber(subscriber) {
+  async deleteSubscriber(subscriber) {   
     if (!window.confirm(`Delete subscriber ${subscriber.id}?`))
       return;
 
@@ -68,7 +81,7 @@ class SubscriberOverview extends Component {
       alert("Error deleting subscriber: " + subscriber.id);
     }
   }
-
+   
   render() {
     return (
       <div className="container-fluid">
@@ -79,7 +92,7 @@ class SubscriberOverview extends Component {
                 <h4>Subscribers</h4>
                 <Button bsStyle={"primary"} className="subscribers__button"
                         onClick={this.openAddSubscriber.bind(this)}>
-                  New Subscriber
+                   New Subscriber
                 </Button>
               </div>
               <div className="content subscribers__content">
@@ -90,19 +103,19 @@ class SubscriberOverview extends Component {
                     <th colSpan={2}>UE ID</th>
                   </tr>
                   </thead>
-                  <tbody>
+                  <tbody> 
                   {this.props.subscribers.map(subscriber => (
                     <tr key={subscriber.id}>
                       <td>{subscriber.plmn}</td>
                       <td>{subscriber.id}</td>
                       <td style={{textAlign: 'center'}}>
-                        <i className="fa fa-pencil-alt" onClick={this.openEditSubscriber.bind(this, subscriber.id, subscriber.plmn)}/>
-                        &nbsp;&nbsp;&nbsp;&nbsp;
-                        <i className="fa fa-trash-alt" onClick={this.deleteSubscriber.bind(this, subscriber)}/>
+                         <Button variant="danger" onClick={this.deleteSubscriber.bind(this, subscriber)}>Delete</Button>
+                         &nbsp;&nbsp;&nbsp;&nbsp;
+                        <Button variant="info" onClick={this.openEditSubscriber.bind(this)}>Modify</Button>
                       </td>
-                    </tr>
-                  ))}
-                  </tbody>
+                      </tr>
+                   ))}
+                      </tbody>
                 </Table>
 
                 <p>&nbsp;</p><p>&nbsp;</p>
@@ -117,7 +130,7 @@ class SubscriberOverview extends Component {
                          setOpen={val => this.setState({subscriberModalOpen: val})}
                          subscriber={this.state.subscriberModalData}
                          onModify={this.updateSubscriber.bind(this)}
-                         onSubmit={this.addSubscriber.bind(this)}/>
+                         onSubmit={this.addSubscriber.bind(this)}/>                         
       </div>
     );
   }

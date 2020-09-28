@@ -27,6 +27,19 @@ class UEInfoDetail extends Component {
         }
       }
 
+      //Bajo
+
+      async updateSubscriber(subscriber) {
+        if (!window.confirm(`Modify subscriber ${subscriber.subscriberData}?`))
+          return;
+    
+        const result = await ApiHelper.updateSubscriber(subscriber.subscriberData);
+        ApiHelper.fetchSubscribers().then();
+        if (!result) {
+          alert("Error modify subscriber: " + subscriber.subscriberData);
+        }
+      }
+
       componentDidMount() {
 
         // console.log("In UEInfoDetail")

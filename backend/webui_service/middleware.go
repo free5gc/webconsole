@@ -1,8 +1,8 @@
 package webui_service
 
 import (
-	"github.com/gin-gonic/gin"
 	"free5gc/lib/path_util"
+	"github.com/gin-gonic/gin"
 )
 
 var PublicPath string
