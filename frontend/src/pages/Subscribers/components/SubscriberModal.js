@@ -242,6 +242,34 @@ class SubscriberModal extends Component {
         }
       }
     });
+    const sessionManagementSubscriptionDataList = singleNssais.map(snssai => {
+      return {
+        "singleNssai": snssai,
+        "dnnConfigurations": {
+          "internet": {
+            "sscModes": {
+              "defaultSscMode": "SSC_MODE_1",
+              "allowedSscModes": ["SSC_MODE_1", "SSC_MODE_2", "SSC_MODE_3"]
+            },
+            "pduSessionTypes": {
+              "defaultSessionType": "IPV4",
+              "allowedSessionTypes": ["IPV4"]
+            },
+            "sessionAmbr": {
+              "uplink": "2 Gbps",
+              "downlink": "1 Gbps"
+            },
+            "5gQosProfile": {
+              "5qi": 9,
+              "arp": {
+                "priorityLevel": 8
+              },
+              "priorityLevel": 8
+            }
+          }
+        }
+      }
+    });
 
     let subscriberData = {
       "plmnID": formData["plmnID"], // Change required
@@ -281,32 +309,7 @@ class SubscriberModal extends Component {
           "uplink": "1 Gbps"
         },
       },
-      "SessionManagementSubscriptionData": { // Need to be a list.
-        "singleNssai": singleNssais[0], // Change required.
-        "dnnConfigurations": {
-          "internet": {
-            "sscModes": {
-              "defaultSscMode": "SSC_MODE_1",
-              "allowedSscModes": ["SSC_MODE_1", "SSC_MODE_2", "SSC_MODE_3"]
-            },
-            "pduSessionTypes": {
-              "defaultSessionType": "IPV4",
-              "allowedSessionTypes": ["IPV4"]
-            },
-            "sessionAmbr": {
-              "uplink": "2 Gbps",
-              "downlink": "1 Gbps"
-            },
-            "5gQosProfile": {
-              "5qi": 9,
-              "arp": {
-                "priorityLevel": 8
-              },
-              "priorityLevel": 8
-            }
-          }
-        }
-      },
+      "SessionManagementSubscriptionDataList": sessionManagementSubscriptionDataList,
       "SmfSelectionSubscriptionData": {
         "subscribedSnssaiInfos": subscribedSnssaiInfos,
       },

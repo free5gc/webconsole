@@ -7,7 +7,7 @@ type SubsData struct {
 	UeId                              string                                   `json:"ueId"`
 	AuthenticationSubscription        models.AuthenticationSubscription        `json:"AuthenticationSubscription"`
 	AccessAndMobilitySubscriptionData models.AccessAndMobilitySubscriptionData `json:"AccessAndMobilitySubscriptionData"`
-	SessionManagementSubscriptionData models.SessionManagementSubscriptionData `json:"SessionManagementSubscriptionData"`
+	SessionManagementSubscriptionDataList [](models.SessionManagementSubscriptionData) `json:"SessionManagementSubscriptionDataList"`
 	SmfSelectionSubscriptionData      models.SmfSelectionSubscriptionData      `json:"SmfSelectionSubscriptionData"`
 	AmPolicyData                      models.AmPolicyData                      `json:"AmPolicyData"`
 	SmPolicyData                      models.SmPolicyData                      `json:"SmPolicyData"`
