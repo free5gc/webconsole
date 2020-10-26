@@ -215,6 +215,61 @@ class SubscriberModal extends Component {
     const formData = result.formData;
     const OP = formData["OPOPcSelect"] === "OP" ? formData["OPOPc"] : "";
     const OPc = formData["OPOPcSelect"] === "OPc" ? formData["OPOPc"] : "";
+    const singleNssais = formData["singleNssais"];
+    const defaultSingleNssais = formData["defaultSingleNssais"];
+    let subscribedSnssaiInfos = {};
+    singleNssais.forEach(snssai => { // Should we merge default and non-default nssais?
+      let key = snssai.sst.toString(16).padStart(2, '0');
+      key += snssai.sd;
+      subscribedSnssaiInfos[key] = {
+        "dnnInfos": [
+          {
+            "dnn": "internet"
+          }
+        ]
+      }
+    });
+    let smPolicySnssaiData = {};
+    singleNssais.forEach(snssai => { // Should we merge default and non-default nssais?
+      let key = snssai.sst.toString(16).padStart(2, '0');
+      key += snssai.sd;
+      smPolicySnssaiData[key] = {
+        "snssai": snssai,
+        "smPolicyDnnData": {
+          "internet": {
+            "dnn": "internet"
+          }
+        }
+      }
+    });
+    const sessionManagementSubscriptionDataList = singleNssais.map(snssai => {
+      return {
+        "singleNssai": snssai,
+        "dnnConfigurations": {
+          "internet": {
+            "sscModes": {
+              "defaultSscMode": "SSC_MODE_1",
+              "allowedSscModes": ["SSC_MODE_1", "SSC_MODE_2", "SSC_MODE_3"]
+            },
+            "pduSessionTypes": {
+              "defaultSessionType": "IPV4",
+              "allowedSessionTypes": ["IPV4"]
+            },
+            "sessionAmbr": {
+              "uplink": "2 Gbps",
+              "downlink": "1 Gbps"
+            },
+            "5gQosProfile": {
+              "5qi": 9,
+              "arp": {
+                "priorityLevel": 8
+              },
+              "priorityLevel": 8
+            }
+          }
+        }
+      }
+    });
 
     let subscriberData = {
       "plmnID": formData["plmnID"], // Change required
@@ -246,78 +301,17 @@ class SubscriberModal extends Component {
           "msisdn-0900000000"
         ],
         "nssai": {
-          "defaultSingleNssais": [
-            {
-              "sd": "010203",
-              "sst": 1
-            },
-            {
-              "sd": "112233",
-              "sst": 1
-            }
-          ],
-          "singleNssais": [
-            {
-              "sd": "010203",
-              "sst": 1
-            },
-            {
-              "sd": "112233",
-              "sst": 1
-            }
-          ]
+          "defaultSingleNssais": defaultSingleNssais,
+          "singleNssais": singleNssais
         },
         "subscribedUeAmbr": {
           "downlink": "2 Gbps",
           "uplink": "1 Gbps"
         },
       },
-      "SessionManagementSubscriptionData": {
-        "singleNssai": {
-          "sst": 1,
-          "sd": "010203"
-        },
-        "dnnConfigurations": {
-          "internet": {
-            "sscModes": {
-              "defaultSscMode": "SSC_MODE_1",
-              "allowedSscModes": ["SSC_MODE_1", "SSC_MODE_2", "SSC_MODE_3"]
-            },
-            "pduSessionTypes": {
-              "defaultSessionType": "IPV4",
-              "allowedSessionTypes": ["IPV4"]
-            },
-            "sessionAmbr": {
-              "uplink": "2 Gbps",
-              "downlink": "1 Gbps"
-            },
-            "5gQosProfile": {
-              "5qi": 9,
-              "arp": {
-                "priorityLevel": 8
-              },
-              "priorityLevel": 8
-            }
-          }
-        }
-      },
+      "SessionManagementSubscriptionDataList": sessionManagementSubscriptionDataList,
       "SmfSelectionSubscriptionData": {
-        "subscribedSnssaiInfos": {
-          "01010203": {
-            "dnnInfos": [
-              {
-                "dnn": "internet"
-              }
-            ]
-          },
-          "01112233": {
-            "dnnInfos": [
-              {
-                "dnn": "internet"
-              }
-            ]
-          }
-        },
+        "subscribedSnssaiInfos": subscribedSnssaiInfos,
       },
       "AmPolicyData": {
         "subscCats": [
@@ -325,30 +319,7 @@ class SubscriberModal extends Component {
         ]
       },
       "SmPolicyData": {
-        "smPolicySnssaiData": {
-          "01010203": {
-            "snssai": {
-              "sst": 1,
-              "sd": "010203"
-            },
-            "smPolicyDnnData": {
-              "internet": {
-                "dnn": "internet"
-              }
-            }
-          },
-          "01112233": {
-            "snssai": {
-              "sst": 1,
-              "sd": "112233"
-            },
-            "smPolicyDnnData": {
-              "internet": {
-                "dnn": "internet"
-              }
-            }
-          }
-        }
+        "smPolicySnssaiData": smPolicySnssaiData
       }
     };
 
