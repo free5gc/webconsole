@@ -421,14 +421,12 @@ class SubscriberModal extends Component {
       },
       "SessionManagementSubscriptionData": smDatasFromSliceConfiguration(formData["sliceConfigurations"]),
       "SmfSelectionSubscriptionData": {
-        "DnnInfosubscribedSnssaiInfos": _.fromPairs(
+        "subscribedSnssaiInfos": _.fromPairs(
           _.map(formData["sliceConfigurations"], slice => [snssaiToString(slice.snssai),
           {
-            "dnnInfos": [
-              {
-                "dnn": "internet",
-              },
-            ]
+            "dnnInfos": _.map(slice.dnnConfigurations, dnnCofig => {
+              return {"dnn": dnnCofig.dnn}
+            })
           }]))
       },
       "AmPolicyData": {
@@ -444,11 +442,14 @@ class SubscriberModal extends Component {
               "sst": slice.snssai.sst,
               "sd": slice.snssai.sd
             },
-            "smPolicyDnnData": {
-              "internet": {
-                "dnn": "internet"
-              },
-            },
+            "smPolicyDnnData": _.fromPairs(
+              _.map(slice.dnnConfigurations, dnnConfig => [
+                dnnConfig.dnn,
+                {
+                  "dnn": dnnConfig.dnn
+                }
+              ])
+            )
           }]))
       },
       "FlowRules": flowRulesFromSliceConfiguration(formData["sliceConfigurations"])
