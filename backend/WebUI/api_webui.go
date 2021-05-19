@@ -302,6 +302,7 @@ func GetSubscriberByID(c *gin.Context) {
 	smfSelDataInterface := MongoDBLibrary.RestfulAPIGetOne(smfSelDataColl, filter)
 	amPolicyDataInterface := MongoDBLibrary.RestfulAPIGetOne(amPolicyDataColl, filterUeIdOnly)
 	smPolicyDataInterface := MongoDBLibrary.RestfulAPIGetOne(smPolicyDataColl, filterUeIdOnly)
+	flowRuleDataInterface := MongoDBLibrary.RestfulAPIGetMany(flowRuleDataColl, filter)
 
 	var authSubsData models.AuthenticationSubscription
 	json.Unmarshal(mapToByte(authSubsDataInterface), &authSubsData)
@@ -315,6 +316,8 @@ func GetSubscriberByID(c *gin.Context) {
 	json.Unmarshal(mapToByte(amPolicyDataInterface), &amPolicyData)
 	var smPolicyData models.SmPolicyData
 	json.Unmarshal(mapToByte(smPolicyDataInterface), &smPolicyData)
+	var flowRules []FlowRule
+	json.Unmarshal(sliceToByte(flowRuleDataInterface), &flowRules)
 
 	subsData = SubsData{
 		PlmnID:                            servingPlmnId,
@@ -325,6 +328,7 @@ func GetSubscriberByID(c *gin.Context) {
 		SmfSelectionSubscriptionData:      smfSelData,
 		AmPolicyData:                      amPolicyData,
 		SmPolicyData:                      smPolicyData,
+		FlowRules:                         flowRules,
 	}
 
 	c.JSON(http.StatusOK, subsData)
@@ -426,6 +430,17 @@ func PutSubscriberByID(c *gin.Context) {
 	amPolicyDataBsonM["ueId"] = ueId
 	smPolicyDataBsonM := toBsonM(subsData.SmPolicyData)
 	smPolicyDataBsonM["ueId"] = ueId
+
+	flowRulesBsonA := make([]interface{}, 0, len(subsData.FlowRules))
+	for _, flowRule := range subsData.FlowRules {
+		flowRuleBsonM := toBsonM(flowRule)
+		flowRuleBsonM["ueId"] = ueId
+		flowRuleBsonM["servingPlmnId"] = servingPlmnId
+		flowRulesBsonA = append(flowRulesBsonA, flowRuleBsonM)
+	}
+	// Replace all data with new one
+	MongoDBLibrary.RestfulAPIDeleteMany(flowRuleDataColl, filter)
+	MongoDBLibrary.RestfulAPIPostMany(flowRuleDataColl, filter, flowRulesBsonA)
 
 	MongoDBLibrary.RestfulAPIPutOne(authSubsDataColl, filterUeIdOnly, authSubsBsonM)
 	MongoDBLibrary.RestfulAPIPutOne(amDataColl, filter, amDataBsonM)

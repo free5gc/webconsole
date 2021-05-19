@@ -54,14 +54,17 @@ class SubscriberOverview extends Component {
   // }
 
   /**
-   * @param subscriber  {Subscriber}
+   * @param subscriberData
    */
-  async updateSubscriber(subscriber) {
-    const result = await ApiHelper.updateSubscriber(subscriber.id, subscriber.plmn);
+  async updateSubscriber(subscriberData) {
+    this.setState({ subscriberModalOpen: false });
+
+    const result = await ApiHelper.updateSubscriber(subscriberData);
 
     if (!result) {
-      alert("Error updating subscriber: " + subscriber.id);
+      alert("Error updating subscriber: " + subscriberData["ueId"]);
     }
+    ApiHelper.fetchSubscribers().then();
   }
 
   /**
@@ -107,7 +110,7 @@ class SubscriberOverview extends Component {
                         <td style={{ textAlign: 'center' }}>
                           <Button variant="danger" onClick={this.deleteSubscriber.bind(this, subscriber)}>Delete</Button>
                          &nbsp;&nbsp;&nbsp;&nbsp;
-                        <Button variant="info" onClick={this.openEditSubscriber.bind(this)}>Modify</Button>
+                        <Button variant="info" onClick={this.openEditSubscriber.bind(this, subscriber.id, subscriber.plmn)}>Modify</Button>
                         </td>
                       </tr>
                     ))}

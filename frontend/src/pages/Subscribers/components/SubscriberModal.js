@@ -57,6 +57,65 @@ function flowRulesFromSliceConfiguration(sliceConfigurations) {
   return flowRules
 }
 
+function sliceConfigurationsFromSubscriber(subscriber) {
+  const defaultSingleNssais = subscriber["AccessAndMobilitySubscriptionData"]["nssai"]["defaultSingleNssais"] ? subscriber["AccessAndMobilitySubscriptionData"]["nssai"]["defaultSingleNssais"].map(nssai => {
+    return {
+      snssai: {
+        sst: nssai.sst,
+        sd: nssai.sd,
+        isDefault: true
+      }
+    }
+  }) : [];
+  const singleNssais = subscriber["AccessAndMobilitySubscriptionData"]["nssai"]["singleNssais"] ? subscriber["AccessAndMobilitySubscriptionData"]["nssai"]["singleNssais"].map(nssai => {
+    return {
+      snssai: {
+        sst: nssai.sst,
+        sd: nssai.sd,
+        isDefault: false
+      }
+    }
+  }) : [];
+
+  let sliceConfigurations = [ // merge
+    ...defaultSingleNssais,
+    ...singleNssais
+  ];
+
+  const sessionManagementSubscriptionData = subscriber["SessionManagementSubscriptionData"];
+
+  sliceConfigurations.forEach(sliceConf => {
+    const dnnConfigs = sessionManagementSubscriptionData.find(data => data.singleNssai.sst === sliceConf.snssai.sst && data.singleNssai.sd === sliceConf.snssai.sd).dnnConfigurations;
+    sliceConf.dnnConfigurations = Object.keys(dnnConfigs).map(dnn => {
+      let flowRules = [];
+      const flowRulesData = subscriber["FlowRules"];
+      if(flowRulesData && flowRulesData.length !== 0) {
+        flowRules = flowRulesData
+        .filter(rule => rule.snssai === snssaiToString(sliceConf.snssai) && dnn === rule.dnn)
+        .map(rule => {
+          return {
+            filter: rule.filter,
+            "5qi": rule["5qi"],
+            gbrUL: rule.gbrUL,
+            gbrDL: rule.gbrDL,
+            mbrUL: rule.mbrUL,
+            mbrDL: rule.mbrDL  
+          }
+        })
+      }
+      return {
+        dnn: dnn,
+        uplinkAmbr: dnnConfigs[dnn].sessionAmbr.uplink,
+        downlinkAmbr: dnnConfigs[dnn].sessionAmbr.downlink,
+        "5qi": dnnConfigs[dnn]["5gQosProfile"]["5qi"],
+        flowRules: flowRules
+      };
+    });
+  });
+
+  return sliceConfigurations;
+}
+
 class SubscriberModal extends Component {
   static propTypes = {
     open: PropTypes.bool.isRequired,
@@ -331,6 +390,7 @@ class SubscriberModal extends Component {
           OPOPcSelect: isOp ? "OP" : "OPc",
           OPOPc: isOp ? subscriber['AuthenticationSubscription']["milenage"]["op"]["opValue"] :
             subscriber['AuthenticationSubscription']["opc"]["opcValue"],
+          sliceConfigurations: sliceConfigurationsFromSubscriber(subscriber),
         };
 
         this.updateFormData(formData).then();
@@ -455,7 +515,11 @@ class SubscriberModal extends Component {
       "FlowRules": flowRulesFromSliceConfiguration(formData["sliceConfigurations"])
     };
 
-    this.props.onSubmit(subscriberData);
+    if(this.state.editMode) {
+      this.props.onModify(subscriberData);
+    } else {
+      this.props.onSubmit(subscriberData);
+    }
   }
 
   render() {
