@@ -46,9 +46,9 @@ class ApiHelper {
 
   static async updateSubscriber(subscriberData) {
     try {
-      let response = await Http.patch(
+      let response = await Http.put(
         `subscriber/${subscriberData["ueId"]}/${subscriberData["plmnID"]}`, subscriberData);
-      if (response.status === 201)
+      if (response.status === 204)
         return true;
     } catch (error) {
       console.error(error);
