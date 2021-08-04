@@ -23,6 +23,8 @@ const (
 	amPolicyDataColl = "policyData.ues.amData"
 	smPolicyDataColl = "policyData.ues.smData"
 	flowRuleDataColl = "policyData.ues.flowRule"
+	userDataColl     = "userData"
+	tenantDataColl   = "tenantData"
 )
 
 var httpsClient *http.Client
@@ -261,6 +263,52 @@ func GetSampleJSON(c *gin.Context) {
 	c.JSON(http.StatusOK, subsData)
 }
 
+type OAuth struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int    `json:"expires_in"`
+}
+
+type LoginRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+const ACCESS_TOKEN = `eyJraWQiOiJ1XC9RZkJJc0J6OUkrSFdISkNLTDNJZW1RcUpKQ1U1dU9aXC9nRW5iZ0tCcUE9IiwiYWxnIjoiUlMyNTYifQ.eyJjdXN0b206ZnVsbG5hbWUiOiJGdWxsIE5hbWUiLCJzdWIiOiI5MjhiMGYyOS04MzMzLTRiOWYtOWZlMC1hN2RiNzRhMTQ1NGQiLCJjdXN0b206c3ViZG9tYWluIjoiZW5nIiwiY29nbml0bzpncm91cHMiOlsiU2hhcmVkTG9nc0dyb3VwIiwiQWRtaW4iXSwiZW1haWxfdmVyaWZpZWQiOnRydWUsImN1c3RvbTpkb21haW4iOiJodWxmdC5jb20iLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAuYXAtbm9ydGhlYXN0LTEuYW1hem9uYXdzLmNvbVwvYXAtbm9ydGhlYXN0LTFfVEljUVJZdUo0IiwiY3VzdG9tOnVzZXJfaW5mbyI6ImVOcjdcL3g4SFlFQUFBRlhxR09nPSIsImNvZ25pdG86dXNlcm5hbWUiOiI5MjhiMGYyOS04MzMzLTRiOWYtOWZlMC1hN2RiNzRhMTQ1NGQiLCJjb2duaXRvOnJvbGVzIjpbImFybjphd3M6aWFtOjo1ODM1NjU5MzgwNDE6cm9sZVwvU2hhcmVkTG9nc0dyb3VwIiwiYXJuOmF3czppYW06OjU4MzU2NTkzODA0MTpyb2xlXC9BZG1pbiJdLCJhdWQiOiIyMGRsM2U2bWJkbWl0NWhkdjlxYzVvY2U0OSIsImV2ZW50X2lkIjoiYzQyZTAzNjktZGE3NS00OGE0LWJhOWItMzIxMDNiOTQ2NmYyIiwidG9rZW5fdXNlIjoiaWQiLCJhdXRoX3RpbWUiOjE2MjQyNTMwNjksImN1c3RvbTpkaXNwbGF5TmFtZSI6IkRlbW8gVXNlciIsImV4cCI6MTYyNDI1NjY2OSwiaWF0IjoxNjI0MjUzMDY5LCJlbWFpbCI6ImRlbW91c2VyQGh1bGZ0LmNvbSJ9.J8U-PtcmeZpYQQmeycKWY6dBqeCil92nQJ_UU3DyCPrVKyxkGBKqLz-ed8-bvCaC-NbXtKBsqhrdqq0MeQzFfreAxzFNQek6AiDnR1mydi6kQcuZkzbuN1CG8eNt03F05u88ymcastlYwd8ddb3ZPsrMMEMxAL0aZtevaKx4p8pJQDRe2PZYxuJXKY24OBUwO6nBcp6I6sNeFlmMKjv9tb32ZZHGOAPFRKudHBkY7XYnzosojXaoO2YJE8mZDH9uS7-c5RTDMNuu0j6GYRr9NwKCkQTOJWBPSPtqdedk3UnPKG-0_ovCjdX4Sk6470g-dNlrBGKigvJW5hgj0cgUIw`
+
+func Login(c *gin.Context) {
+	setCorsHeader(c)
+
+	login := LoginRequest{}
+	err := json.NewDecoder(c.Request.Body).Decode(&login)
+	if err != nil {
+		logger.WebUILog.Warnln("JSON decode error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
+
+	if login.Username == "kunihiro" {
+		oauth := OAuth{}
+		oauth.AccessToken = ACCESS_TOKEN
+		c.JSON(http.StatusOK, oauth)
+	} else {
+		c.JSON(http.StatusForbidden, gin.H{})
+	}
+}
+
+// Placeholder to handle logout.
+func Logout(c *gin.Context) {
+	setCorsHeader(c)
+	// Needs to invalidate access_token.
+	c.JSON(http.StatusOK, gin.H{})
+}
+
+type AuthSub struct {
+	models.AuthenticationSubscription
+	TenantId string `json:"tenantId" bson:"tenantId"`
+}
+
 // Get all subscribers list
 func GetSubscribers(c *gin.Context) {
 	setCorsHeader(c)
@@ -272,13 +320,18 @@ func GetSubscribers(c *gin.Context) {
 	for _, amData := range amDataList {
 		ueId := amData["ueId"]
 		servingPlmnId := amData["servingPlmnId"]
-		tmp := SubsListIE{
-			PlmnID: servingPlmnId.(string),
-			UeId:   ueId.(string),
+		filterUeIdOnly := bson.M{"ueId": ueId}
+		authSubsDataInterface := MongoDBLibrary.RestfulAPIGetOne(authSubsDataColl, filterUeIdOnly)
+		var authSubsData AuthSub
+		json.Unmarshal(mapToByte(authSubsDataInterface), &authSubsData)
+		if authSubsData.TenantId == "tenant-uuid" {
+			tmp := SubsListIE{
+				PlmnID: servingPlmnId.(string),
+				UeId:   ueId.(string),
+			}
+			subsList = append(subsList, tmp)
 		}
-		subsList = append(subsList, tmp)
 	}
-
 	c.JSON(http.StatusOK, subsList)
 }
 
@@ -352,6 +405,7 @@ func PostSubscriberByID(c *gin.Context) {
 
 	authSubsBsonM := toBsonM(subsData.AuthenticationSubscription)
 	authSubsBsonM["ueId"] = ueId
+	authSubsBsonM["tenantId"] = "tenant-uuid"
 	amDataBsonM := toBsonM(subsData.AccessAndMobilitySubscriptionData)
 	amDataBsonM["ueId"] = ueId
 	amDataBsonM["servingPlmnId"] = servingPlmnId

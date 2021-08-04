@@ -67,7 +67,17 @@ class ApiHelper {
     }
 
     return false;
-  } 
+  }
+
+  static async login(loginRequest) {
+    console.log("login");
+    try {
+      let response = await Http.post(`login`, loginRequest);
+      return response;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 }
 
 export default ApiHelper;

@@ -61,6 +61,20 @@ var routes = Routes{
 	},
 
 	{
+		"Login",
+		http.MethodPost,
+		"/login",
+		Login,
+	},
+
+	{
+		"Logout",
+		http.MethodPost,
+		"/logout",
+		Logout,
+	},
+
+	{
 		"GetSubscribers",
 		http.MethodGet,
 		"/subscriber",
