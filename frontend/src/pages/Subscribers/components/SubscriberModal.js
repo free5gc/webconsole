@@ -36,6 +36,10 @@ function smDatasFromSliceConfiguration(sliceConfiguration) {
               "priorityLevel": 8
             },
             "priorityLevel": 8
+          },
+          "upSecurity": {
+            "upintegr": dnnConfig.upIntegrity,
+            "upconfid": dnnConfig.upConfidentiality
           }
         }
       ]))
@@ -205,12 +209,16 @@ class SubscriberModal extends Component {
                 uplinkAmbr: "200 Mbps",
                 downlinkAmbr: "100 Mbps",
                 "5qi": 9,
+                upIntegrity: "NOT_NEEDED",
+                upConfidentiality: "NOT_NEEDED",
               },
               {
                 dnn: "internet2",
                 uplinkAmbr: "200 Mbps",
                 downlinkAmbr: "100 Mbps",
                 "5qi": 9,
+                upIntegrity: "NOT_NEEDED",
+                upConfidentiality: "NOT_NEEDED",
               }
             ]
           },
@@ -226,12 +234,16 @@ class SubscriberModal extends Component {
                 uplinkAmbr: "200 Mbps",
                 downlinkAmbr: "100 Mbps",
                 "5qi": 9,
+                upIntegrity: "NOT_NEEDED",
+                upConfidentiality: "NOT_NEEDED",
               },
               {
                 dnn: "internet2",
                 uplinkAmbr: "200 Mbps",
                 downlinkAmbr: "100 Mbps",
                 "5qi": 9,
+                upIntegrity: "NOT_NEEDED",
+                upConfidentiality: "NOT_NEEDED",
               }
             ]
           },
@@ -297,6 +309,18 @@ class SubscriberModal extends Component {
             minimum: 0,
             maximum: 255,
             title: "Default 5QI"
+          },
+          upIntegrity: {
+            type: "string",
+            title: "Integrity of UP Security",
+            enum: ["NOT_NEEDED", "PREFERRED", "REQUIRED"],
+            default: "NOT_NEEDED",
+          },
+          upConfidentiality: {
+            type: "string",
+            title: "Confidentiality of UP Security",
+            enum: ["NOT_NEEDED", "PREFERRED", "REQUIRED"],
+            default: "NOT_NEEDED",
           },
           flowRules: {
             type: "array",

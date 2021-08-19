@@ -159,6 +159,10 @@ func GetSampleJSON(c *gin.Context) {
 						},
 						PriorityLevel: 8,
 					},
+					UpSecurity: &models.UpSecurity{
+						UpIntegr: "NOT_NEEDED",
+						UpConfid: "NOT_NEEDED",
+					},
 				},
 			},
 		},
@@ -187,6 +191,10 @@ func GetSampleJSON(c *gin.Context) {
 							PriorityLevel: 8,
 						},
 						PriorityLevel: 8,
+					},
+					UpSecurity: &models.UpSecurity{
+						UpIntegr: "NOT_NEEDED",
+						UpConfid: "NOT_NEEDED",
 					},
 				},
 			},
