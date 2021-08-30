@@ -2,11 +2,15 @@ import Http from './Http';
 import {store} from '../index';
 import subscriberActions from "../redux/actions/subscriberActions";
 import Subscriber from "../models/Subscriber";
+import axios from 'axios';
+import LocalStorageHelper from "./LocalStorageHelper";
 
 class ApiHelper {
 
   static async fetchSubscribers() {
     try {
+      let user = LocalStorageHelper.getUserInfo();
+      axios.defaults.headers.common['Token'] = user.accessToken;
       let response = await Http.get('subscriber');
       if (response.status === 200 && response.data) {
         const subscribers = response.data.map(val => new Subscriber(val['ueId'], val['plmnID']));
@@ -33,6 +37,8 @@ class ApiHelper {
 
   static async createSubscriber(subscriberData) {
     try {
+      let user = LocalStorageHelper.getUserInfo();
+      axios.defaults.headers.common['Token'] = user.accessToken;
       let response = await Http.post(
         `subscriber/${subscriberData["ueId"]}/${subscriberData["plmnID"]}`, subscriberData);
       if (response.status === 201)
@@ -77,6 +83,7 @@ class ApiHelper {
     } catch (error) {
       console.error(error);
     }
+    return false;
   }
 }
 

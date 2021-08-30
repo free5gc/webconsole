@@ -3,6 +3,7 @@ import authActions from '../redux/actions/authActions';
 import config from '../config/config';
 import User from "../models/User";
 import ApiHelper from "./ApiHelper";
+import LocalStorageHelper from "./LocalStorageHelper";
 
 export default class AuthHelper {
 
@@ -14,7 +15,8 @@ export default class AuthHelper {
    */
   static async login(username, password) {
     if (username === config.USERNAME && password === config.PASSWORD) {
-      let user = new User(username, "System Administrator", "");
+      let user = new User(username, "System Administrator", "admin");
+      LocalStorageHelper.setUserInfo(user);
       store.dispatch(authActions.setUser(user));
       return true;
     } else {
@@ -24,6 +26,7 @@ export default class AuthHelper {
       }
       if (response.status === 200) {
         let user = new User(username, "User", response.data.access_token);
+        LocalStorageHelper.setUserInfo(user);
         store.dispatch(authActions.setUser(user));
         return true;
       } else {
