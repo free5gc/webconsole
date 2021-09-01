@@ -6,6 +6,57 @@ import _ from 'lodash';
 
 let snssaiToString = (snssai) => snssai.sst.toString(16).padStart(2, '0').toUpperCase() + snssai.sd
 
+function dnnConfigurationFromSliceConfiguration(dnnConfig){
+  if (dnnConfig.upSecurityChk === true) {
+    return {
+      "sscModes": {
+        "defaultSscMode": "SSC_MODE_1",
+        "allowedSscModes": ["SSC_MODE_2", "SSC_MODE_3"]
+      },
+      "pduSessionTypes": {
+        "defaultSessionType": "IPV4",
+        "allowedSessionTypes": ["IPV4"]
+      },
+      "sessionAmbr": {
+        "uplink": dnnConfig.uplinkAmbr,
+        "downlink": dnnConfig.downlinkAmbr
+      },
+      "5gQosProfile": {
+        "5qi": dnnConfig["5qi"],
+        "arp": {
+          "priorityLevel": 8
+        },
+        "priorityLevel": 8
+      },
+      "upSecurity": {
+        "upIntegr": dnnConfig.upIntegrity,
+        "upConfid": dnnConfig.upConfidentiality
+      }
+    }
+  }
+  return {
+    "sscModes": {
+      "defaultSscMode": "SSC_MODE_1",
+      "allowedSscModes": ["SSC_MODE_2", "SSC_MODE_3"]
+    },
+    "pduSessionTypes": {
+      "defaultSessionType": "IPV4",
+      "allowedSessionTypes": ["IPV4"]
+    },
+    "sessionAmbr": {
+      "uplink": dnnConfig.uplinkAmbr,
+      "downlink": dnnConfig.downlinkAmbr
+    },
+    "5gQosProfile": {
+      "5qi": dnnConfig["5qi"],
+      "arp": {
+        "priorityLevel": 8
+      },
+      "priorityLevel": 8
+    }
+  }
+}
+
 function smDatasFromSliceConfiguration(sliceConfiguration) {
   return _.map(sliceConfiguration, slice => {
     return {
@@ -17,31 +68,7 @@ function smDatasFromSliceConfiguration(sliceConfiguration) {
         // key
         dnnConfig.dnn,
         // value
-        {
-          "sscModes": {
-            "defaultSscMode": "SSC_MODE_1",
-            "allowedSscModes": ["SSC_MODE_2", "SSC_MODE_3"]
-          },
-          "pduSessionTypes": {
-            "defaultSessionType": "IPV4",
-            "allowedSessionTypes": ["IPV4"]
-          },
-          "sessionAmbr": {
-            "uplink": dnnConfig.uplinkAmbr,
-            "downlink": dnnConfig.downlinkAmbr
-          },
-          "5gQosProfile": {
-            "5qi": dnnConfig["5qi"],
-            "arp": {
-              "priorityLevel": 8
-            },
-            "priorityLevel": 8
-          },
-          "upSecurity": {
-            "upintegr": dnnConfig.upIntegrity,
-            "upconfid": dnnConfig.upConfidentiality
-          }
-        }
+        dnnConfigurationFromSliceConfiguration(dnnConfig)
       ]))
     }
   })
@@ -106,6 +133,18 @@ function sliceConfigurationsFromSubscriber(subscriber) {
             mbrDL: rule.mbrDL  
           }
         })
+      }
+      if (dnnConfigs[dnn].upSecurity !== null){
+        return {
+          dnn: dnn,
+          uplinkAmbr: dnnConfigs[dnn].sessionAmbr.uplink,
+          downlinkAmbr: dnnConfigs[dnn].sessionAmbr.downlink,
+          "5qi": dnnConfigs[dnn]["5gQosProfile"]["5qi"],
+          flowRules: flowRules,
+          upSecurityChk: true,
+          upIntegrity: dnnConfigs[dnn].upSecurity.upIntegr,
+          upConfidentiality: dnnConfigs[dnn].upSecurity.upConfid
+        };
       }
       return {
         dnn: dnn,
@@ -209,16 +248,12 @@ class SubscriberModal extends Component {
                 uplinkAmbr: "200 Mbps",
                 downlinkAmbr: "100 Mbps",
                 "5qi": 9,
-                upIntegrity: "NOT_NEEDED",
-                upConfidentiality: "NOT_NEEDED",
               },
               {
                 dnn: "internet2",
                 uplinkAmbr: "200 Mbps",
                 downlinkAmbr: "100 Mbps",
                 "5qi": 9,
-                upIntegrity: "NOT_NEEDED",
-                upConfidentiality: "NOT_NEEDED",
               }
             ]
           },
@@ -234,16 +269,12 @@ class SubscriberModal extends Component {
                 uplinkAmbr: "200 Mbps",
                 downlinkAmbr: "100 Mbps",
                 "5qi": 9,
-                upIntegrity: "NOT_NEEDED",
-                upConfidentiality: "NOT_NEEDED",
               },
               {
                 dnn: "internet2",
                 uplinkAmbr: "200 Mbps",
                 downlinkAmbr: "100 Mbps",
                 "5qi": 9,
-                upIntegrity: "NOT_NEEDED",
-                upConfidentiality: "NOT_NEEDED",
               }
             ]
           },
@@ -309,24 +340,51 @@ class SubscriberModal extends Component {
             minimum: 0,
             maximum: 255,
             title: "Default 5QI"
-          },
-          upIntegrity: {
-            type: "string",
-            title: "Integrity of UP Security",
-            enum: ["NOT_NEEDED", "PREFERRED", "REQUIRED"],
-            default: "NOT_NEEDED",
-          },
-          upConfidentiality: {
-            type: "string",
-            title: "Confidentiality of UP Security",
-            enum: ["NOT_NEEDED", "PREFERRED", "REQUIRED"],
-            default: "NOT_NEEDED",
-          },
+          },       
           flowRules: {
             type: "array",
             items: { $ref: "#/definitions/FlowInformation" },
             maxItems: 1,
             title: "Flow Rules"
+          },
+          upSecurityChk: {
+            "type": "boolean",
+            title: "UP Security",
+            "default": false
+          },
+        },
+        "dependencies": {
+          upSecurityChk: {
+            "oneOf": [
+              {
+                "properties": {
+                  upSecurityChk: {
+                    "enum": [false]
+                  }
+                },
+              },
+              {
+                "properties": {
+                  upSecurityChk: {
+                    "enum": [true]
+                  },
+                  upIntegrity: {
+                    type: "string",
+                    title: "Integrity of UP Security",
+                    enum: ["NOT_NEEDED", "PREFERRED", "REQUIRED"],
+                  },
+                  upConfidentiality: {
+                    type: "string",
+                    title: "Confidentiality of UP Security",
+                    enum: ["NOT_NEEDED", "PREFERRED", "REQUIRED"],
+                  },
+                },
+                "required": [
+                  "upIntegrity",
+                  "upConfidentiality"
+                ]
+              }
+            ]
           }
         },
       },
