@@ -10,6 +10,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/crypto/bcrypt"
 
@@ -370,38 +371,114 @@ func ParseJWT(tokenStr string) jwt.MapClaims {
 
 // Tenant
 func GetTenants(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{})
+	setCorsHeader(c)
+
+	tenantDataInterface := MongoDBLibrary.RestfulAPIGetMany(tenantDataColl, bson.M{})
+	var tenantData []Tenant
+	json.Unmarshal(sliceToByte(tenantDataInterface), &tenantData)
+
+	c.JSON(http.StatusOK, tenantData)
 }
 
 func GetTenantByID(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{})
+	setCorsHeader(c)
+
+	tenantId := c.Param("tenantId")
+
+	filterTenantIdOnly := bson.M{"tenantId": tenantId}
+	tenantDataInterface := MongoDBLibrary.RestfulAPIGetOne(tenantDataColl, filterTenantIdOnly)
+	if len(tenantDataInterface) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	var tenantData Tenant
+	json.Unmarshal(mapToByte(tenantDataInterface), &tenantData)
+
+	c.JSON(http.StatusOK, tenantData)
 }
 
-func PostTenantByID(c *gin.Context) {
+func PostTenant(c *gin.Context) {
+	setCorsHeader(c)
+
+	var tenantData Tenant
+	if err := c.ShouldBindJSON(&tenantData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{})
+		return
+	}
+
+	if tenantData.TenantId == "" {
+		tenantData.TenantId = uuid.Must(uuid.NewRandom()).String()
+	}
+
+	tenantBsonM := toBsonM(tenantData)
+	filterTenantIdOnly := bson.M{"tenantId": tenantData.TenantId}
+	MongoDBLibrary.RestfulAPIPost(tenantDataColl, filterTenantIdOnly, tenantBsonM)
+
+	c.JSON(http.StatusOK, tenantData)
 }
 
 func PutTenantByID(c *gin.Context) {
+	setCorsHeader(c)
+
+	tenantId := c.Param("tenantId")
+
+	filterTenantIdOnly := bson.M{"tenantId": tenantId}
+	tenantDataInterface := MongoDBLibrary.RestfulAPIGetOne(tenantDataColl, filterTenantIdOnly)
+	if len(tenantDataInterface) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	var tenantData Tenant
+	if err := c.ShouldBindJSON(&tenantData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{})
+		return
+	}
+	tenantData.TenantId = tenantId
+
+	tenantBsonM := toBsonM(tenantData)
+	filterTenantIdOnly = bson.M{"tenantId": tenantId}
+	MongoDBLibrary.RestfulAPIPost(tenantDataColl, filterTenantIdOnly, tenantBsonM)
+
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 func DeleteTenantByID(c *gin.Context) {
+	setCorsHeader(c)
+
+	tenantId := c.Param("tenantId")
+
+	filterTenantIdOnly := bson.M{"tenantId": tenantId}
+	MongoDBLibrary.RestfulAPIDeleteOne(tenantDataColl, filterTenantIdOnly)
+
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 // Users
 func GetUsers(c *gin.Context) {
+	setCorsHeader(c)
 	c.JSON(http.StatusOK, gin.H{})
 }
 
 func GetUserByID(c *gin.Context) {
+	setCorsHeader(c)
 	c.JSON(http.StatusOK, gin.H{})
 }
 
 func PostUserByID(c *gin.Context) {
+	setCorsHeader(c)
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 func PutUserByID(c *gin.Context) {
+	setCorsHeader(c)
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 func DeleteUserByID(c *gin.Context) {
+	setCorsHeader(c)
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 // Get all subscribers list

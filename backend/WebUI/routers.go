@@ -89,10 +89,10 @@ var routes = Routes{
 	},
 
 	{
-		"PostTenantByID",
+		"PostTenant",
 		http.MethodPost,
-		"/tenant/:tenantId",
-		PostTenantByID,
+		"/tenant",
+		PostTenant,
 	},
 
 	{
