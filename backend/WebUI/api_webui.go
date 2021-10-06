@@ -368,6 +368,38 @@ func ParseJWT(tokenStr string) jwt.MapClaims {
 	return claims
 }
 
+// Tenant
+func TenantList() {
+}
+
+func TenantGet() {
+}
+
+func TenantCreate() {
+}
+
+func TenantUpdate() {
+}
+
+func TenantDelete() {
+}
+
+// Users
+func UserList() {
+}
+
+func UserGet() {
+}
+
+func UserCreate() {
+}
+
+func UserUpdate() {
+}
+
+func UserDelete() {
+}
+
 // Get all subscribers list
 func GetSubscribers(c *gin.Context) {
 	setCorsHeader(c)

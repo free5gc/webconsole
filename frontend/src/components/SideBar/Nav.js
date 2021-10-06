@@ -33,6 +33,13 @@ class Nav extends Component {
           </Link>
         </li>
 
+        <li className={this.isPathActive('/tenants') ? 'active' : null}>
+          <Link to="/tenants">
+            <i className="pe-7s-users"/>
+            <p>Tenant and User</p>
+          </Link>
+        </li>
+
       </ul>
     );
   }
