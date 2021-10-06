@@ -75,6 +75,76 @@ var routes = Routes{
 	},
 
 	{
+		"GetTenants",
+		http.MethodGet,
+		"/tenant",
+		GetTenants,
+	},
+
+	{
+		"GetTenantByID",
+		http.MethodGet,
+		"/tenant/:tenantId",
+		GetTenantByID,
+	},
+
+	{
+		"PostTenantByID",
+		http.MethodPost,
+		"/tenant/:tenantId",
+		PostTenantByID,
+	},
+
+	{
+		"PutTenantByID",
+		http.MethodPut,
+		"/tenant/:tenantId",
+		PutTenantByID,
+	},
+
+	{
+		"DeleteTenantByID",
+		http.MethodDelete,
+		"/tenant/:tenantId",
+		DeleteTenantByID,
+	},
+
+	{
+		"GetUsers",
+		http.MethodGet,
+		"/user",
+		GetUsers,
+	},
+
+	{
+		"GetUserByID",
+		http.MethodGet,
+		"/user/:userId",
+		GetUserByID,
+	},
+
+	{
+		"PostUserByID",
+		http.MethodPost,
+		"/user/:userId",
+		PostUserByID,
+	},
+
+	{
+		"PutUserByID",
+		http.MethodPut,
+		"/user/:userId",
+		PutUserByID,
+	},
+
+	{
+		"DeleteUserByID",
+		http.MethodDelete,
+		"/user/:userId",
+		DeleteUserByID,
+	},
+
+	{
 		"GetSubscribers",
 		http.MethodGet,
 		"/subscriber",

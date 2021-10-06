@@ -369,35 +369,39 @@ func ParseJWT(tokenStr string) jwt.MapClaims {
 }
 
 // Tenant
-func TenantList() {
+func GetTenants(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{})
 }
 
-func TenantGet() {
+func GetTenantByID(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{})
 }
 
-func TenantCreate() {
+func PostTenantByID(c *gin.Context) {
 }
 
-func TenantUpdate() {
+func PutTenantByID(c *gin.Context) {
 }
 
-func TenantDelete() {
+func DeleteTenantByID(c *gin.Context) {
 }
 
 // Users
-func UserList() {
+func GetUsers(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{})
 }
 
-func UserGet() {
+func GetUserByID(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{})
 }
 
-func UserCreate() {
+func PostUserByID(c *gin.Context) {
 }
 
-func UserUpdate() {
+func PutUserByID(c *gin.Context) {
 }
 
-func UserDelete() {
+func DeleteUserByID(c *gin.Context) {
 }
 
 // Get all subscribers list
@@ -494,8 +498,11 @@ func PostSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
 	logger.WebUILog.Infoln("Post One Subscriber Data")
 
+	var claims jwt.MapClaims = nil
 	tokenStr := c.GetHeader("Token")
-	claims := ParseJWT(tokenStr)
+	if tokenStr != "admin" {
+		claims = ParseJWT(tokenStr)
+	}
 
 	var subsData SubsData
 	if err := c.ShouldBindJSON(&subsData); err != nil {
@@ -510,11 +517,15 @@ func PostSubscriberByID(c *gin.Context) {
 
 	authSubsBsonM := toBsonM(subsData.AuthenticationSubscription)
 	authSubsBsonM["ueId"] = ueId
-	authSubsBsonM["tenantId"] = claims["tenantId"].(string)
+	if claims != nil {
+		authSubsBsonM["tenantId"] = claims["tenantId"].(string)
+	}
 	amDataBsonM := toBsonM(subsData.AccessAndMobilitySubscriptionData)
 	amDataBsonM["ueId"] = ueId
 	amDataBsonM["servingPlmnId"] = servingPlmnId
-	amDataBsonM["tenantId"] = claims["tenantId"].(string)
+	if claims != nil {
+		amDataBsonM["tenantId"] = claims["tenantId"].(string)
+	}
 
 	smDatasBsonA := make([]interface{}, 0, len(subsData.SessionManagementSubscriptionData))
 	for _, smSubsData := range subsData.SessionManagementSubscriptionData {
