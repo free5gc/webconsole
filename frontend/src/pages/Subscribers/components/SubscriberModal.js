@@ -150,6 +150,7 @@ class SubscriberModal extends Component {
       "K",
       "OPOPcSelect",
       "OPOPc",
+      "SQN",
     ],
     properties: {
       plmnID: {
@@ -187,6 +188,12 @@ class SubscriberModal extends Component {
         title: "Operator Code Value",
         pattern: "^[A-Fa-f0-9]{32}$",
         default: "8e27b6af0e692e750f32667a3b14605d",
+      },
+      SQN: {
+        type: "string",
+        title: "SQN",
+        pattern: "^[A-Fa-f0-9]{1,12}$",
+        default: "16f3b3f70fc2",
       },
       sliceConfigurations: {
         type: "array",
@@ -390,6 +397,7 @@ class SubscriberModal extends Component {
           OPOPcSelect: isOp ? "OP" : "OPc",
           OPOPc: isOp ? subscriber['AuthenticationSubscription']["milenage"]["op"]["opValue"] :
             subscriber['AuthenticationSubscription']["opc"]["opcValue"],
+          SQN: subscriber['AuthenticationSubscription']["sequenceNumber"],
           sliceConfigurations: sliceConfigurationsFromSubscriber(subscriber),
         };
 
@@ -460,7 +468,7 @@ class SubscriberModal extends Component {
           "encryptionKey": 0,
           "permanentKeyValue": formData["K"] // Change required
         },
-        "sequenceNumber": "16f3b3f70fc2",
+        "sequenceNumber": formData["SQN"],
       },
       "AccessAndMobilitySubscriptionData": {
         "gpsis": [
