@@ -64,8 +64,8 @@ class TenantModal extends Component {
         this.updateFormData(formData).then();
       } else {
         let formData = {
-          tenantId: null,
-          tenantName: null,
+          tenantId: "",
+          tenantName: "",
         };
         this.updateFormData(formData).then();
       }

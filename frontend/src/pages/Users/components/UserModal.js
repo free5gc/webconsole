@@ -70,9 +70,9 @@ class UserModal extends Component {
         this.updateFormData(formData).then();
       } else {
         let formData = {
-          userId: null,
-          email: null,
-          password: null,
+          userId: "",
+          email: "",
+          password: "",
         };
         this.updateFormData(formData).then();
       }

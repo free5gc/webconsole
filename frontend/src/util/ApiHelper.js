@@ -92,6 +92,7 @@ class ApiHelper {
 
   static async fetchTenants() {
     try {
+      store.dispatch(tenantActions.setTenants([]));
       let user = LocalStorageHelper.getUserInfo();
       axios.defaults.headers.common['Token'] = user.accessToken;
       let response = await Http.get('tenant');
@@ -166,6 +167,7 @@ class ApiHelper {
 
   static async fetchUsers(tenantId) {
     try {
+      store.dispatch(userActions.setUsers([]));
       let user = LocalStorageHelper.getUserInfo();
       axios.defaults.headers.common['Token'] = user.accessToken;
       let response = await Http.get(`tenant/${tenantId}/user`);
@@ -173,8 +175,6 @@ class ApiHelper {
         const users = response.data.map(val => new User('', '', '', val['userId'], val['email']));
         store.dispatch(userActions.setUsers(users));
         return true;
-      } else {
-        store.dispatch(userActions.setUsers([]));
       }
     } catch (error) {
     }
