@@ -7,7 +7,7 @@ class TenantModal extends Component {
   static propTypes = {
     open: PropTypes.bool.isRequired,
     setOpen: PropTypes.func.isRequired,
-    subscriber: PropTypes.object,
+    tenant: PropTypes.object,
     onModify: PropTypes.func.isRequired,
     onSubmit: PropTypes.func.isRequired,
   };
@@ -31,7 +31,7 @@ class TenantModal extends Component {
     // "description": "A simple form example.",
     type: "object",
     required: [
-      "ueId",
+      "tenantName",
     ],
     properties: {
       tenantId: {
@@ -40,7 +40,7 @@ class TenantModal extends Component {
         pattern: "^[0-9a-zA-Z-]*$",
         default: "",
       },
-      ueId: {
+      tenantName: {
         type: "string",
         title: "Tenant Name",
         default: "",
@@ -50,14 +50,14 @@ class TenantModal extends Component {
 
   componentDidUpdate(prevProps, prevState, snapshot) {
     if (prevProps !== this.props) {
-      this.setState({ editMode: !!this.props.subscriber });
+      this.setState({ editMode: !!this.props.tenant });
 
-      if (this.props.subscriber) {
-        const subscriber = this.props.subscriber;
+      if (this.props.tenant) {
+        const tenant = this.props.tenant;
 
         let formData = {
-          tenantId: subscriber['tenantId'],
-          ueId: subscriber['ueId'],
+          tenantId: tenant['tenantId'],
+          tenantName: tenant['tenantName'],
         };
 
         this.updateFormData(formData).then();
@@ -86,7 +86,7 @@ class TenantModal extends Component {
 
     let tenantData = {
       "tenantId": formData["tenantId"],
-      "tenantName": formData["ueId"]
+      "tenantName": formData["tenantName"]
     };
 
     if(this.state.editMode) {

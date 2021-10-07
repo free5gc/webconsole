@@ -2,6 +2,8 @@ import Http from './Http';
 import {store} from '../index';
 import subscriberActions from "../redux/actions/subscriberActions";
 import Subscriber from "../models/Subscriber";
+import tenantActions from "../redux/actions/tenantActions";
+import Tenant from "../models/Tenant";
 import axios from 'axios';
 import LocalStorageHelper from "./LocalStorageHelper";
 
@@ -85,6 +87,75 @@ class ApiHelper {
     }
     return false;
   }
+
+  static async fetchTenants() {
+    try {
+      let user = LocalStorageHelper.getUserInfo();
+      axios.defaults.headers.common['Token'] = user.accessToken;
+      let response = await Http.get('tenant');
+      if (response.status === 200 && response.data) {
+        const tenants = response.data.map(val => new Tenant(val['tenantId'], val['tenantName']));
+        store.dispatch(tenantActions.setTenants(tenants));
+        return true;
+      }
+    } catch (error) {
+    }
+
+    return false;
+  }
+
+  static async fetchTenantById(id) {
+    try {
+      let response = await Http.get(`tenant/${id}`);
+      if (response.status === 200 && response.data) {
+        return response.data;
+      }
+    } catch (error) {
+    }
+
+    return false;
+  }
+
+  static async createTenant(tenantData) {
+    try {
+      let user = LocalStorageHelper.getUserInfo();
+      axios.defaults.headers.common['Token'] = user.accessToken;
+      let response = await Http.post(
+        'tenant', tenantData);
+      if (response.status === 200)
+        return true;
+    } catch (error) {
+      console.error(error);
+    }
+
+    return false;
+  }
+
+  static async updateTenant(tenantData) {
+    try {
+      let response = await Http.put(
+        `tenant/${tenantData["tenantId"]}`, tenantData);
+      if (response.status === 200)
+        return true;
+    } catch (error) {
+      console.error(error);
+    }
+
+    return false;
+  }
+
+  static async deleteTenant(id) {
+    try {
+      let response = await Http.delete(`tenant/${id}`);
+      if (response.status === 200)
+        return true;
+    } catch (error) {
+      console.error(error);
+    }
+
+    return false;
+  }
+
 }
 
 export default ApiHelper;

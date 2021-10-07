@@ -23,15 +23,14 @@ class TenantOverview extends Component {
   }
 
   /**
-   * @param subscriberId  {number}
-   * @param plmn          {number}
+   * @param tenantId  {string}
    */
-  async openEditSubscriber(subscriberId, plmn) {
-    const subscriber = await ApiHelper.fetchSubscriberById(subscriberId, plmn);
+  async openEditTenant(tenantId) {
+    const tenant = await ApiHelper.fetchTenantById(tenantId);
 
     this.setState({
       tenantModalOpen: true,
-      tenantModalData: subscriber,
+      tenantModalData: tenant,
     });
   }
 
@@ -45,15 +44,15 @@ class TenantOverview extends Component {
   }
 
   /**
-   * @param subscriberData
+   * @param tenantData
    */
-  async updateSubscriber(subscriberData) {
+  async updateTenant(tenantData) {
     this.setState({ tenantModalOpen: false });
 
-    const result = await ApiHelper.updateSubscriber(subscriberData);
+    const result = await ApiHelper.updateTenant(tenantData);
 
     if (!result) {
-      alert("Error updating subscriber: " + subscriberData["ueId"]);
+      alert("Error updating tenant: " + tenantData["ueId"]);
     }
     ApiHelper.fetchTenants().then();
   }
@@ -101,7 +100,7 @@ class TenantOverview extends Component {
                         <td style={{ textAlign: 'center' }}>
                           <Button variant="danger" onClick={this.deleteTenant.bind(this, tenant)}>Delete</Button>
                          &nbsp;&nbsp;&nbsp;&nbsp;
-                        <Button variant="info" onClick={this.openEditSubscriber.bind(this, tenant.id, tenant.name)}>Modify</Button>
+                        <Button variant="info" onClick={this.openEditTenant.bind(this, tenant.id)}>Modify</Button>
                         </td>
                       </tr>
                     ))}
@@ -118,8 +117,8 @@ class TenantOverview extends Component {
 
         <TenantModal open={this.state.tenantModalOpen}
           setOpen={val => this.setState({ tenantModalOpen: val })}
-          subscriber={this.state.tenantModalData}
-          onModify={this.updateSubscriber.bind(this)}
+          tenant={this.state.tenantModalData}
+          onModify={this.updateTenant.bind(this)}
           onSubmit={this.addTenant.bind(this)} />
       </div>
     );
