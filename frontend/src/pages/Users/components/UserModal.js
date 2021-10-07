@@ -3,11 +3,11 @@ import { Modal } from "react-bootstrap";
 import Form from "react-jsonschema-form";
 import PropTypes from 'prop-types';
 
-class TenantModal extends Component {
+class UserModal extends Component {
   static propTypes = {
     open: PropTypes.bool.isRequired,
     setOpen: PropTypes.func.isRequired,
-    tenant: PropTypes.object,
+    user: PropTypes.object,
     onModify: PropTypes.func.isRequired,
     onSubmit: PropTypes.func.isRequired,
   };
@@ -31,19 +31,24 @@ class TenantModal extends Component {
     // "description": "A simple form example.",
     type: "object",
     required: [
-      "tenantName",
+      "email",
     ],
     properties: {
-      tenantId: {
+      userId: {
         type: "string",
-        title: "Tenant ID",
+        title: "User ID",
         pattern: "^[0-9a-zA-Z-]*$",
         default: "",
         readOnly: true,
       },
-      tenantName: {
+      email: {
         type: "string",
-        title: "Tenant Name",
+        title: "User Email",
+        default: "",
+      },
+      password: {
+        type: "string",
+        title: "Password",
         default: "",
       },
     },
@@ -51,21 +56,23 @@ class TenantModal extends Component {
 
   componentDidUpdate(prevProps, prevState, snapshot) {
     if (prevProps !== this.props) {
-      this.setState({ editMode: !!this.props.tenant });
+      this.setState({ editMode: !!this.props.user });
 
-      if (this.props.tenant) {
-        const tenant = this.props.tenant;
+      if (this.props.user) {
+        const user = this.props.user;
 
         let formData = {
-          tenantId: tenant['tenantId'],
-          tenantName: tenant['tenantName'],
+          userId: user['userId'],
+          email: user['email'],
+          password: user['password'],
         };
 
         this.updateFormData(formData).then();
       } else {
         let formData = {
-          tenantId: null,
-          tenantName: null,
+          userId: null,
+          email: null,
+          password: null,
         };
         this.updateFormData(formData).then();
       }
@@ -75,8 +82,8 @@ class TenantModal extends Component {
   async onChange(data) {
     const lastData = this.state.formData;
 
-    if (lastData && lastData.tenantId === undefined)
-      lastData.tenantId = "";
+    if (lastData && lastData.userId === undefined)
+      lastData.userId = "";
   }
 
   async updateFormData(newData) {
@@ -91,15 +98,16 @@ class TenantModal extends Component {
   onSubmitClick(result) {
     const formData = result.formData;
 
-    let tenantData = {
-      "tenantId": formData["tenantId"],
-      "tenantName": formData["tenantName"]
+    let userData = {
+      "userId": formData["userId"],
+      "email": formData["email"],
+      "password": formData["password"]
     };
 
     if(this.state.editMode) {
-      this.props.onModify(tenantData);
+      this.props.onModify(userData);
     } else {
-      this.props.onSubmit(tenantData);
+      this.props.onSubmit(userData);
     }
   }
 
@@ -112,7 +120,7 @@ class TenantModal extends Component {
         onHide={this.props.setOpen.bind(this, false)}>
         <Modal.Header closeButton>
           <Modal.Title id="example-modal-sizes-title-lg">
-            {this.state.editMode ? "Edit Tenant" : "New Tenant"}
+            {this.state.editMode ? "Edit User" : "New User"}
           </Modal.Title>
         </Modal.Header>
 
@@ -130,4 +138,4 @@ class TenantModal extends Component {
   }
 }
 
-export default TenantModal;
+export default UserModal;

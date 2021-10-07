@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { withRouter } from "react-router-dom";
+import { Link, withRouter } from "react-router-dom";
 import { connect } from "react-redux";
 import { Button, Table } from "react-bootstrap";
 import TenantModal from "./components/TenantModal";
@@ -96,7 +96,7 @@ class TenantOverview extends Component {
                     {this.props.tenants.map(tenant => (
                       <tr key={tenant.id}>
                         <td>{tenant.id}</td>
-                        <td>{tenant.name}</td>
+                        <td><font color="blue"><u><Link to={"/users/"+tenant.id}>{tenant.name}</Link></u></font></td>
                         <td style={{ textAlign: 'center' }}>
                           <Button variant="danger" onClick={this.deleteTenant.bind(this, tenant)}>Delete</Button>
                          &nbsp;&nbsp;&nbsp;&nbsp;
