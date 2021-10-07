@@ -369,9 +369,25 @@ func ParseJWT(tokenStr string) jwt.MapClaims {
 	return claims
 }
 
+// Check of admin user. This should be done with proper JWT token.
+func CheckAuth(c *gin.Context) bool {
+	tokenStr := c.GetHeader("Token")
+	fmt.Println("XXX", tokenStr)
+	if tokenStr == "admin" {
+		return true
+	} else {
+		return false
+	}
+}
+
 // Tenant
 func GetTenants(c *gin.Context) {
 	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
 
 	tenantDataInterface := MongoDBLibrary.RestfulAPIGetMany(tenantDataColl, bson.M{})
 	var tenantData []Tenant
@@ -382,6 +398,11 @@ func GetTenants(c *gin.Context) {
 
 func GetTenantByID(c *gin.Context) {
 	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
 
 	tenantId := c.Param("tenantId")
 
@@ -400,6 +421,11 @@ func GetTenantByID(c *gin.Context) {
 
 func PostTenant(c *gin.Context) {
 	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
 
 	var tenantData Tenant
 	if err := c.ShouldBindJSON(&tenantData); err != nil {
@@ -420,6 +446,11 @@ func PostTenant(c *gin.Context) {
 
 func PutTenantByID(c *gin.Context) {
 	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
 
 	tenantId := c.Param("tenantId")
 
@@ -447,6 +478,11 @@ func PutTenantByID(c *gin.Context) {
 func DeleteTenantByID(c *gin.Context) {
 	setCorsHeader(c)
 
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
 	tenantId := c.Param("tenantId")
 
 	filterTenantIdOnly := bson.M{"tenantId": tenantId}
@@ -464,6 +500,11 @@ func GetTenantById(tenantId string) map[string]interface{} {
 // Users
 func GetUsers(c *gin.Context) {
 	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
 
 	tenantId := c.Param("tenantId")
 	if len(GetTenantById(tenantId)) == 0 {
@@ -485,6 +526,11 @@ func GetUsers(c *gin.Context) {
 
 func GetUserByID(c *gin.Context) {
 	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
 
 	tenantId := c.Param("tenantId")
 	if len(GetTenantById(tenantId)) == 0 {
@@ -510,6 +556,11 @@ func GetUserByID(c *gin.Context) {
 func PostUserByID(c *gin.Context) {
 	setCorsHeader(c)
 
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
 	tenantId := c.Param("tenantId")
 	if len(GetTenantById(tenantId)) == 0 {
 		c.JSON(http.StatusNotFound, bson.M{})
@@ -519,6 +570,14 @@ func PostUserByID(c *gin.Context) {
 	var userData User
 	if err := c.ShouldBindJSON(&userData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{})
+		return
+	}
+
+	filterEmail := bson.M{"email": userData.Email}
+	userWithEmailData := MongoDBLibrary.RestfulAPIGetOne(userDataColl, filterEmail)
+	if len(userWithEmailData) != 0 {
+		logger.WebUILog.Warnln("Email already exists", userData.Email)
+		c.JSON(http.StatusForbidden, gin.H{})
 		return
 	}
 
@@ -536,6 +595,11 @@ func PostUserByID(c *gin.Context) {
 
 func PutUserByID(c *gin.Context) {
 	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
 
 	tenantId := c.Param("tenantId")
 	if len(GetTenantById(tenantId)) == 0 {
@@ -573,6 +637,11 @@ func PutUserByID(c *gin.Context) {
 
 func DeleteUserByID(c *gin.Context) {
 	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
 
 	tenantId := c.Param("tenantId")
 	if len(GetTenantById(tenantId)) == 0 {
