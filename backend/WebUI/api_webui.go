@@ -455,29 +455,138 @@ func DeleteTenantByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
+// Utility function.
+func GetTenantById(tenantId string) map[string]interface{} {
+	filterTenantIdOnly := bson.M{"tenantId": tenantId}
+	return MongoDBLibrary.RestfulAPIGetOne(tenantDataColl, filterTenantIdOnly)
+}
+
 // Users
 func GetUsers(c *gin.Context) {
 	setCorsHeader(c)
-	c.JSON(http.StatusOK, gin.H{})
+
+	tenantId := c.Param("tenantId")
+	if len(GetTenantById(tenantId)) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	filterTenantIdOnly := bson.M{"tenantId": tenantId}
+	userDataInterface := MongoDBLibrary.RestfulAPIGetMany(userDataColl, filterTenantIdOnly)
+
+	var userData []User
+	json.Unmarshal(sliceToByte(userDataInterface), &userData)
+	for pos, _ := range userData {
+		userData[pos].EncryptedPassword = ""
+	}
+
+	c.JSON(http.StatusOK, userData)
 }
 
 func GetUserByID(c *gin.Context) {
 	setCorsHeader(c)
-	c.JSON(http.StatusOK, gin.H{})
+
+	tenantId := c.Param("tenantId")
+	if len(GetTenantById(tenantId)) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+	userId := c.Param("userId")
+
+	filterUserIdOnly := bson.M{"tenantId": tenantId, "userId": userId}
+	userDataInterface := MongoDBLibrary.RestfulAPIGetOne(userDataColl, filterUserIdOnly)
+	if len(userDataInterface) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	var userData User
+	json.Unmarshal(mapToByte(userDataInterface), &userData)
+	userData.EncryptedPassword = ""
+
+	c.JSON(http.StatusOK, userData)
 }
 
 func PostUserByID(c *gin.Context) {
 	setCorsHeader(c)
-	c.JSON(http.StatusOK, gin.H{})
+
+	tenantId := c.Param("tenantId")
+	if len(GetTenantById(tenantId)) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	var userData User
+	if err := c.ShouldBindJSON(&userData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{})
+		return
+	}
+
+	userData.TenantId = tenantId
+	userData.UserId = uuid.Must(uuid.NewRandom()).String()
+	hash, _ := bcrypt.GenerateFromPassword([]byte(userData.EncryptedPassword), 12)
+	userData.EncryptedPassword = string(hash)
+
+	userBsonM := toBsonM(userData)
+	filterUserIdOnly := bson.M{"tenantId": userData.TenantId, "userId": userData.UserId}
+	MongoDBLibrary.RestfulAPIPost(userDataColl, filterUserIdOnly, userBsonM)
+
+	c.JSON(http.StatusOK, userData)
 }
 
 func PutUserByID(c *gin.Context) {
 	setCorsHeader(c)
-	c.JSON(http.StatusOK, gin.H{})
+
+	tenantId := c.Param("tenantId")
+	if len(GetTenantById(tenantId)) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+	userId := c.Param("userId")
+
+	var newUserData User
+	if err := c.ShouldBindJSON(&newUserData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{})
+		return
+	}
+
+	filterUserIdOnly := bson.M{"tenantId": tenantId, "userId": userId}
+	userDataInterface := MongoDBLibrary.RestfulAPIGetOne(userDataColl, filterUserIdOnly)
+	if len(userDataInterface) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	var userData User
+	json.Unmarshal(mapToByte(userDataInterface), &userData)
+
+	if newUserData.EncryptedPassword != "" {
+		hash, _ := bcrypt.GenerateFromPassword([]byte(newUserData.EncryptedPassword), 12)
+		userData.EncryptedPassword = string(hash)
+	}
+
+	userBsonM := toBsonM(userData)
+	MongoDBLibrary.RestfulAPIPost(userDataColl, filterUserIdOnly, userBsonM)
+
+	c.JSON(http.StatusOK, userData)
 }
 
 func DeleteUserByID(c *gin.Context) {
 	setCorsHeader(c)
+
+	tenantId := c.Param("tenantId")
+	if len(GetTenantById(tenantId)) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+	userId := c.Param("userId")
+
+	fmt.Println("XXX", tenantId)
+	fmt.Println("XXX", userId)
+
+	filterUserIdOnly := bson.M{"tenantId": tenantId, "userId": userId}
+	MongoDBLibrary.RestfulAPIDeleteOne(userDataColl, filterUserIdOnly)
+
 	c.JSON(http.StatusOK, gin.H{})
 }
 

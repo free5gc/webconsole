@@ -112,35 +112,35 @@ var routes = Routes{
 	{
 		"GetUsers",
 		http.MethodGet,
-		"/user",
+		"/tenant/:tenantId/user",
 		GetUsers,
 	},
 
 	{
 		"GetUserByID",
 		http.MethodGet,
-		"/user/:userId",
+		"/tenant/:tenantId/user/:userId",
 		GetUserByID,
 	},
 
 	{
 		"PostUserByID",
 		http.MethodPost,
-		"/user/:userId",
+		"/tenant/:tenantId/user",
 		PostUserByID,
 	},
 
 	{
 		"PutUserByID",
 		http.MethodPut,
-		"/user/:userId",
+		"/tenant/:tenantId/user/:userId",
 		PutUserByID,
 	},
 
 	{
 		"DeleteUserByID",
 		http.MethodDelete,
-		"/user/:userId",
+		"/tenant/:tenantId/user/:userId",
 		DeleteUserByID,
 	},
 
