@@ -48,7 +48,7 @@ const Main = ({
           <Route exact path="/tasks" component={Tasks}/>
           <Route exact path="/ueinfo" component={UEInfo}/>
           <Route exact path="/ueinfo/:id" component={UEInfoDetail}/>
-          <Route exact path="/tenant" component={Tenants}/>
+          <Route exact path="/tenants" component={Tenants}/>
 
           <Footer/>
         </div>

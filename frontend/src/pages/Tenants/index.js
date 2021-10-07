@@ -1,11 +1,10 @@
 import React from 'react';
 import {Route} from 'react-router-dom';
-//import SubscriberOverview from "./SubscriberOverview";
+import TenantOverview from "./TenantOverview";
 
 const Tenants = ({match}) => (
-  //console.log("In Subscribers")
   <div className="content">
-    
+    <Route exact path={`${match.url}/`} component={TenantOverview} />
   </div>
 );
 
