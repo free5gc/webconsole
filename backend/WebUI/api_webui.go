@@ -484,8 +484,10 @@ func DeleteTenantByID(c *gin.Context) {
 	}
 
 	tenantId := c.Param("tenantId")
-
 	filterTenantIdOnly := bson.M{"tenantId": tenantId}
+
+	MongoDBLibrary.RestfulAPIDeleteMany(amDataColl, filterTenantIdOnly)
+	MongoDBLibrary.RestfulAPIDeleteMany(userDataColl, filterTenantIdOnly)
 	MongoDBLibrary.RestfulAPIDeleteOne(tenantDataColl, filterTenantIdOnly)
 
 	c.JSON(http.StatusOK, gin.H{})
@@ -623,6 +625,16 @@ func PutUserByID(c *gin.Context) {
 
 	var userData User
 	json.Unmarshal(mapToByte(userDataInterface), &userData)
+
+	if newUserData.Email != "" && newUserData.Email != userData.Email {
+		filterEmail := bson.M{"email": newUserData.Email}
+		sameEmailInterface := MongoDBLibrary.RestfulAPIGetOne(userDataColl, filterEmail)
+		if len(sameEmailInterface) != 0 {
+			c.JSON(http.StatusBadRequest, bson.M{})
+			return
+		}
+		userData.Email = newUserData.Email
+	}
 
 	if newUserData.EncryptedPassword != "" {
 		hash, _ := bcrypt.GenerateFromPassword([]byte(newUserData.EncryptedPassword), 12)
