@@ -782,6 +782,17 @@ func PostSubscriberByID(c *gin.Context) {
 	filterUeIdOnly := bson.M{"ueId": ueId}
 	filter := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId}
 
+	// Lookup same UE ID of other tenant's subscription.
+	if claims != nil {
+		authSubsDataInterface := MongoDBLibrary.RestfulAPIGetOne(authSubsDataColl, filterUeIdOnly)
+		if len(authSubsDataInterface) > 0 {
+			if authSubsDataInterface["tenantId"].(string) != claims["tenantId"].(string) {
+				c.JSON(http.StatusUnprocessableEntity, gin.H{})
+				return
+			}
+		}
+	}
+
 	authSubsBsonM := toBsonM(subsData.AuthenticationSubscription)
 	authSubsBsonM["ueId"] = ueId
 	if claims != nil {

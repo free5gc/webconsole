@@ -39,7 +39,7 @@ class SubscriberOverview extends Component {
     this.setState({ subscriberModalOpen: false });
 
     if (!await ApiHelper.createSubscriber(subscriberData)) {
-      alert("Error creating new subscriber");
+      alert("Error creating new subscriber, same UE ID may exists in other tenant");
     }
     ApiHelper.fetchSubscribers().then();
   }
