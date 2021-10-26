@@ -134,7 +134,7 @@ function sliceConfigurationsFromSubscriber(subscriber) {
           }
         })
       }
-      if (dnnConfigs[dnn].upSecurity !== null){
+      if (dnnConfigs[dnn].upSecurity){
         return {
           dnn: dnn,
           uplinkAmbr: dnnConfigs[dnn].sessionAmbr.uplink,
