@@ -28,7 +28,17 @@ class SubscriberOverview extends Component {
    */
   async openEditSubscriber(subscriberId, plmn) {
     const subscriber = await ApiHelper.fetchSubscriberById(subscriberId, plmn);
-
+    if(subscriber.SmPolicyData["smPolicySnssaiData"]){
+      for (var SnssaiData in subscriber.SmPolicyData["smPolicySnssaiData"]) {
+        if(SnssaiData.smPolicyDnnData !== undefined && SnssaiData.smPolicyDnnData !== null){
+          for(var dnn in SnssaiData.smPolicyDnnData){
+            if(dnn !== undefined && dnn !== null){
+              subscriber.SmPolicyData["smPolicySnssaiData"].SnssaiData.smPolicyDnnData.dnn = dnn.replace(/_/g, ".");
+            }
+          }
+        }
+      }
+    }
     this.setState({
       subscriberModalOpen: true,
       subscriberModalData: subscriber,

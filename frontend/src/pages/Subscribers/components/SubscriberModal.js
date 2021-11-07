@@ -482,7 +482,7 @@ class SubscriberModal extends Component {
           SQN: subscriber['AuthenticationSubscription']["sequenceNumber"],
           sliceConfigurations: sliceConfigurationsFromSubscriber(subscriber),
         };
-
+        
         this.updateFormData(formData).then();
       }
     }
@@ -594,7 +594,7 @@ class SubscriberModal extends Component {
             },
             "smPolicyDnnData": _.fromPairs(
               _.map(slice.dnnConfigurations, dnnConfig => [
-                dnnConfig.dnn,
+                dnnConfig.dnn.replace(/\./g, "_"),
                 {
                   "dnn": dnnConfig.dnn
                 }
