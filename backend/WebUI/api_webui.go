@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -55,6 +56,14 @@ func toBsonA(data interface{}) (ret bson.A) {
 	tmp, _ := json.Marshal(data)
 	json.Unmarshal(tmp, &ret)
 	return
+}
+
+func EscapeDnn(dnn string) string {
+	return strings.ReplaceAll(dnn, ".", "_")
+}
+
+func UnescapeDnn(dnnKey string) string {
+	return strings.ReplaceAll(dnnKey, "_", ".")
 }
 
 func setCorsHeader(c *gin.Context) {
@@ -319,6 +328,16 @@ func GetSubscriberByID(c *gin.Context) {
 	var flowRules []FlowRule
 	json.Unmarshal(sliceToByte(flowRuleDataInterface), &flowRules)
 
+	for key, SnssaiData := range smPolicyData.SmPolicySnssaiData {
+		tmpSmPolicyDnnData := make(map[string]models.SmPolicyDnnData)
+		for escapedDnn, dnn := range SnssaiData.SmPolicyDnnData {
+			dnnKey := UnescapeDnn(escapedDnn)
+			tmpSmPolicyDnnData[dnnKey] = dnn
+		}
+		SnssaiData.SmPolicyDnnData = tmpSmPolicyDnnData
+		smPolicyData.SmPolicySnssaiData[key] = SnssaiData
+	}
+
 	subsData = SubsData{
 		PlmnID:                            servingPlmnId,
 		UeId:                              ueId,
@@ -362,6 +381,16 @@ func PostSubscriberByID(c *gin.Context) {
 		smDataBsonM["ueId"] = ueId
 		smDataBsonM["servingPlmnId"] = servingPlmnId
 		smDatasBsonA = append(smDatasBsonA, smDataBsonM)
+	}
+
+	for key, SnssaiData := range subsData.SmPolicyData.SmPolicySnssaiData {
+		tmpSmPolicyDnnData := make(map[string]models.SmPolicyDnnData)
+		for dnnKey, dnn := range SnssaiData.SmPolicyDnnData {
+			escapedDnn := EscapeDnn(dnnKey)
+			tmpSmPolicyDnnData[escapedDnn] = dnn
+		}
+		SnssaiData.SmPolicyDnnData = tmpSmPolicyDnnData
+		subsData.SmPolicyData.SmPolicySnssaiData[key] = SnssaiData
 	}
 
 	smfSelSubsBsonM := toBsonM(subsData.SmfSelectionSubscriptionData)
@@ -423,6 +452,16 @@ func PutSubscriberByID(c *gin.Context) {
 		MongoDBLibrary.RestfulAPIPutOne(smDataColl, filterSmData, smDataBsonM)
 	}
 
+	for key, SnssaiData := range subsData.SmPolicyData.SmPolicySnssaiData {
+		tmpSmPolicyDnnData := make(map[string]models.SmPolicyDnnData)
+		for dnnKey, dnn := range SnssaiData.SmPolicyDnnData {
+			escapedDnn := EscapeDnn(dnnKey)
+			tmpSmPolicyDnnData[escapedDnn] = dnn
+		}
+		SnssaiData.SmPolicyDnnData = tmpSmPolicyDnnData
+		subsData.SmPolicyData.SmPolicySnssaiData[key] = SnssaiData
+	}
+
 	smfSelSubsBsonM := toBsonM(subsData.SmfSelectionSubscriptionData)
 	smfSelSubsBsonM["ueId"] = ueId
 	smfSelSubsBsonM["servingPlmnId"] = servingPlmnId
@@ -481,6 +520,16 @@ func PatchSubscriberByID(c *gin.Context) {
 		smDataBsonM["servingPlmnId"] = servingPlmnId
 		filterSmData := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId, "snssai": data.SingleNssai}
 		MongoDBLibrary.RestfulAPIMergePatch(smDataColl, filterSmData, smDataBsonM)
+	}
+
+	for key, SnssaiData := range subsData.SmPolicyData.SmPolicySnssaiData {
+		tmpSmPolicyDnnData := make(map[string]models.SmPolicyDnnData)
+		for dnnKey, dnn := range SnssaiData.SmPolicyDnnData {
+			escapedDnn := EscapeDnn(dnnKey)
+			tmpSmPolicyDnnData[escapedDnn] = dnn
+		}
+		SnssaiData.SmPolicyDnnData = tmpSmPolicyDnnData
+		subsData.SmPolicyData.SmPolicySnssaiData[key] = SnssaiData
 	}
 
 	smfSelSubsBsonM := toBsonM(subsData.SmfSelectionSubscriptionData)
