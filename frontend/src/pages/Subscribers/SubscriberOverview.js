@@ -1,24 +1,43 @@
 import React, { Component } from 'react';
 import { withRouter } from "react-router-dom";
 import { connect } from "react-redux";
-import { Button, Table } from "react-bootstrap";
+import { Button, Table, Form, FormGroup, FormControl, ControlLabel } from "react-bootstrap";
 import SubscriberModal from "./components/SubscriberModal";
 import ApiHelper from "../../util/ApiHelper";
+
+// doc: https://react-bootstrap-v3.netlify.app/components/forms/
 
 class SubscriberOverview extends Component {
   state = {
     subscriberModalOpen: false,
     subscriberModalData: null,
+    userNum: 1
   };
 
   componentDidMount() {
     ApiHelper.fetchSubscribers().then();
   }
 
+  handleChange = event => {
+    this.setState({
+      subscriberModalOpen: false,
+      subscriberModalData: null,
+      userNum: event.target.value
+    });
+  }
+
+  addMultiSubcriber(){
+    this.setState({
+      subscriberModalOpen: true,
+      subscriberModalData: null,
+    });
+  }
+
   openAddSubscriber() {
     this.setState({
       subscriberModalOpen: true,
       subscriberModalData: null,
+      userNum: 1
     });
   }
 
@@ -32,26 +51,22 @@ class SubscriberOverview extends Component {
     this.setState({
       subscriberModalOpen: true,
       subscriberModalData: subscriber,
+      userNum: 1
     });
   }
 
   async addSubscriber(subscriberData) {
     this.setState({ subscriberModalOpen: false });
-
-    if (!await ApiHelper.createSubscriber(subscriberData)) {
-      alert("Error creating new subscriber");
+    let imsi = subscriberData["ueId"].substr(5, subscriberData["ueId"].length - 5);
+    for(let i = 0; i < this.state.userNum; i++){
+      let newImsi = Number(imsi) + i;
+      subscriberData["ueId"] = `imsi-${newImsi}`;
+      if (!await ApiHelper.createSubscriber(subscriberData)) {
+        alert("Error creating new subscriber when create user");
+      }
+      ApiHelper.fetchSubscribers().then();
     }
-    ApiHelper.fetchSubscribers().then();
   }
-
-  // async updateSubscriber(subscriberData) {
-  //   this.setState({subscriberModalOpen: false});
-
-  //   if (!await ApiHelper.updateSubscriber(subscriberData)) {
-  //     alert("Error creating new subscriber");
-  //   }
-  //   ApiHelper.fetchSubscribers().then();
-  // }
 
   /**
    * @param subscriberData
@@ -93,6 +108,20 @@ class SubscriberOverview extends Component {
                   onClick={this.openAddSubscriber.bind(this)}>
                   New Subscriber
                 </Button>
+                <Form>
+                  <FormGroup className="mb-3" controlId="formBasicEmail">
+                    <ControlLabel>Add multi subscribers</ControlLabel>
+                    <FormControl
+                      type="number"
+                      placeholder="Enter user number" 
+                      onChange={this.handleChange}/>
+                  </FormGroup>
+                  <Button variant="primary"
+                    onClick={this.addMultiSubcriber.bind(this)}>
+                    Add
+                  </Button>
+                </Form>
+                
               </div>
               <div className="content subscribers__content">
                 <Table className="subscribers__table" striped bordered condensed hover>
