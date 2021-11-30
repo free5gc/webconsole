@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"reflect"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -75,6 +76,47 @@ func sendResponseToClient(c *gin.Context, response *http.Response) {
 	var jsonData interface{}
 	json.NewDecoder(response.Body).Decode(&jsonData)
 	c.JSON(response.StatusCode, jsonData)
+}
+
+func sendResponseToClientFilterTenant(c *gin.Context, response *http.Response, tenantId string) {
+	// Subscription data.
+	filterTenantIdOnly := bson.M{"tenantId": tenantId}
+	amDataList := MongoDBLibrary.RestfulAPIGetMany(amDataColl, filterTenantIdOnly)
+
+	tenantCheck := func(supi string) bool {
+		for _, amData := range amDataList {
+			if supi == amData["ueId"] && tenantId == amData["tenantId"] {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Response data.
+	var jsonData interface{}
+	json.NewDecoder(response.Body).Decode(&jsonData)
+
+	s := reflect.ValueOf(jsonData)
+	if s.Kind() != reflect.Slice {
+		c.JSON(response.StatusCode, jsonData)
+		return
+	}
+
+	var sliceData []interface{}
+	for i := 0; i < s.Len(); i++ {
+		mapData := s.Index(i).Interface()
+		m := reflect.ValueOf(mapData)
+		for _, key := range m.MapKeys() {
+			if key.String() == "Supi" {
+				strct := m.MapIndex(key)
+				if tenantCheck(strct.Interface().(string)) {
+					sliceData = append(sliceData, mapData)
+				}
+			}
+		}
+	}
+
+	c.JSON(response.StatusCode, sliceData)
 }
 
 func GetSampleJSON(c *gin.Context) {
@@ -372,12 +414,21 @@ func ParseJWT(tokenStr string) jwt.MapClaims {
 // Check of admin user. This should be done with proper JWT token.
 func CheckAuth(c *gin.Context) bool {
 	tokenStr := c.GetHeader("Token")
-	fmt.Println("XXX", tokenStr)
 	if tokenStr == "admin" {
 		return true
 	} else {
 		return false
 	}
+}
+
+// Tenat ID
+func GetTenantId(c *gin.Context) string {
+	tokenStr := c.GetHeader("Token")
+	if tokenStr == "admin" {
+		return ""
+	}
+	claims := ParseJWT(tokenStr)
+	return claims["tenantId"].(string)
 }
 
 // Tenant
@@ -661,9 +712,6 @@ func DeleteUserByID(c *gin.Context) {
 		return
 	}
 	userId := c.Param("userId")
-
-	fmt.Println("XXX", tenantId)
-	fmt.Println("XXX", userId)
 
 	filterUserIdOnly := bson.M{"tenantId": tenantId, "userId": userId}
 	MongoDBLibrary.RestfulAPIDeleteOne(userDataColl, filterUserIdOnly)
@@ -997,7 +1045,14 @@ func GetRegisteredUEContext(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{})
 			return
 		}
-		sendResponseToClient(c, resp)
+
+		// Filter by tenant.
+		tenantId := GetTenantId(c)
+		if tenantId == "" {
+			sendResponseToClient(c, resp)
+		} else {
+			sendResponseToClientFilterTenant(c, resp, tenantId)
+		}
 	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"cause": "No AMF Found",
