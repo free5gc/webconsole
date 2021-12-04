@@ -187,6 +187,7 @@ class SubscriberModal extends Component {
     // "description": "A simple form example.",
     type: "object",
     required: [
+      "userNumber",
       "plmnID",
       "ueId",
       "authenticationMethod",
@@ -196,6 +197,13 @@ class SubscriberModal extends Component {
       "SQN",
     ],
     properties: {
+      userNumber: {
+        type: "integer",
+        title: "Subscriber data number (auto-increased with SUPI)",
+        default: 1,
+        maximum: 100000,
+        minimum: 1
+      },
       plmnID: {
         type: "string",
         title: "PLMN ID",
@@ -528,6 +536,7 @@ class SubscriberModal extends Component {
     const OPc = formData["OPOPcSelect"] === "OPc" ? formData["OPOPc"] : "";
 
     let subscriberData = {
+      "userNumber": formData["userNumber"],
       "plmnID": formData["plmnID"], // Change required
       "ueId": "imsi-" + formData["ueId"], // Change required
       "AuthenticationSubscription": {
