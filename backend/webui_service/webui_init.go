@@ -13,7 +13,6 @@ import (
 	"github.com/free5gc/MongoDBLibrary"
 	mongoDBLibLogger "github.com/free5gc/MongoDBLibrary/logger"
 	openApiLogger "github.com/free5gc/openapi/logger"
-	"github.com/free5gc/path_util"
 	pathUtilLogger "github.com/free5gc/path_util/logger"
 	"github.com/free5gc/webconsole/backend/WebUI"
 	"github.com/free5gc/webconsole/backend/factory"
@@ -63,8 +62,7 @@ func (webui *WEBUI) Initialize(c *cli.Context) {
 			panic(err)
 		}
 	} else {
-		DefaultWebUIConfigPath := path_util.Free5gcPath("free5gc/config/webuicfg.yaml")
-		if err := factory.InitConfigFactory(DefaultWebUIConfigPath); err != nil {
+		if err := factory.InitConfigFactory("./config/webuicfg.yaml"); err != nil {
 			panic(err)
 		}
 	}
@@ -189,8 +187,6 @@ func (webui *WEBUI) Start() {
 }
 
 func (webui *WEBUI) Exec(c *cli.Context) error {
-	// WEBUI.Initialize(cfgPath, c)
-
 	initLog.Traceln("args:", c.String("webuicfg"))
 	args := webui.FilterCli(c)
 	initLog.Traceln("filter: ", args)
