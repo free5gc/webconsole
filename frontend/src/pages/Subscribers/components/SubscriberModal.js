@@ -6,6 +6,57 @@ import _ from 'lodash';
 
 let snssaiToString = (snssai) => snssai.sst.toString(16).padStart(2, '0').toUpperCase() + snssai.sd
 
+function dnnConfigurationFromSliceConfiguration(dnnConfig){
+  if (dnnConfig.upSecurityChk === true) {
+    return {
+      "sscModes": {
+        "defaultSscMode": "SSC_MODE_1",
+        "allowedSscModes": ["SSC_MODE_2", "SSC_MODE_3"]
+      },
+      "pduSessionTypes": {
+        "defaultSessionType": "IPV4",
+        "allowedSessionTypes": ["IPV4"]
+      },
+      "sessionAmbr": {
+        "uplink": dnnConfig.uplinkAmbr,
+        "downlink": dnnConfig.downlinkAmbr
+      },
+      "5gQosProfile": {
+        "5qi": dnnConfig["5qi"],
+        "arp": {
+          "priorityLevel": 8
+        },
+        "priorityLevel": 8
+      },
+      "upSecurity": {
+        "upIntegr": dnnConfig.upIntegrity,
+        "upConfid": dnnConfig.upConfidentiality
+      }
+    }
+  }
+  return {
+    "sscModes": {
+      "defaultSscMode": "SSC_MODE_1",
+      "allowedSscModes": ["SSC_MODE_2", "SSC_MODE_3"]
+    },
+    "pduSessionTypes": {
+      "defaultSessionType": "IPV4",
+      "allowedSessionTypes": ["IPV4"]
+    },
+    "sessionAmbr": {
+      "uplink": dnnConfig.uplinkAmbr,
+      "downlink": dnnConfig.downlinkAmbr
+    },
+    "5gQosProfile": {
+      "5qi": dnnConfig["5qi"],
+      "arp": {
+        "priorityLevel": 8
+      },
+      "priorityLevel": 8
+    }
+  }
+}
+
 function smDatasFromSliceConfiguration(sliceConfiguration) {
   return _.map(sliceConfiguration, slice => {
     return {
@@ -17,27 +68,7 @@ function smDatasFromSliceConfiguration(sliceConfiguration) {
         // key
         dnnConfig.dnn,
         // value
-        {
-          "sscModes": {
-            "defaultSscMode": "SSC_MODE_1",
-            "allowedSscModes": ["SSC_MODE_2", "SSC_MODE_3"]
-          },
-          "pduSessionTypes": {
-            "defaultSessionType": "IPV4",
-            "allowedSessionTypes": ["IPV4"]
-          },
-          "sessionAmbr": {
-            "uplink": dnnConfig.uplinkAmbr,
-            "downlink": dnnConfig.downlinkAmbr
-          },
-          "5gQosProfile": {
-            "5qi": dnnConfig["5qi"],
-            "arp": {
-              "priorityLevel": 8
-            },
-            "priorityLevel": 8
-          }
-        }
+        dnnConfigurationFromSliceConfiguration(dnnConfig)
       ]))
     }
   })
@@ -103,6 +134,18 @@ function sliceConfigurationsFromSubscriber(subscriber) {
           }
         })
       }
+      if (dnnConfigs[dnn].upSecurity){
+        return {
+          dnn: dnn,
+          uplinkAmbr: dnnConfigs[dnn].sessionAmbr.uplink,
+          downlinkAmbr: dnnConfigs[dnn].sessionAmbr.downlink,
+          "5qi": dnnConfigs[dnn]["5gQosProfile"]["5qi"],
+          flowRules: flowRules,
+          upSecurityChk: true,
+          upIntegrity: dnnConfigs[dnn].upSecurity.upIntegr,
+          upConfidentiality: dnnConfigs[dnn].upSecurity.upConfid
+        };
+      }
       return {
         dnn: dnn,
         uplinkAmbr: dnnConfigs[dnn].sessionAmbr.uplink,
@@ -144,14 +187,23 @@ class SubscriberModal extends Component {
     // "description": "A simple form example.",
     type: "object",
     required: [
+      "userNumber",
       "plmnID",
       "ueId",
       "authenticationMethod",
       "K",
       "OPOPcSelect",
       "OPOPc",
+      "SQN",
     ],
     properties: {
+      userNumber: {
+        type: "integer",
+        title: "Subscriber data number (auto-increased with SUPI)",
+        default: 1,
+        maximum: 100000,
+        minimum: 1
+      },
       plmnID: {
         type: "string",
         title: "PLMN ID",
@@ -187,6 +239,12 @@ class SubscriberModal extends Component {
         title: "Operator Code Value",
         pattern: "^[A-Fa-f0-9]{32}$",
         default: "8e27b6af0e692e750f32667a3b14605d",
+      },
+      SQN: {
+        type: "string",
+        title: "SQN",
+        pattern: "^[A-Fa-f0-9]{1,12}$",
+        default: "16f3b3f70fc2",
       },
       sliceConfigurations: {
         type: "array",
@@ -297,12 +355,51 @@ class SubscriberModal extends Component {
             minimum: 0,
             maximum: 255,
             title: "Default 5QI"
-          },
+          },       
           flowRules: {
             type: "array",
             items: { $ref: "#/definitions/FlowInformation" },
             maxItems: 1,
             title: "Flow Rules"
+          },
+          upSecurityChk: {
+            "type": "boolean",
+            title: "UP Security",
+            "default": false
+          },
+        },
+        "dependencies": {
+          upSecurityChk: {
+            "oneOf": [
+              {
+                "properties": {
+                  upSecurityChk: {
+                    "enum": [false]
+                  }
+                },
+              },
+              {
+                "properties": {
+                  upSecurityChk: {
+                    "enum": [true]
+                  },
+                  upIntegrity: {
+                    type: "string",
+                    title: "Integrity of UP Security",
+                    enum: ["NOT_NEEDED", "PREFERRED", "REQUIRED"],
+                  },
+                  upConfidentiality: {
+                    type: "string",
+                    title: "Confidentiality of UP Security",
+                    enum: ["NOT_NEEDED", "PREFERRED", "REQUIRED"],
+                  },
+                },
+                "required": [
+                  "upIntegrity",
+                  "upConfidentiality"
+                ]
+              }
+            ]
           }
         },
       },
@@ -390,6 +487,7 @@ class SubscriberModal extends Component {
           OPOPcSelect: isOp ? "OP" : "OPc",
           OPOPc: isOp ? subscriber['AuthenticationSubscription']["milenage"]["op"]["opValue"] :
             subscriber['AuthenticationSubscription']["opc"]["opcValue"],
+          SQN: subscriber['AuthenticationSubscription']["sequenceNumber"],
           sliceConfigurations: sliceConfigurationsFromSubscriber(subscriber),
         };
 
@@ -438,6 +536,7 @@ class SubscriberModal extends Component {
     const OPc = formData["OPOPcSelect"] === "OPc" ? formData["OPOPc"] : "";
 
     let subscriberData = {
+      "userNumber": formData["userNumber"],
       "plmnID": formData["plmnID"], // Change required
       "ueId": "imsi-" + formData["ueId"], // Change required
       "AuthenticationSubscription": {
@@ -460,7 +559,7 @@ class SubscriberModal extends Component {
           "encryptionKey": 0,
           "permanentKeyValue": formData["K"] // Change required
         },
-        "sequenceNumber": "16f3b3f70fc2",
+        "sequenceNumber": formData["SQN"],
       },
       "AccessAndMobilitySubscriptionData": {
         "gpsis": [

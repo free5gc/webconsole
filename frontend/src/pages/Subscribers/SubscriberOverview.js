@@ -5,6 +5,7 @@ import { Button, Table } from "react-bootstrap";
 import SubscriberModal from "./components/SubscriberModal";
 import ApiHelper from "../../util/ApiHelper";
 
+
 class SubscriberOverview extends Component {
   state = {
     subscriberModalOpen: false,
@@ -37,21 +38,18 @@ class SubscriberOverview extends Component {
 
   async addSubscriber(subscriberData) {
     this.setState({ subscriberModalOpen: false });
-
-    if (!await ApiHelper.createSubscriber(subscriberData)) {
-      alert("Error creating new subscriber, same UE ID may exists in other tenant");
+    let userNumber = subscriberData["userNumber"];
+    delete subscriberData["userNumber"];
+    let imsi = subscriberData["ueId"].substr(5, subscriberData["ueId"].length - 5);
+    for(let i = 0; i < userNumber; i++){
+      let newImsi = Number(imsi) + i;
+      subscriberData["ueId"] = `imsi-${newImsi}`;
+      if (!await ApiHelper.createSubscriber(subscriberData)) {
+        alert("Error creating new subscriber when create user");
+      }
+      ApiHelper.fetchSubscribers().then();
     }
-    ApiHelper.fetchSubscribers().then();
   }
-
-  // async updateSubscriber(subscriberData) {
-  //   this.setState({subscriberModalOpen: false});
-
-  //   if (!await ApiHelper.updateSubscriber(subscriberData)) {
-  //     alert("Error creating new subscriber");
-  //   }
-  //   ApiHelper.fetchSubscribers().then();
-  // }
 
   /**
    * @param subscriberData
