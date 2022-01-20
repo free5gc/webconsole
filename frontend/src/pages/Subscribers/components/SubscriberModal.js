@@ -299,7 +299,7 @@ class SubscriberModal extends Component {
     definitions: {
       Snssai: {
         type: "object",
-        required: ["sst", "sd"],
+        required: ["sst"],
         properties: {
           sst: {
             type: "integer",
