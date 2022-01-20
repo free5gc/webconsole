@@ -14,6 +14,7 @@ export default class LocalStorageHelper {
    */
   static getUserInfo() {
     let json = localStorage.getItem('user_info');
-    return json === null ? null : ApiTokens.deserialize(json);
+    // return json === null ? null : ApiTokens.deserialize(json);
+    return json === null ? null : User.deserialize(json);
   }
 }

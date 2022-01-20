@@ -2,6 +2,8 @@ import Http from './Http';
 import {store} from '../index';
 import ueinfoActions from "../redux/actions/ueinfoActions";
 import UEInfo from "../models/UEInfo";
+import axios from 'axios';
+import LocalStorageHelper from "./LocalStorageHelper";
 
 class UeInfoApiHelper {
 
@@ -11,6 +13,8 @@ class UeInfoApiHelper {
     try {
       let url =  "registered-ue-context"
       // console.log("Making request to ", url, " ....")
+      let user = LocalStorageHelper.getUserInfo();
+      axios.defaults.headers.common['Token'] = user.accessToken;
       let response = await Http.get(url);
       if (response.status === 200) {
         let registered_users = [];
@@ -20,7 +24,7 @@ class UeInfoApiHelper {
           );
           store.dispatch(ueinfoActions.setRegisteredUE(registered_users));
         } else {
-          store.dispatch(ueinfoActions.unsetRegisteredUEError());
+          store.dispatch(ueinfoActions.setRegisteredUE(registered_users));
         }
         return true;
       } else {
@@ -55,6 +59,8 @@ class UeInfoApiHelper {
       let url = `registered-ue-context/${supi}`
       // console.log("Making request to ", url, " ....")
 
+      let user = LocalStorageHelper.getUserInfo();
+      axios.defaults.headers.common['Token'] = user.accessToken;
       let response = await Http.get(url);
       if (response.status === 200 && response.data) {
         //To do: implement set rgistered ue action
@@ -84,6 +90,8 @@ class UeInfoApiHelper {
       let  url = `ue-pdu-session-info/${smContextRef}`
       // console.log("Making request to ", url, " ....")
 
+      let user = LocalStorageHelper.getUserInfo();
+      axios.defaults.headers.common['Token'] = user.accessToken;
       let response = await Http.get(url);
       if (response.status === 200 && response.data) {
         //To do: implement set rgistered ue action

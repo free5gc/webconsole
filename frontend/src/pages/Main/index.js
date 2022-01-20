@@ -13,7 +13,9 @@ import SideBar from '../../components/SideBar';
 import Subscribers from '../Subscribers';
 import Tasks from '../Tasks';
 import UEInfo from '../Dashboard';
-import UEInfoDetail from '../UEInfoDetail'
+import UEInfoDetail from '../UEInfoDetail';
+import Tenants from '../Tenants';
+import Users from '../Users';
 
 const Main = ({
                 mobileNavVisibility,
@@ -47,6 +49,8 @@ const Main = ({
           <Route exact path="/tasks" component={Tasks}/>
           <Route exact path="/ueinfo" component={UEInfo}/>
           <Route exact path="/ueinfo/:id" component={UEInfoDetail}/>
+          <Route exact path="/tenants" component={Tenants}/>
+          <Route exact path="/users/:id" component={Users}/>
 
           <Footer/>
         </div>

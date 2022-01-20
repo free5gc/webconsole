@@ -5,10 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"reflect"
+	"time"
 	"strings"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/free5gc/MongoDBLibrary"
 	"github.com/free5gc/openapi/models"
@@ -24,6 +30,8 @@ const (
 	amPolicyDataColl = "policyData.ues.amData"
 	smPolicyDataColl = "policyData.ues.smData"
 	flowRuleDataColl = "policyData.ues.flowRule"
+	userDataColl     = "userData"
+	tenantDataColl   = "tenantData"
 )
 
 var httpsClient *http.Client
@@ -77,6 +85,47 @@ func sendResponseToClient(c *gin.Context, response *http.Response) {
 	var jsonData interface{}
 	json.NewDecoder(response.Body).Decode(&jsonData)
 	c.JSON(response.StatusCode, jsonData)
+}
+
+func sendResponseToClientFilterTenant(c *gin.Context, response *http.Response, tenantId string) {
+	// Subscription data.
+	filterTenantIdOnly := bson.M{"tenantId": tenantId}
+	amDataList := MongoDBLibrary.RestfulAPIGetMany(amDataColl, filterTenantIdOnly)
+
+	tenantCheck := func(supi string) bool {
+		for _, amData := range amDataList {
+			if supi == amData["ueId"] && tenantId == amData["tenantId"] {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Response data.
+	var jsonData interface{}
+	json.NewDecoder(response.Body).Decode(&jsonData)
+
+	s := reflect.ValueOf(jsonData)
+	if s.Kind() != reflect.Slice {
+		c.JSON(response.StatusCode, jsonData)
+		return
+	}
+
+	var sliceData []interface{}
+	for i := 0; i < s.Len(); i++ {
+		mapData := s.Index(i).Interface()
+		m := reflect.ValueOf(mapData)
+		for _, key := range m.MapKeys() {
+			if key.String() == "Supi" {
+				strct := m.MapIndex(key)
+				if tenantCheck(strct.Interface().(string)) {
+					sliceData = append(sliceData, mapData)
+				}
+			}
+		}
+	}
+
+	c.JSON(response.StatusCode, sliceData)
 }
 
 func GetSampleJSON(c *gin.Context) {
@@ -270,24 +319,449 @@ func GetSampleJSON(c *gin.Context) {
 	c.JSON(http.StatusOK, subsData)
 }
 
+type OAuth struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int    `json:"expires_in"`
+}
+
+type LoginRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+func JWT(email, userId, tenantId string) string {
+	token := jwt.New(jwt.SigningMethodHS256)
+
+	claims := token.Claims.(jwt.MapClaims)
+	claims["sub"] = userId
+	claims["iat"] = time.Now()
+	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
+	claims["email"] = email
+	claims["tenantId"] = tenantId
+
+	tokenString, _ := token.SignedString([]byte(os.Getenv("SIGNINGKEY")))
+
+	return tokenString
+}
+
+func generateHash(password string) {
+	hash, _ := bcrypt.GenerateFromPassword([]byte(password), 12)
+	logger.WebUILog.Warnln("Password hash:", hash)
+}
+
+func Login(c *gin.Context) {
+	setCorsHeader(c)
+
+	login := LoginRequest{}
+	err := json.NewDecoder(c.Request.Body).Decode(&login)
+	if err != nil {
+		logger.WebUILog.Warnln("JSON decode error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
+
+	generateHash(login.Password)
+
+	filterEmail := bson.M{"email": login.Username}
+	userData := MongoDBLibrary.RestfulAPIGetOne(userDataColl, filterEmail)
+
+	if len(userData) == 0 {
+		logger.WebUILog.Warnln("Can't find user email", login.Username)
+		c.JSON(http.StatusForbidden, gin.H{})
+		return
+	}
+
+	hash := userData["encryptedPassword"].(string)
+
+	err = bcrypt.CompareHashAndPassword([]byte(hash), []byte(login.Password))
+	if err != nil {
+		logger.WebUILog.Warnln("Password incorrect", login.Username)
+		c.JSON(http.StatusForbidden, gin.H{})
+		return
+	}
+
+	userId := userData["userId"].(string)
+	tenantId := userData["tenantId"].(string)
+
+	logger.WebUILog.Warnln("Login success", login.Username)
+	logger.WebUILog.Warnln("userid", userId)
+	logger.WebUILog.Warnln("tenantid", tenantId)
+
+	token := JWT(login.Username, userId, tenantId)
+	logger.WebUILog.Warnln("token", token)
+
+	oauth := OAuth{}
+	oauth.AccessToken = token
+	c.JSON(http.StatusOK, oauth)
+}
+
+// Placeholder to handle logout.
+func Logout(c *gin.Context) {
+	setCorsHeader(c)
+	// Needs to invalidate access_token.
+	c.JSON(http.StatusOK, gin.H{})
+}
+
+type AuthSub struct {
+	models.AuthenticationSubscription
+	TenantId string `json:"tenantId" bson:"tenantId"`
+}
+
+// Parse JWT
+func ParseJWT(tokenStr string) jwt.MapClaims {
+	token, _ := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("SIGNINGKEY")), nil
+	})
+
+	claims, _ := token.Claims.(jwt.MapClaims)
+
+	return claims
+}
+
+// Check of admin user. This should be done with proper JWT token.
+func CheckAuth(c *gin.Context) bool {
+	tokenStr := c.GetHeader("Token")
+	if tokenStr == "admin" {
+		return true
+	} else {
+		return false
+	}
+}
+
+// Tenat ID
+func GetTenantId(c *gin.Context) string {
+	tokenStr := c.GetHeader("Token")
+	if tokenStr == "admin" {
+		return ""
+	}
+	claims := ParseJWT(tokenStr)
+	return claims["tenantId"].(string)
+}
+
+// Tenant
+func GetTenants(c *gin.Context) {
+	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	tenantDataInterface := MongoDBLibrary.RestfulAPIGetMany(tenantDataColl, bson.M{})
+	var tenantData []Tenant
+	json.Unmarshal(sliceToByte(tenantDataInterface), &tenantData)
+
+	c.JSON(http.StatusOK, tenantData)
+}
+
+func GetTenantByID(c *gin.Context) {
+	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	tenantId := c.Param("tenantId")
+
+	filterTenantIdOnly := bson.M{"tenantId": tenantId}
+	tenantDataInterface := MongoDBLibrary.RestfulAPIGetOne(tenantDataColl, filterTenantIdOnly)
+	if len(tenantDataInterface) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	var tenantData Tenant
+	json.Unmarshal(mapToByte(tenantDataInterface), &tenantData)
+
+	c.JSON(http.StatusOK, tenantData)
+}
+
+func PostTenant(c *gin.Context) {
+	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	var tenantData Tenant
+	if err := c.ShouldBindJSON(&tenantData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{})
+		return
+	}
+
+	if tenantData.TenantId == "" {
+		tenantData.TenantId = uuid.Must(uuid.NewRandom()).String()
+	}
+
+	tenantBsonM := toBsonM(tenantData)
+	filterTenantIdOnly := bson.M{"tenantId": tenantData.TenantId}
+	MongoDBLibrary.RestfulAPIPost(tenantDataColl, filterTenantIdOnly, tenantBsonM)
+
+	c.JSON(http.StatusOK, tenantData)
+}
+
+func PutTenantByID(c *gin.Context) {
+	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	tenantId := c.Param("tenantId")
+
+	filterTenantIdOnly := bson.M{"tenantId": tenantId}
+	tenantDataInterface := MongoDBLibrary.RestfulAPIGetOne(tenantDataColl, filterTenantIdOnly)
+	if len(tenantDataInterface) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	var tenantData Tenant
+	if err := c.ShouldBindJSON(&tenantData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{})
+		return
+	}
+	tenantData.TenantId = tenantId
+
+	tenantBsonM := toBsonM(tenantData)
+	filterTenantIdOnly = bson.M{"tenantId": tenantId}
+	MongoDBLibrary.RestfulAPIPost(tenantDataColl, filterTenantIdOnly, tenantBsonM)
+
+	c.JSON(http.StatusOK, gin.H{})
+}
+
+func DeleteTenantByID(c *gin.Context) {
+	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	tenantId := c.Param("tenantId")
+	filterTenantIdOnly := bson.M{"tenantId": tenantId}
+
+	MongoDBLibrary.RestfulAPIDeleteMany(amDataColl, filterTenantIdOnly)
+	MongoDBLibrary.RestfulAPIDeleteMany(userDataColl, filterTenantIdOnly)
+	MongoDBLibrary.RestfulAPIDeleteOne(tenantDataColl, filterTenantIdOnly)
+
+	c.JSON(http.StatusOK, gin.H{})
+}
+
+// Utility function.
+func GetTenantById(tenantId string) map[string]interface{} {
+	filterTenantIdOnly := bson.M{"tenantId": tenantId}
+	return MongoDBLibrary.RestfulAPIGetOne(tenantDataColl, filterTenantIdOnly)
+}
+
+// Users
+func GetUsers(c *gin.Context) {
+	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	tenantId := c.Param("tenantId")
+	if len(GetTenantById(tenantId)) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	filterTenantIdOnly := bson.M{"tenantId": tenantId}
+	userDataInterface := MongoDBLibrary.RestfulAPIGetMany(userDataColl, filterTenantIdOnly)
+
+	var userData []User
+	json.Unmarshal(sliceToByte(userDataInterface), &userData)
+	for pos, _ := range userData {
+		userData[pos].EncryptedPassword = ""
+	}
+
+	c.JSON(http.StatusOK, userData)
+}
+
+func GetUserByID(c *gin.Context) {
+	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	tenantId := c.Param("tenantId")
+	if len(GetTenantById(tenantId)) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+	userId := c.Param("userId")
+
+	filterUserIdOnly := bson.M{"tenantId": tenantId, "userId": userId}
+	userDataInterface := MongoDBLibrary.RestfulAPIGetOne(userDataColl, filterUserIdOnly)
+	if len(userDataInterface) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	var userData User
+	json.Unmarshal(mapToByte(userDataInterface), &userData)
+	userData.EncryptedPassword = ""
+
+	c.JSON(http.StatusOK, userData)
+}
+
+func PostUserByID(c *gin.Context) {
+	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	tenantId := c.Param("tenantId")
+	if len(GetTenantById(tenantId)) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	var userData User
+	if err := c.ShouldBindJSON(&userData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{})
+		return
+	}
+
+	filterEmail := bson.M{"email": userData.Email}
+	userWithEmailData := MongoDBLibrary.RestfulAPIGetOne(userDataColl, filterEmail)
+	if len(userWithEmailData) != 0 {
+		logger.WebUILog.Warnln("Email already exists", userData.Email)
+		c.JSON(http.StatusForbidden, gin.H{})
+		return
+	}
+
+	userData.TenantId = tenantId
+	userData.UserId = uuid.Must(uuid.NewRandom()).String()
+	hash, _ := bcrypt.GenerateFromPassword([]byte(userData.EncryptedPassword), 12)
+	userData.EncryptedPassword = string(hash)
+
+	userBsonM := toBsonM(userData)
+	filterUserIdOnly := bson.M{"tenantId": userData.TenantId, "userId": userData.UserId}
+	MongoDBLibrary.RestfulAPIPost(userDataColl, filterUserIdOnly, userBsonM)
+
+	c.JSON(http.StatusOK, userData)
+}
+
+func PutUserByID(c *gin.Context) {
+	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	tenantId := c.Param("tenantId")
+	if len(GetTenantById(tenantId)) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+	userId := c.Param("userId")
+
+	var newUserData User
+	if err := c.ShouldBindJSON(&newUserData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{})
+		return
+	}
+
+	filterUserIdOnly := bson.M{"tenantId": tenantId, "userId": userId}
+	userDataInterface := MongoDBLibrary.RestfulAPIGetOne(userDataColl, filterUserIdOnly)
+	if len(userDataInterface) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	var userData User
+	json.Unmarshal(mapToByte(userDataInterface), &userData)
+
+	if newUserData.Email != "" && newUserData.Email != userData.Email {
+		filterEmail := bson.M{"email": newUserData.Email}
+		sameEmailInterface := MongoDBLibrary.RestfulAPIGetOne(userDataColl, filterEmail)
+		if len(sameEmailInterface) != 0 {
+			c.JSON(http.StatusBadRequest, bson.M{})
+			return
+		}
+		userData.Email = newUserData.Email
+	}
+
+	if newUserData.EncryptedPassword != "" {
+		hash, _ := bcrypt.GenerateFromPassword([]byte(newUserData.EncryptedPassword), 12)
+		userData.EncryptedPassword = string(hash)
+	}
+
+	userBsonM := toBsonM(userData)
+	MongoDBLibrary.RestfulAPIPost(userDataColl, filterUserIdOnly, userBsonM)
+
+	c.JSON(http.StatusOK, userData)
+}
+
+func DeleteUserByID(c *gin.Context) {
+	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	tenantId := c.Param("tenantId")
+	if len(GetTenantById(tenantId)) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+	userId := c.Param("userId")
+
+	filterUserIdOnly := bson.M{"tenantId": tenantId, "userId": userId}
+	MongoDBLibrary.RestfulAPIDeleteOne(userDataColl, filterUserIdOnly)
+
+	c.JSON(http.StatusOK, gin.H{})
+}
+
 // Get all subscribers list
 func GetSubscribers(c *gin.Context) {
 	setCorsHeader(c)
 
 	logger.WebUILog.Infoln("Get All Subscribers List")
 
+	tokenStr := c.GetHeader("Token")
+
+	var claims jwt.MapClaims = nil
+	if tokenStr != "admin" {
+		claims = ParseJWT(tokenStr)
+	}
+
 	var subsList []SubsListIE = make([]SubsListIE, 0)
 	amDataList := MongoDBLibrary.RestfulAPIGetMany(amDataColl, bson.M{})
 	for _, amData := range amDataList {
 		ueId := amData["ueId"]
 		servingPlmnId := amData["servingPlmnId"]
-		tmp := SubsListIE{
-			PlmnID: servingPlmnId.(string),
-			UeId:   ueId.(string),
-		}
-		subsList = append(subsList, tmp)
-	}
+		tenantId := amData["tenantId"]
 
+		filterUeIdOnly := bson.M{"ueId": ueId}
+		authSubsDataInterface := MongoDBLibrary.RestfulAPIGetOne(authSubsDataColl, filterUeIdOnly)
+
+		var authSubsData AuthSub
+		json.Unmarshal(mapToByte(authSubsDataInterface), &authSubsData)
+
+		if tokenStr == "admin" || tenantId == claims["tenantId"].(string) {
+			tmp := SubsListIE{
+				PlmnID: servingPlmnId.(string),
+				UeId:   ueId.(string),
+			}
+			subsList = append(subsList, tmp)
+		}
+	}
 	c.JSON(http.StatusOK, subsList)
 }
 
@@ -358,6 +832,12 @@ func PostSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
 	logger.WebUILog.Infoln("Post One Subscriber Data")
 
+	var claims jwt.MapClaims = nil
+	tokenStr := c.GetHeader("Token")
+	if tokenStr != "admin" {
+		claims = ParseJWT(tokenStr)
+	}
+
 	var subsData SubsData
 	if err := c.ShouldBindJSON(&subsData); err != nil {
 		logger.WebUILog.Panic(err.Error())
@@ -369,11 +849,28 @@ func PostSubscriberByID(c *gin.Context) {
 	filterUeIdOnly := bson.M{"ueId": ueId}
 	filter := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId}
 
+	// Lookup same UE ID of other tenant's subscription.
+	if claims != nil {
+		authSubsDataInterface := MongoDBLibrary.RestfulAPIGetOne(authSubsDataColl, filterUeIdOnly)
+		if len(authSubsDataInterface) > 0 {
+			if authSubsDataInterface["tenantId"].(string) != claims["tenantId"].(string) {
+				c.JSON(http.StatusUnprocessableEntity, gin.H{})
+				return
+			}
+		}
+	}
+
 	authSubsBsonM := toBsonM(subsData.AuthenticationSubscription)
 	authSubsBsonM["ueId"] = ueId
+	if claims != nil {
+		authSubsBsonM["tenantId"] = claims["tenantId"].(string)
+	}
 	amDataBsonM := toBsonM(subsData.AccessAndMobilitySubscriptionData)
 	amDataBsonM["ueId"] = ueId
 	amDataBsonM["servingPlmnId"] = servingPlmnId
+	if claims != nil {
+		amDataBsonM["tenantId"] = claims["tenantId"].(string)
+	}
 
 	smDatasBsonA := make([]interface{}, 0, len(subsData.SessionManagementSubscriptionData))
 	for _, smSubsData := range subsData.SessionManagementSubscriptionData {
@@ -597,7 +1094,14 @@ func GetRegisteredUEContext(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{})
 			return
 		}
-		sendResponseToClient(c, resp)
+
+		// Filter by tenant.
+		tenantId := GetTenantId(c)
+		if tenantId == "" {
+			sendResponseToClient(c, resp)
+		} else {
+			sendResponseToClientFilterTenant(c, resp, tenantId)
+		}
 	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"cause": "No AMF Found",
