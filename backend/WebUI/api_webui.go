@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 	"reflect"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
