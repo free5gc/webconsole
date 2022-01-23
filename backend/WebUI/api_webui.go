@@ -94,7 +94,7 @@ func sendResponseToClientFilterTenant(c *gin.Context, response *http.Response, t
 
 	tenantCheck := func(supi string) bool {
 		for _, amData := range amDataList {
-			if supi == amData["ueId"] && tenantId == amData["tenantId"] {
+			if supi == amData["ueId"] {
 				return true
 			}
 		}
@@ -423,7 +423,7 @@ func ParseJWT(tokenStr string) jwt.MapClaims {
 // Check of admin user. This should be done with proper JWT token.
 func CheckAuth(c *gin.Context) bool {
 	tokenStr := c.GetHeader("Token")
-	if tokenStr == "admin" {
+	if tokenStr == "admin" || tokenStr == "" {
 		return true
 	} else {
 		return false
@@ -834,6 +834,12 @@ func PostSubscriberByID(c *gin.Context) {
 
 	var claims jwt.MapClaims = nil
 	tokenStr := c.GetHeader("Token")
+	if tokenStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"cause": "Illegal",
+		})
+		return
+	}
 	if tokenStr != "admin" {
 		claims = ParseJWT(tokenStr)
 	}
