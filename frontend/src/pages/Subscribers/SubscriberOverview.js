@@ -40,9 +40,11 @@ class SubscriberOverview extends Component {
     this.setState({ subscriberModalOpen: false });
     let userNumber = subscriberData["userNumber"];
     delete subscriberData["userNumber"];
-    let imsi = subscriberData["ueId"].substr(5, subscriberData["ueId"].length - 5);
+    let imsiLength = subscriberData["ueId"].length - 5
+    let imsi = subscriberData["ueId"].substr(5, imsiLength);
     for(let i = 0; i < userNumber; i++){
-      let newImsi = Number(imsi) + i;
+      let newImsi = (Number(imsi) + i).toString();
+      newImsi = newImsi.padStart(imsiLength, '0')
       subscriberData["ueId"] = `imsi-${newImsi}`;
       if (!await ApiHelper.createSubscriber(subscriberData)) {
         alert("Error creating new subscriber when create user");
