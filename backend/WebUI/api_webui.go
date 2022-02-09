@@ -7,12 +7,13 @@ import (
 	"net/http"
 	"os"
 	"reflect"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/crypto/bcrypt"
 
@@ -94,7 +95,7 @@ func sendResponseToClientFilterTenant(c *gin.Context, response *http.Response, t
 
 	tenantCheck := func(supi string) bool {
 		for _, amData := range amDataList {
-			if supi == amData["ueId"] && tenantId == amData["tenantId"] {
+			if supi == amData["ueId"] {
 				return true
 			}
 		}
@@ -410,14 +411,18 @@ type AuthSub struct {
 }
 
 // Parse JWT
-func ParseJWT(tokenStr string) jwt.MapClaims {
-	token, _ := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+func ParseJWT(tokenStr string) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 		return []byte(os.Getenv("SIGNINGKEY")), nil
 	})
 
+	if err != nil {
+		return nil, errors.Wrap(err, "ParseJWT error")
+	}
+
 	claims, _ := token.Claims.(jwt.MapClaims)
 
-	return claims
+	return claims, nil
 }
 
 // Check of admin user. This should be done with proper JWT token.
@@ -431,13 +436,16 @@ func CheckAuth(c *gin.Context) bool {
 }
 
 // Tenat ID
-func GetTenantId(c *gin.Context) string {
+func GetTenantId(c *gin.Context) (string, error) {
 	tokenStr := c.GetHeader("Token")
 	if tokenStr == "admin" {
-		return ""
+		return "", nil
 	}
-	claims := ParseJWT(tokenStr)
-	return claims["tenantId"].(string)
+	claims, err := ParseJWT(tokenStr)
+	if err != nil {
+		return "", errors.Wrap(err, "GetTenantId error")
+	}
+	return claims["tenantId"].(string), nil
 }
 
 // Tenant
@@ -737,8 +745,16 @@ func GetSubscribers(c *gin.Context) {
 	tokenStr := c.GetHeader("Token")
 
 	var claims jwt.MapClaims = nil
+	var err error = nil
 	if tokenStr != "admin" {
-		claims = ParseJWT(tokenStr)
+		claims, err = ParseJWT(tokenStr)
+	}
+	if err != nil {
+		logger.WebUILog.Errorln(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{
+			"cause": "Illegal Token",
+		})
+		return
 	}
 
 	var subsList []SubsListIE = make([]SubsListIE, 0)
@@ -833,14 +849,27 @@ func PostSubscriberByID(c *gin.Context) {
 	logger.WebUILog.Infoln("Post One Subscriber Data")
 
 	var claims jwt.MapClaims = nil
+	var err error = nil
 	tokenStr := c.GetHeader("Token")
+
 	if tokenStr != "admin" {
-		claims = ParseJWT(tokenStr)
+		claims, err = ParseJWT(tokenStr)
+	}
+	if err != nil {
+		logger.WebUILog.Errorln(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{
+			"cause": "Illegal Token",
+		})
+		return
 	}
 
 	var subsData SubsData
 	if err := c.ShouldBindJSON(&subsData); err != nil {
-		logger.WebUILog.Panic(err.Error())
+		logger.WebUILog.Errorf("PostSubscriberByID err: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"cause": "JSON format incorrect",
+		})
+		return
 	}
 
 	ueId := c.Param("ueId")
@@ -924,7 +953,11 @@ func PutSubscriberByID(c *gin.Context) {
 
 	var subsData SubsData
 	if err := c.ShouldBindJSON(&subsData); err != nil {
-		logger.WebUILog.Panic(err.Error())
+		logger.WebUILog.Errorf("PutSubscriberByID err: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"cause": "JSON format incorrect",
+		})
+		return
 	}
 
 	ueId := c.Param("ueId")
@@ -994,7 +1027,11 @@ func PatchSubscriberByID(c *gin.Context) {
 
 	var subsData SubsData
 	if err := c.ShouldBindJSON(&subsData); err != nil {
-		logger.WebUILog.Panic(err.Error())
+		logger.WebUILog.Errorf("PatchSubscriberByID err: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"cause": "JSON format incorrect",
+		})
+		return
 	}
 
 	ueId := c.Param("ueId")
@@ -1096,7 +1133,15 @@ func GetRegisteredUEContext(c *gin.Context) {
 		}
 
 		// Filter by tenant.
-		tenantId := GetTenantId(c)
+		tenantId, err := GetTenantId(c)
+		if err != nil {
+			logger.WebUILog.Errorln(err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{
+				"cause": "Illegal Token",
+			})
+			return
+		}
+
 		if tenantId == "" {
 			sendResponseToClient(c, resp)
 		} else {

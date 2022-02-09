@@ -12,6 +12,7 @@ class UserOverview extends Component {
   };
 
   async componentDidMount() {
+    //eslint-disable-next-line
     const tenantId = this.props.match.url.replace(/^.*[\\\/]/, '');
 
     ApiHelper.fetchUsers(tenantId).then();
