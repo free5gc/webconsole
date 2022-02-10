@@ -4,11 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var PublicPath string
-
-func init() {
-	PublicPath = "public"
-}
+var PublicPath = "public"
 
 func ReturnPublic() gin.HandlerFunc {
 	return func(context *gin.Context) {

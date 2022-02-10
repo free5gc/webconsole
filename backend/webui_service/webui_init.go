@@ -4,16 +4,15 @@ import (
 	"bufio"
 	"fmt"
 	"os/exec"
+	"path/filepath"
+	"runtime/debug"
 	"sync"
 
 	"github.com/gin-contrib/cors"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	"github.com/free5gc/MongoDBLibrary"
-	mongoDBLibLogger "github.com/free5gc/MongoDBLibrary/logger"
-	openApiLogger "github.com/free5gc/openapi/logger"
-	pathUtilLogger "github.com/free5gc/path_util/logger"
+	"github.com/free5gc/util/mongoapi"
 	"github.com/free5gc/webconsole/backend/WebUI"
 	"github.com/free5gc/webconsole/backend/factory"
 	"github.com/free5gc/webconsole/backend/logger"
@@ -23,51 +22,65 @@ import (
 type WEBUI struct{}
 
 type (
-	// Config information.
-	Config struct {
-		webuicfg string
+	// Commands information.
+	Commands struct {
+		config string
+		public string
 	}
 )
 
-var config Config
+var commands Commands
 
-var webuiCLi = []cli.Flag{
+var cliCmd = []cli.Flag{
 	cli.StringFlag{
-		Name:  "free5gccfg",
-		Usage: "common config file",
+		Name:  "public, p",
+		Usage: "Load public path from `FOLDER`",
 	},
 	cli.StringFlag{
-		Name:  "webuicfg",
-		Usage: "config file",
+		Name:  "config, c",
+		Usage: "Load configuration from `FILE`",
+	},
+	cli.StringFlag{
+		Name:  "log, l",
+		Usage: "Output NF log to `FILE`",
+	},
+	cli.StringFlag{
+		Name:  "log5gc, lc",
+		Usage: "Output free5gc log to `FILE`",
 	},
 }
 
 var initLog *logrus.Entry
 
-func init() {
-	initLog = logger.InitLog
-}
-
 func (*WEBUI) GetCliCmd() (flags []cli.Flag) {
-	return webuiCLi
+	return cliCmd
 }
 
-func (webui *WEBUI) Initialize(c *cli.Context) {
-	config = Config{
-		webuicfg: c.String("webuicfg"),
+func (webui *WEBUI) Initialize(c *cli.Context) error {
+	commands = Commands{
+		config: c.String("config"),
+		public: c.String("public"),
 	}
 
-	if config.webuicfg != "" {
-		if err := factory.InitConfigFactory(config.webuicfg); err != nil {
-			panic(err)
+	initLog = logger.InitLog
+
+	if commands.config != "" {
+		if err := factory.InitConfigFactory(commands.config); err != nil {
+			return err
 		}
 	} else {
 		if err := factory.InitConfigFactory("./config/webuicfg.yaml"); err != nil {
-			panic(err)
+			return err
 		}
 	}
 
+	if commands.public != "" {
+		PublicPath = filepath.Clean(commands.public)
+	}
+
 	webui.setLogLevel()
+
+	return nil
 }
 
 func (webui *WEBUI) setLogLevel() {
@@ -92,54 +105,6 @@ func (webui *WEBUI) setLogLevel() {
 		}
 		logger.SetReportCaller(factory.WebUIConfig.Logger.WEBUI.ReportCaller)
 	}
-
-	if factory.WebUIConfig.Logger.PathUtil != nil {
-		if factory.WebUIConfig.Logger.PathUtil.DebugLevel != "" {
-			if level, err := logrus.ParseLevel(factory.WebUIConfig.Logger.PathUtil.DebugLevel); err != nil {
-				pathUtilLogger.PathLog.Warnf("PathUtil Log level [%s] is invalid, set to [info] level",
-					factory.WebUIConfig.Logger.PathUtil.DebugLevel)
-				pathUtilLogger.SetLogLevel(logrus.InfoLevel)
-			} else {
-				pathUtilLogger.SetLogLevel(level)
-			}
-		} else {
-			pathUtilLogger.PathLog.Warnln("PathUtil Log level not set. Default set to [info] level")
-			pathUtilLogger.SetLogLevel(logrus.InfoLevel)
-		}
-		pathUtilLogger.SetReportCaller(factory.WebUIConfig.Logger.PathUtil.ReportCaller)
-	}
-
-	if factory.WebUIConfig.Logger.OpenApi != nil {
-		if factory.WebUIConfig.Logger.OpenApi.DebugLevel != "" {
-			if level, err := logrus.ParseLevel(factory.WebUIConfig.Logger.OpenApi.DebugLevel); err != nil {
-				openApiLogger.OpenApiLog.Warnf("OpenAPI Log level [%s] is invalid, set to [info] level",
-					factory.WebUIConfig.Logger.OpenApi.DebugLevel)
-				openApiLogger.SetLogLevel(logrus.InfoLevel)
-			} else {
-				openApiLogger.SetLogLevel(level)
-			}
-		} else {
-			openApiLogger.OpenApiLog.Warnln("OpenAPI Log level not set. Default set to [info] level")
-			openApiLogger.SetLogLevel(logrus.InfoLevel)
-		}
-		openApiLogger.SetReportCaller(factory.WebUIConfig.Logger.OpenApi.ReportCaller)
-	}
-
-	if factory.WebUIConfig.Logger.MongoDBLibrary != nil {
-		if factory.WebUIConfig.Logger.MongoDBLibrary.DebugLevel != "" {
-			if level, err := logrus.ParseLevel(factory.WebUIConfig.Logger.MongoDBLibrary.DebugLevel); err != nil {
-				mongoDBLibLogger.MongoDBLog.Warnf("MongoDBLibrary Log level [%s] is invalid, set to [info] level",
-					factory.WebUIConfig.Logger.MongoDBLibrary.DebugLevel)
-				mongoDBLibLogger.SetLogLevel(logrus.InfoLevel)
-			} else {
-				mongoDBLibLogger.SetLogLevel(level)
-			}
-		} else {
-			mongoDBLibLogger.MongoDBLog.Warnln("MongoDBLibrary Log level not set. Default set to [info] level")
-			mongoDBLibLogger.SetLogLevel(logrus.InfoLevel)
-		}
-		mongoDBLibLogger.SetReportCaller(factory.WebUIConfig.Logger.MongoDBLibrary.ReportCaller)
-	}
 }
 
 func (webui *WEBUI) FilterCli(c *cli.Context) (args []string) {
@@ -160,7 +125,10 @@ func (webui *WEBUI) Start() {
 	mongodb := factory.WebUIConfig.Configuration.Mongodb
 
 	// Connect to MongoDB
-	MongoDBLibrary.SetMongoDB(mongodb.Name, mongodb.Url)
+	if err := mongoapi.SetMongoDB(mongodb.Name, mongodb.Url); err != nil {
+		initLog.Errorf("Server start err: %+v", err)
+		return
+	}
 
 	initLog.Infoln("Server started")
 
@@ -192,7 +160,9 @@ func (webui *WEBUI) Exec(c *cli.Context) error {
 	initLog.Traceln("filter: ", args)
 	command := exec.Command("./webui", args...)
 
-	webui.Initialize(c)
+	if err := webui.Initialize(c); err != nil {
+		return err
+	}
 
 	stdout, err := command.StdoutPipe()
 	if err != nil {
@@ -201,6 +171,13 @@ func (webui *WEBUI) Exec(c *cli.Context) error {
 	wg := sync.WaitGroup{}
 	wg.Add(3)
 	go func() {
+		defer func() {
+			if p := recover(); p != nil {
+				// Print stack for panic to log. Fatalf() will let program exit.
+				logger.InitLog.Fatalf("panic: %v\n%s", p, string(debug.Stack()))
+			}
+		}()
+
 		in := bufio.NewScanner(stdout)
 		for in.Scan() {
 			fmt.Println(in.Text())
@@ -213,6 +190,13 @@ func (webui *WEBUI) Exec(c *cli.Context) error {
 		initLog.Fatalln(err)
 	}
 	go func() {
+		defer func() {
+			if p := recover(); p != nil {
+				// Print stack for panic to log. Fatalf() will let program exit.
+				logger.InitLog.Fatalf("panic: %v\n%s", p, string(debug.Stack()))
+			}
+		}()
+
 		in := bufio.NewScanner(stderr)
 		for in.Scan() {
 			fmt.Println(in.Text())
@@ -221,6 +205,13 @@ func (webui *WEBUI) Exec(c *cli.Context) error {
 	}()
 
 	go func() {
+		defer func() {
+			if p := recover(); p != nil {
+				// Print stack for panic to log. Fatalf() will let program exit.
+				logger.InitLog.Fatalf("panic: %v\n%s", p, string(debug.Stack()))
+			}
+		}()
+
 		if errCmd := command.Start(); errCmd != nil {
 			fmt.Println("command.Start Fails!")
 		}

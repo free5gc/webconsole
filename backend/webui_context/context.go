@@ -2,13 +2,10 @@ package webui_context
 
 import (
 	"fmt"
-	"reflect"
-	"time"
 
-	"github.com/mitchellh/mapstructure"
-
-	"github.com/free5gc/MongoDBLibrary"
 	"github.com/free5gc/openapi/models"
+	timedecode "github.com/free5gc/util/mapstruct"
+	"github.com/free5gc/util/mongoapi"
 	"github.com/free5gc/webconsole/backend/logger"
 )
 
@@ -29,9 +26,13 @@ func init() {
 }
 
 func (context *WEBUIContext) UpdateNfProfiles() {
-	nfProfilesRaw := MongoDBLibrary.RestfulAPIGetMany("NfProfile", nil)
-	nfProfiles, err := decode(nfProfilesRaw, time.RFC3339)
+	nfProfilesRaw, err := mongoapi.RestfulAPIGetMany("NfProfile", nil)
 	if err != nil {
+		logger.ContextLog.Error(err)
+		return
+	}
+	var nfProfiles []models.NfProfile
+	if err := timedecode.Decode(nfProfilesRaw, &nfProfiles); err != nil {
 		logger.ContextLog.Error(err)
 		return
 	}
@@ -106,39 +107,6 @@ func (context *WEBUIContext) GetOamUris(targetNfType models.NfType) (uris []stri
 
 func WEBUI_Self() *WEBUIContext {
 	return &webuiContext
-}
-
-// Copy from lib/TimeDecode/TimeDecode.go
-func decode(source interface{}, format string) ([]models.NfProfile, error) {
-	var target []models.NfProfile
-
-	// config mapstruct
-	stringToDateTimeHook := func(
-		f reflect.Type,
-		t reflect.Type,
-		data interface{}) (interface{}, error) {
-		if t == reflect.TypeOf(time.Time{}) && f == reflect.TypeOf("") {
-			return time.Parse(format, data.(string))
-		}
-		return data, nil
-	}
-
-	config := mapstructure.DecoderConfig{
-		DecodeHook: stringToDateTimeHook,
-		Result:     &target,
-	}
-
-	decoder, err := mapstructure.NewDecoder(&config)
-	if err != nil {
-		return nil, err
-	}
-
-	// Decode result to NfProfile structure
-	err = decoder.Decode(source)
-	if err != nil {
-		return nil, err
-	}
-	return target, nil
 }
 
 func getSbiUri(scheme models.UriScheme, ipv4Address string, port int32) (uri string) {

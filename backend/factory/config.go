@@ -7,7 +7,7 @@
 package factory
 
 import (
-	"github.com/free5gc/logger_util"
+	logger_util "github.com/free5gc/util/logger"
 )
 
 type Config struct {

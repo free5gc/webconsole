@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/free5gc/logger_util"
+	logger_util "github.com/free5gc/util/logger"
 	"github.com/free5gc/webconsole/backend/logger"
 )
 
