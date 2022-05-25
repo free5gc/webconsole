@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Modal } from "react-bootstrap";
 import Form from "react-jsonschema-form";
 import PropTypes from 'prop-types';
+import { tenantSchema } from '../../../metadata/index'
 
 class TenantModal extends Component {
   static propTypes = {
@@ -19,35 +20,7 @@ class TenantModal extends Component {
     rerenderCounter: 0,
   };
 
-  state = {
-    formData: undefined,
-    editMode: false,
-    // for force re-rendering json form
-    rerenderCounter: 0,
-  };
-
-  schema = {
-    // title: "A registration form",
-    // "description": "A simple form example.",
-    type: "object",
-    required: [
-      "tenantName",
-    ],
-    properties: {
-      tenantId: {
-        type: "string",
-        title: "Tenant ID",
-        pattern: "^[0-9a-zA-Z-]*$",
-        default: "",
-        readOnly: true,
-      },
-      tenantName: {
-        type: "string",
-        title: "Tenant Name",
-        default: "",
-      },
-    },
-  };
+  schema = tenantSchema;
 
   componentDidUpdate(prevProps, prevState, snapshot) {
     if (prevProps !== this.props) {
