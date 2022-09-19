@@ -149,7 +149,7 @@ func (webui *WEBUI) Start() {
 	self := webui_context.WEBUI_Self()
 	self.UpdateNfProfiles()
 
-	router.NoRoute(ReturnPublic())
+	// router.NoRoute(ReturnPublic())
 
 	initLog.Infoln(router.Run(":5000"))
 }
