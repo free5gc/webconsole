@@ -25,3 +25,10 @@ cp -R build ../public
 # (In directory: ~/free5gc/webconsole)
 go run server.go
 ```
+
+### Connect to WebConsole
+
+Enter <WebConsole server's IP>:5000 in URL bar.
+
+Username: admin
+Password: free5gc
