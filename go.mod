@@ -7,7 +7,7 @@ require (
 	github.com/free5gc/openapi v1.0.4
 	github.com/free5gc/util v1.0.3
 	github.com/gin-contrib/cors v1.3.1
-	github.com/gin-gonic/gin v1.7.3
+	github.com/gin-gonic/gin v1.7.7
 	github.com/golang-jwt/jwt v3.2.1+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/pkg/errors v0.9.1
