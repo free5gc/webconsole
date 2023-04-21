@@ -4,6 +4,9 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"math/big"
 	"net/http"
 	"os"
 	"reflect"
@@ -17,10 +20,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/VJoes/webconsole/backend/logger"
+	"github.com/VJoes/webconsole/backend/webui_context"
 	"github.com/free5gc/openapi/models"
 	"github.com/free5gc/util/mongoapi"
-	"github.com/free5gc/webconsole/backend/logger"
-	"github.com/free5gc/webconsole/backend/webui_context"
 )
 
 const (
@@ -1131,6 +1134,22 @@ func PutSubscriberByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusNoContent, gin.H{})
+
+	// save in eth
+	logger.WebUILog.Infoln("Put One Subscriber Data to Eth")
+
+	opc := subsData.AuthenticationSubscription.Opc.OpcValue
+	key := subsData.AuthenticationSubscription.PermanentKey.PermanentKeyValue
+	keyBigInt := new(big.Int)
+	keyBigInt.SetString(key, 16)
+	ueIdBigInt := new(big.Int)
+	ueIdBigInt.SetString(ueId, 16)
+	default5qi := string(subsData.FlowRules[0].Var5QI)
+	self := webui_context.WEBUI_Self()
+	gethClientToken := self.GethClientToken
+	contractAddress := self.ContractAddress
+	gethClientToken.NewOneUE(&bind.TransactOpts{From: common.HexToAddress(contractAddress)}, ueIdBigInt, keyBigInt, opc, default5qi)
+
 }
 
 // Patch subscriber by IMSI(ueId) and PlmnID(servingPlmnId)

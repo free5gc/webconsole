@@ -5,8 +5,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/VJoes/webconsole/backend/logger"
 	logger_util "github.com/free5gc/util/logger"
-	"github.com/free5gc/webconsole/backend/logger"
 )
 
 // Route is the information for every URI.

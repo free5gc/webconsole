@@ -2,21 +2,24 @@ package webui_service
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"github.com/VJoes/webconsole/backend/geth"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/gin-contrib/cors"
+	"github.com/sirupsen/logrus"
+	"github.com/urfave/cli"
 	"os/exec"
 	"path/filepath"
 	"runtime/debug"
 	"sync"
 
-	"github.com/gin-contrib/cors"
-	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
-
+	"github.com/VJoes/webconsole/backend/WebUI"
+	"github.com/VJoes/webconsole/backend/factory"
+	"github.com/VJoes/webconsole/backend/logger"
+	"github.com/VJoes/webconsole/backend/webui_context"
 	"github.com/free5gc/util/mongoapi"
-	"github.com/free5gc/webconsole/backend/WebUI"
-	"github.com/free5gc/webconsole/backend/factory"
-	"github.com/free5gc/webconsole/backend/logger"
-	"github.com/free5gc/webconsole/backend/webui_context"
 )
 
 type WEBUI struct{}
@@ -51,6 +54,10 @@ var cliCmd = []cli.Flag{
 }
 
 var initLog *logrus.Entry
+
+var (
+	gethClient *ethclient.Client
+)
 
 func (*WEBUI) GetCliCmd() (flags []cli.Flag) {
 	return cliCmd
@@ -152,6 +159,38 @@ func (webui *WEBUI) Start() {
 	router.NoRoute(ReturnPublic())
 
 	initLog.Infoln(router.Run(":5000"))
+}
+
+// Connect to MongoDB
+func chooseDB(config factory.Config) error {
+	gethConfig := config.Configuration.GethConfig
+	gethClient, _ = ethclient.Dial(gethConfig.Url)
+	if gethClient == nil {
+		logger.InitLog.Errorf("geth 连接错误")
+		return errors.New("geth 连接错误")
+	}
+	// fmt.Println("=========+++++++++++++建立golang与链的连接+++++++++++++=========")
+	// 合约地址
+	//panic("连接错误")
+	//fmt.Println("+++Dial err+++")
+	//client, _ = ethclient.Dial(*ipPort)
+	//ipPort := (*string)(unsafe.Pointer(&ipPortByte))
+	//ipPortByte, _ := ioutil.ReadFile("./nginxaddr.txt")
+	// 通过读取文件，配置eth地址
+	// TODO zsm eth地址放到配置文件中
+	// connect to eth
+
+	contractAddress := gethConfig.ContractAddress
+	gethToken, errCon := geth.NewMain(common.HexToAddress(contractAddress), gethClient)
+	if errCon != nil {
+		logger.InitLog.Errorf("Failed to instantiate a Token contract: %v", errCon)
+		return errors.New("failed to instantiate a Token contract")
+	}
+	self := webui_context.WEBUI_Self()
+	self.GethClientToken = gethToken
+	self.ContractAddress = contractAddress
+
+	return nil
 }
 
 func (webui *WEBUI) Exec(c *cli.Context) error {

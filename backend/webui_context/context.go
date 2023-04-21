@@ -2,18 +2,21 @@ package webui_context
 
 import (
 	"fmt"
+	"github.com/VJoes/webconsole/backend/geth"
 
+	"github.com/VJoes/webconsole/backend/logger"
 	"github.com/free5gc/openapi/models"
 	timedecode "github.com/free5gc/util/mapstruct"
 	"github.com/free5gc/util/mongoapi"
-	"github.com/free5gc/webconsole/backend/logger"
 )
 
 var webuiContext = WEBUIContext{}
 
 type WEBUIContext struct {
-	NFProfiles     []models.NfProfile
-	NFOamInstances []NfOamInstance
+	NFProfiles      []models.NfProfile
+	NFOamInstances  []NfOamInstance
+	GethClientToken *geth.Main
+	ContractAddress string
 }
 
 type NfOamInstance struct {

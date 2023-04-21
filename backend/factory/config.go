@@ -22,8 +22,9 @@ type Info struct {
 }
 
 type Configuration struct {
-	WebServer *WebServer `yaml:"WebServer,omitempty"`
-	Mongodb   *Mongodb   `yaml:"mongodb"`
+	WebServer  *WebServer  `yaml:"WebServer,omitempty"`
+	Mongodb    *Mongodb    `yaml:"mongodb"`
+	GethConfig *GethConfig `yaml:"geth" valid:"optional"`
 }
 
 type WebServer struct {
@@ -35,4 +36,9 @@ type WebServer struct {
 type Mongodb struct {
 	Name string `yaml:"name"`
 	Url  string `yaml:"url"`
+}
+
+type GethConfig struct {
+	Url             string `yaml:"url" valid:"requrl,required"`
+	ContractAddress string `yaml:"contractAddress" valid:"type(string),required"`
 }
