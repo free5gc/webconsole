@@ -6,9 +6,9 @@ import (
 
 	"github.com/urfave/cli"
 
+	"github.com/VJoes/webconsole/backend/logger"
+	"github.com/VJoes/webconsole/backend/webui_service"
 	"github.com/free5gc/util/version"
-	"github.com/free5gc/webconsole/backend/logger"
-	"github.com/free5gc/webconsole/backend/webui_service"
 )
 
 var WEBUI = &webui_service.WEBUI{}

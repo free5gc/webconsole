@@ -159,6 +159,7 @@ func (webui *WEBUI) Start() {
 	router.NoRoute(ReturnPublic())
 
 	initLog.Infoln(router.Run(":5000"))
+	chooseDB(factory.WebUIConfig)
 }
 
 // Connect to MongoDB

@@ -13,10 +13,13 @@ import (
 var webuiContext = WEBUIContext{}
 
 type WEBUIContext struct {
-	NFProfiles      []models.NfProfile
-	NFOamInstances  []NfOamInstance
-	GethClientToken *geth.Main
-	ContractAddress string
+	NFProfiles         []models.NfProfile
+	NFOamInstances     []NfOamInstance
+	GethClientToken    *geth.Main
+	ContractAddress    string
+	CoreNetworkAddress string
+	GethPassword       string
+	KeyStore           string
 }
 
 type NfOamInstance struct {

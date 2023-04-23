@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/antonfisher/nested-logrus-formatter v1.3.1
-	github.com/ethereum/go-ethereum v1.11.5
+	github.com/ethereum/go-ethereum v1.9.11
 	github.com/free5gc/openapi v1.0.4
 	github.com/free5gc/util v1.0.3
 	github.com/gin-contrib/cors v1.3.1

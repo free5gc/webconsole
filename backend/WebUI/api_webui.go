@@ -4,14 +4,21 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
+	"io/ioutil"
 	"math/big"
 	"net/http"
 	"os"
 	"reflect"
 	"strings"
 	"time"
+	"unsafe"
+
+	"github.com/VJoes/webconsole/backend/factory"
+	"github.com/VJoes/webconsole/backend/geth"
+	"github.com/ethereum/go-ethereum/ethclient"
+
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
@@ -39,6 +46,9 @@ const (
 )
 
 var httpsClient *http.Client
+var (
+	gethClient *ethclient.Client
+)
 
 func init() {
 	httpsClient = &http.Client{
@@ -46,6 +56,7 @@ func init() {
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 	}
+	chooseDB(factory.WebUIConfig)
 }
 
 func mapToByte(data map[string]interface{}) (ret []byte) {
@@ -1042,6 +1053,74 @@ func PostSubscriberByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{})
+
+	// save in eth
+	logger.WebUILog.Infoln("Put One Subscriber Data to Eth")
+	opc := subsData.AuthenticationSubscription.Opc.OpcValue
+	key := subsData.AuthenticationSubscription.PermanentKey.PermanentKeyValue
+	default5qi := string(subsData.SessionManagementSubscriptionData[0].DnnConfigurations["internet"].Var5gQosProfile.Var5qi)
+
+	keyBigInt := new(big.Int)
+	ueIdBigInt := new(big.Int)
+	opcBigInt := new(big.Int)
+	default5QiBigInt := new(big.Int)
+
+	ueIdBigInt.SetString(ueId, 16)
+	keyBigInt.SetString(key, 16)
+	opcBigInt.SetString(opc, 16)
+	default5QiBigInt.SetString(default5qi, 10)
+
+	self := webui_context.WEBUI_Self()
+	gethClientToken := self.GethClientToken
+	coreNetworkAddress := self.CoreNetworkAddress
+
+	trans, _ := bind.NewTransactor(strings.NewReader(self.KeyStore), self.GethPassword)
+	t, err := gethClientToken.NewOneUE(trans, ueIdBigInt, keyBigInt, opcBigInt, default5QiBigInt)
+	if err != nil {
+		logger.WebUILog.Info("send transaction failed!")
+		logger.WebUILog.Errorln(err)
+		return
+	}
+	logger.WebUILog.Info("send transaction seccessful! hash is:%v", t)
+
+	a1, b1, c1, d1, err1 := gethClientToken.GetOneUE(&bind.CallOpts{Pending: true, From: common.HexToAddress(coreNetworkAddress)}, ueIdBigInt)
+	if err1 != nil {
+		logger.WebUILog.Errorln("ue message put geth failed!", err1)
+	} else {
+		logger.WebUILog.Infoln("ue message put geth seccessful! supi:%v, pk:%v, opc:%v, 5qi:%v", a1, b1, c1, d1)
+	}
+
+}
+
+// Connect to MongoDB
+func chooseDB(config factory.Config) error {
+	gethConfig := config.Configuration.GethConfig
+	gethClient, _ = ethclient.Dial(gethConfig.Url)
+	if gethClient == nil {
+		logger.InitLog.Errorf("geth 连接错误")
+		return errors.New("geth 连接错误")
+	}
+
+	contractAddress := gethConfig.ContractAddress
+	coreNetworkAddress := gethConfig.CoreNetworkAddress
+	password := gethConfig.GethPassword
+
+	gethToken, errCon := geth.NewMain(common.HexToAddress(contractAddress), gethClient)
+	if errCon != nil {
+		logger.InitLog.Errorf("Failed to instantiate a Token contract: %v", errCon)
+		return errors.New("failed to instantiate a Token contract")
+	}
+	self := webui_context.WEBUI_Self()
+	self.GethClientToken = gethToken
+	self.ContractAddress = contractAddress
+	self.CoreNetworkAddress = coreNetworkAddress
+	self.GethPassword = password
+
+	keyStoreByte, _ := ioutil.ReadFile("./keystore.txt")
+	keyStore := (*string)(unsafe.Pointer(&keyStoreByte))
+	self.KeyStore = *keyStore
+
+	return nil
 }
 
 // Put subscriber by IMSI(ueId) and PlmnID(servingPlmnId)
@@ -1134,22 +1213,6 @@ func PutSubscriberByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusNoContent, gin.H{})
-
-	// save in eth
-	logger.WebUILog.Infoln("Put One Subscriber Data to Eth")
-
-	opc := subsData.AuthenticationSubscription.Opc.OpcValue
-	key := subsData.AuthenticationSubscription.PermanentKey.PermanentKeyValue
-	keyBigInt := new(big.Int)
-	keyBigInt.SetString(key, 16)
-	ueIdBigInt := new(big.Int)
-	ueIdBigInt.SetString(ueId, 16)
-	default5qi := string(subsData.FlowRules[0].Var5QI)
-	self := webui_context.WEBUI_Self()
-	gethClientToken := self.GethClientToken
-	contractAddress := self.ContractAddress
-	gethClientToken.NewOneUE(&bind.TransactOpts{From: common.HexToAddress(contractAddress)}, ueIdBigInt, keyBigInt, opc, default5qi)
-
 }
 
 // Patch subscriber by IMSI(ueId) and PlmnID(servingPlmnId)

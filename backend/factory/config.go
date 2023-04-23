@@ -39,6 +39,8 @@ type Mongodb struct {
 }
 
 type GethConfig struct {
-	Url             string `yaml:"url" valid:"requrl,required"`
-	ContractAddress string `yaml:"contractAddress" valid:"type(string),required"`
+	Url                string `yaml:"url" valid:"requrl,required"`
+	ContractAddress    string `yaml:"contractAddress" valid:"type(string),required"`
+	CoreNetworkAddress string `yaml:"coreNetworkAddress" valid:"type(string),required"`
+	GethPassword       string `yaml:"gethPassword" valid:"type(string),required"`
 }
