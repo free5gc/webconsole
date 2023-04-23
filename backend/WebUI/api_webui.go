@@ -4,18 +4,13 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"math/big"
 	"net/http"
 	"os"
 	"reflect"
 	"strings"
 	"time"
-	"unsafe"
-
-	"github.com/VJoes/webconsole/backend/factory"
-	"github.com/VJoes/webconsole/backend/geth"
-	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -56,7 +51,84 @@ func init() {
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 	}
-	chooseDB(factory.WebUIConfig)
+}
+
+type gethData struct {
+	Supi       string
+	Key        string
+	Opc        string
+	Default5qi string
+}
+
+func (data5g *gethData) addOne() error {
+	self := webui_context.WEBUI_Self()
+	gethClientToken := self.GethClientToken
+
+	keyBigInt := new(big.Int)
+	ueIdBigInt := new(big.Int)
+	opcBigInt := new(big.Int)
+	default5QiBigInt := new(big.Int)
+
+	ueIdBigInt.SetString(data5g.Supi, 16)
+	keyBigInt.SetString(data5g.Key, 16)
+	opcBigInt.SetString(data5g.Opc, 16)
+	default5QiBigInt.SetString(data5g.Default5qi, 10)
+
+	trans, _ := bind.NewTransactor(strings.NewReader(self.KeyStore), self.GethPassword)
+	t, err := gethClientToken.NewOneUE(trans, ueIdBigInt, keyBigInt, opcBigInt, default5QiBigInt)
+	if err != nil {
+		logger.WebUILog.Errorln("send add transaction failed! err:", err)
+		return errors.New("send add transaction failed!")
+	}
+
+	logger.WebUILog.Info("send add transaction seccessful! hash is:%v", t)
+
+	return nil
+}
+
+func (data5g *gethData) getOneBySupi() (gethData, error) {
+	self := webui_context.WEBUI_Self()
+	gethClientToken := self.GethClientToken
+	coreNetworkAddress := self.CoreNetworkAddress
+
+	ueIdBigInt := new(big.Int)
+	ueIdBigInt.SetString(data5g.Supi, 16)
+
+	supi, key, opc, d5qi, err := gethClientToken.GetUEbySUPI(
+		&bind.CallOpts{Pending: true, From: common.HexToAddress(coreNetworkAddress)}, ueIdBigInt)
+	if err != nil {
+		logger.WebUILog.Errorln("ue message put geth failed!", err)
+		return gethData{}, errors.New("ue message put geth failed!")
+	}
+
+	logger.WebUILog.Infoln("ue message put geth seccessful! supi:%v, pk:%v, opc:%v, 5qi:%v", supi, key, opc, d5qi)
+
+	return gethData{
+		supi.String(),
+		key.String(),
+		opc.String(),
+		d5qi.String(),
+	}, nil
+}
+
+func (data5g *gethData) deleteOne() error {
+	self := webui_context.WEBUI_Self()
+
+	gethClientToken := self.GethClientToken
+
+	ueIdBigInt := new(big.Int)
+	ueIdBigInt.SetString(data5g.Supi, 16)
+
+	trans, _ := bind.NewTransactor(strings.NewReader(self.KeyStore), self.GethPassword)
+	t, err := gethClientToken.DeleteOneUE(trans, ueIdBigInt)
+	if err != nil {
+		logger.WebUILog.Info("send delete transaction failed!")
+		return errors.New("send delete transaction failed!")
+	}
+
+	logger.WebUILog.Info("send delete transaction seccessful! hash is:%v", t)
+
+	return nil
 }
 
 func mapToByte(data map[string]interface{}) (ret []byte) {
@@ -1055,72 +1127,30 @@ func PostSubscriberByID(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{})
 
 	// save in eth
-	logger.WebUILog.Infoln("Put One Subscriber Data to Eth")
+	logger.WebUILog.Infoln("Post One Subscriber Data to Eth")
+
 	opc := subsData.AuthenticationSubscription.Opc.OpcValue
 	key := subsData.AuthenticationSubscription.PermanentKey.PermanentKeyValue
 	default5qi := string(subsData.SessionManagementSubscriptionData[0].DnnConfigurations["internet"].Var5gQosProfile.Var5qi)
+	var data5g = gethData{
+		Supi: ueId,
+		Key: key,
+		Opc: opc,
+		Default5qi: default5qi,
+	}
 
-	keyBigInt := new(big.Int)
-	ueIdBigInt := new(big.Int)
-	opcBigInt := new(big.Int)
-	default5QiBigInt := new(big.Int)
-
-	ueIdBigInt.SetString(ueId, 16)
-	keyBigInt.SetString(key, 16)
-	opcBigInt.SetString(opc, 16)
-	default5QiBigInt.SetString(default5qi, 10)
-
-	self := webui_context.WEBUI_Self()
-	gethClientToken := self.GethClientToken
-	coreNetworkAddress := self.CoreNetworkAddress
-
-	trans, _ := bind.NewTransactor(strings.NewReader(self.KeyStore), self.GethPassword)
-	t, err := gethClientToken.NewOneUE(trans, ueIdBigInt, keyBigInt, opcBigInt, default5QiBigInt)
-	if err != nil {
-		logger.WebUILog.Info("send transaction failed!")
-		logger.WebUILog.Errorln(err)
+	e := data5g.addOne()
+	if e != nil {
+		logger.WebUILog.Errorln("send transaction failed!")
 		return
 	}
-	logger.WebUILog.Info("send transaction seccessful! hash is:%v", t)
 
-	a1, b1, c1, d1, err1 := gethClientToken.GetOneUE(&bind.CallOpts{Pending: true, From: common.HexToAddress(coreNetworkAddress)}, ueIdBigInt)
-	if err1 != nil {
-		logger.WebUILog.Errorln("ue message put geth failed!", err1)
+	newData5qi, err2 := data5g.getOneBySupi()
+	if err2 != nil {
+		logger.WebUILog.Errorln("ue message put geth failed!", err2)
 	} else {
-		logger.WebUILog.Infoln("ue message put geth seccessful! supi:%v, pk:%v, opc:%v, 5qi:%v", a1, b1, c1, d1)
+		logger.WebUILog.Infoln("ue message put geth seccessful! data: ", newData5qi)
 	}
-
-}
-
-// Connect to MongoDB
-func chooseDB(config factory.Config) error {
-	gethConfig := config.Configuration.GethConfig
-	gethClient, _ = ethclient.Dial(gethConfig.Url)
-	if gethClient == nil {
-		logger.InitLog.Errorf("geth 连接错误")
-		return errors.New("geth 连接错误")
-	}
-
-	contractAddress := gethConfig.ContractAddress
-	coreNetworkAddress := gethConfig.CoreNetworkAddress
-	password := gethConfig.GethPassword
-
-	gethToken, errCon := geth.NewMain(common.HexToAddress(contractAddress), gethClient)
-	if errCon != nil {
-		logger.InitLog.Errorf("Failed to instantiate a Token contract: %v", errCon)
-		return errors.New("failed to instantiate a Token contract")
-	}
-	self := webui_context.WEBUI_Self()
-	self.GethClientToken = gethToken
-	self.ContractAddress = contractAddress
-	self.CoreNetworkAddress = coreNetworkAddress
-	self.GethPassword = password
-
-	keyStoreByte, _ := ioutil.ReadFile("./keystore.txt")
-	keyStore := (*string)(unsafe.Pointer(&keyStoreByte))
-	self.KeyStore = *keyStore
-
-	return nil
 }
 
 // Put subscriber by IMSI(ueId) and PlmnID(servingPlmnId)
@@ -1213,6 +1243,30 @@ func PutSubscriberByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusNoContent, gin.H{})
+	logger.WebUILog.Infoln("Put One Subscriber Data to Geth")
+
+	opc := subsData.AuthenticationSubscription.Opc.OpcValue
+	key := subsData.AuthenticationSubscription.PermanentKey.PermanentKeyValue
+	default5qi := string(subsData.SessionManagementSubscriptionData[0].DnnConfigurations["internet"].Var5gQosProfile.Var5qi)
+	var data5g = gethData{
+		Supi: ueId,
+		Key: key,
+		Opc: opc,
+		Default5qi: default5qi,
+	}
+
+	e := data5g.addOne()
+	if e != nil {
+		logger.WebUILog.Errorln("send transaction failed!")
+		return
+	}
+
+	newData5qi, err2 := data5g.getOneBySupi()
+	if err2 != nil {
+		logger.WebUILog.Errorln("ue message put geth failed!", err2)
+	} else {
+		logger.WebUILog.Infoln("ue message put geth seccessful! data: ", newData5qi)
+	}
 }
 
 // Patch subscriber by IMSI(ueId) and PlmnID(servingPlmnId)
@@ -1326,6 +1380,18 @@ func DeleteSubscriberByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusNoContent, gin.H{})
+
+	// delete
+	logger.WebUILog.Infoln("Delete One Subscriber Data from Geth")
+	var data5g = gethData{
+		Supi: ueId,
+	}
+
+	err := data5g.deleteOne()
+	if err != nil {
+		logger.WebUILog.Errorln("delete ue failed!")
+		return
+	}
 }
 
 func GetRegisteredUEContext(c *gin.Context) {

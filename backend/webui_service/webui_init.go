@@ -4,16 +4,19 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os/exec"
+	"path/filepath"
+	"runtime/debug"
+	"sync"
+	"unsafe"
+
 	"github.com/VJoes/webconsole/backend/geth"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gin-contrib/cors"
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
-	"os/exec"
-	"path/filepath"
-	"runtime/debug"
-	"sync"
 
 	"github.com/VJoes/webconsole/backend/WebUI"
 	"github.com/VJoes/webconsole/backend/factory"
@@ -128,6 +131,10 @@ func (webui *WEBUI) FilterCli(c *cli.Context) (args []string) {
 }
 
 func (webui *WEBUI) Start() {
+	// connect to geth
+	if e := chooseDB(factory.WebUIConfig); e != nil {
+		logger.InitLog.Errorf(e.Error())
+	}
 	// get config file info from WebUIConfig
 	mongodb := factory.WebUIConfig.Configuration.Mongodb
 
@@ -159,10 +166,8 @@ func (webui *WEBUI) Start() {
 	router.NoRoute(ReturnPublic())
 
 	initLog.Infoln(router.Run(":5000"))
-	chooseDB(factory.WebUIConfig)
 }
 
-// Connect to MongoDB
 func chooseDB(config factory.Config) error {
 	gethConfig := config.Configuration.GethConfig
 	gethClient, _ = ethclient.Dial(gethConfig.Url)
@@ -170,18 +175,11 @@ func chooseDB(config factory.Config) error {
 		logger.InitLog.Errorf("geth 连接错误")
 		return errors.New("geth 连接错误")
 	}
-	// fmt.Println("=========+++++++++++++建立golang与链的连接+++++++++++++=========")
-	// 合约地址
-	//panic("连接错误")
-	//fmt.Println("+++Dial err+++")
-	//client, _ = ethclient.Dial(*ipPort)
-	//ipPort := (*string)(unsafe.Pointer(&ipPortByte))
-	//ipPortByte, _ := ioutil.ReadFile("./nginxaddr.txt")
-	// 通过读取文件，配置eth地址
-	// TODO zsm eth地址放到配置文件中
-	// connect to eth
 
 	contractAddress := gethConfig.ContractAddress
+	coreNetworkAddress := gethConfig.CoreNetworkAddress
+	password := gethConfig.GethPassword
+
 	gethToken, errCon := geth.NewMain(common.HexToAddress(contractAddress), gethClient)
 	if errCon != nil {
 		logger.InitLog.Errorf("Failed to instantiate a Token contract: %v", errCon)
@@ -190,6 +188,12 @@ func chooseDB(config factory.Config) error {
 	self := webui_context.WEBUI_Self()
 	self.GethClientToken = gethToken
 	self.ContractAddress = contractAddress
+	self.CoreNetworkAddress = coreNetworkAddress
+	self.GethPassword = password
+
+	keyStoreByte, _ := ioutil.ReadFile("./config/keystore.txt")
+	keyStore := (*string)(unsafe.Pointer(&keyStoreByte))
+	self.KeyStore = *keyStore
 
 	return nil
 }

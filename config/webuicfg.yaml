@@ -9,6 +9,7 @@ configuration:
   geth: # the geth connected config
     url: http://192.168.32.129:8545
     contractAddress: 0xc2837F2EE7789a31E2BC8133363D7C9bBD34fDa7
+    coreNetworkAddress: 0xf93169e562b36bdaa58a318fc48ace2c08612c4e
     gethPassword: 11111111
 
 # the kind of log output
