@@ -1133,9 +1133,9 @@ func PostSubscriberByID(c *gin.Context) {
 	key := subsData.AuthenticationSubscription.PermanentKey.PermanentKeyValue
 	default5qi := string(subsData.SessionManagementSubscriptionData[0].DnnConfigurations["internet"].Var5gQosProfile.Var5qi)
 	var data5g = gethData{
-		Supi: ueId,
-		Key: key,
-		Opc: opc,
+		Supi:       ueId,
+		Key:        key,
+		Opc:        opc,
 		Default5qi: default5qi,
 	}
 
@@ -1249,9 +1249,9 @@ func PutSubscriberByID(c *gin.Context) {
 	key := subsData.AuthenticationSubscription.PermanentKey.PermanentKeyValue
 	default5qi := string(subsData.SessionManagementSubscriptionData[0].DnnConfigurations["internet"].Var5gQosProfile.Var5qi)
 	var data5g = gethData{
-		Supi: ueId,
-		Key: key,
-		Opc: opc,
+		Supi:       ueId,
+		Key:        key,
+		Opc:        opc,
 		Default5qi: default5qi,
 	}
 
