@@ -9,7 +9,7 @@ import (
 	"github.com/free5gc/webconsole/backend/logger"
 )
 
-var webuiContext = WEBUIContext{}
+var webuiContext WEBUIContext
 
 type WEBUIContext struct {
 	NFProfiles     []models.NfProfile
@@ -22,18 +22,15 @@ type NfOamInstance struct {
 	Uri    string
 }
 
-func init() {
-}
-
 func (context *WEBUIContext) UpdateNfProfiles() {
 	nfProfilesRaw, err := mongoapi.RestfulAPIGetMany("NfProfile", nil)
 	if err != nil {
-		logger.ContextLog.Error(err)
+		logger.CtxLog.Error(err)
 		return
 	}
 	var nfProfiles []models.NfProfile
 	if err := timedecode.Decode(nfProfilesRaw, &nfProfiles); err != nil {
-		logger.ContextLog.Error(err)
+		logger.CtxLog.Error(err)
 		return
 	}
 
@@ -105,7 +102,7 @@ func (context *WEBUIContext) GetOamUris(targetNfType models.NfType) (uris []stri
 	return
 }
 
-func WEBUI_Self() *WEBUIContext {
+func GetSelf() *WEBUIContext {
 	return &webuiContext
 }
 

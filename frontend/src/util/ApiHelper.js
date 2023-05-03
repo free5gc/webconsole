@@ -1,5 +1,5 @@
 import Http from './Http';
-import {store} from '../index';
+import { store } from '../index';
 import subscriberActions from "../redux/actions/subscriberActions";
 import Subscriber from "../models/Subscriber";
 import tenantActions from "../redux/actions/tenantActions";
@@ -17,7 +17,7 @@ class ApiHelper {
       axios.defaults.headers.common['Token'] = user.accessToken;
       let response = await Http.get('subscriber');
       if (response.status === 200 && response.data) {
-        const subscribers = response.data.map(val => new Subscriber(val['ueId'], val['plmnID']));
+        const subscribers = response.data.map(val => new Subscriber(val['ueId'], val['plmnID'], val['msisdn']));
         store.dispatch(subscriberActions.setSubscribers(subscribers));
         return true;
       }
@@ -44,7 +44,7 @@ class ApiHelper {
       let user = LocalStorageHelper.getUserInfo();
       axios.defaults.headers.common['Token'] = user.accessToken;
       let response = await Http.post(
-        `subscriber/${subscriberData["ueId"]}/${subscriberData["plmnID"]}`, subscriberData);
+        `subscriber/${subscriberData["ueId"]}/${subscriberData["plmnID"]}/${subscriberData["userNumber"]}`, subscriberData);
       if (response.status === 201)
         return true;
     } catch (error) {

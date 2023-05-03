@@ -29,28 +29,44 @@ class SubscriberOverview extends Component {
    */
   async openEditSubscriber(subscriberId, plmn) {
     const subscriber = await ApiHelper.fetchSubscriberById(subscriberId, plmn);
-
+    let origiData = subscriber;
+    if (subscriber.FlowRules !== undefined && subscriber.FlowRules !== null) {
+      subscriber.FlowRules.forEach(FlowRule => {
+        let i = 0;
+        subscriber.QosFlows.forEach(QosFlow => {
+          if (QosFlow.snssai === FlowRule.snssai &&
+            QosFlow.dnn === FlowRule.dnn &&
+            QosFlow["5qi"] === FlowRule.qfi) {
+            if (origiData.QosFlows[i].flowRules === undefined) {
+              origiData.QosFlows[i].flowRules = [];
+            }
+            origiData.QosFlows[i].flowRules.push(Object.assign({ precedence: FlowRule.precedence, filter: FlowRule.filter }))
+          }
+          i++;
+        })
+      });
+    }
+    delete origiData.FlowRules;
     this.setState({
       subscriberModalOpen: true,
-      subscriberModalData: subscriber,
+      subscriberModalData: origiData,
     });
   }
 
   async addSubscriber(subscriberData) {
     this.setState({ subscriberModalOpen: false });
     let userNumber = subscriberData["userNumber"];
-    delete subscriberData["userNumber"];
-    let imsiLength = subscriberData["ueId"].length - 5
-    let imsi = subscriberData["ueId"].substr(5, imsiLength);
-    for(let i = 0; i < userNumber; i++){
-      let newImsi = (Number(imsi) + i).toString();
-      newImsi = newImsi.padStart(imsiLength, '0')
-      subscriberData["ueId"] = `imsi-${newImsi}`;
-      if (!await ApiHelper.createSubscriber(subscriberData)) {
+
+    if (!await ApiHelper.createSubscriber(subscriberData)) {
+      if (userNumber > 1) {
+        alert("Error creating new multiple subscribers when create user");
+      }
+      else if (userNumber === 1) {
         alert("Error creating new subscriber when create user");
       }
-      ApiHelper.fetchSubscribers().then();
     }
+    delete subscriberData["userNumber"];
+    ApiHelper.fetchSubscribers().then();
   }
 
   /**
@@ -99,7 +115,8 @@ class SubscriberOverview extends Component {
                   <thead>
                     <tr>
                       <th style={{ width: 80 }}>PLMN</th>
-                      <th colSpan={2}>UE ID</th>
+                      <th>UE ID</th>
+                      <th>MSISDN</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -107,10 +124,11 @@ class SubscriberOverview extends Component {
                       <tr key={subscriber.id}>
                         <td>{subscriber.plmn}</td>
                         <td>{subscriber.id}</td>
+                        <td>{subscriber.msisdn}</td>
                         <td style={{ textAlign: 'center' }}>
                           <Button variant="danger" onClick={this.deleteSubscriber.bind(this, subscriber)}>Delete</Button>
-                         &nbsp;&nbsp;&nbsp;&nbsp;
-                        <Button variant="info" onClick={this.openEditSubscriber.bind(this, subscriber.id, subscriber.plmn)}>Modify</Button>
+                          &nbsp;&nbsp;&nbsp;&nbsp;
+                          <Button variant="info" onClick={this.openEditSubscriber.bind(this, subscriber.id, subscriber.plmn)}>Modify</Button>
                         </td>
                       </tr>
                     ))}

@@ -13,7 +13,7 @@ class TasksOverview extends Component {
     this.targetDownloaded = false;
   }
 
-  componentWillMount() {
+  componentDidMount() {
     this.refreshEnabled = true;
     this.updateTasksTable().then();
   }
@@ -22,8 +22,8 @@ class TasksOverview extends Component {
     this.refreshEnabled = false;
   }
 
-  componentWillReceiveProps(nextProps) {
-    let urlParams = queryString.parse(this.props.location.search);
+  static getDerivedStateFromProps(nextProps, prevState){
+    let urlParams = queryString.parse(nextProps.location.search);
 
     if (urlParams['target'] !== undefined) {
       let dashedUuid = AppUtils.dashUuid(urlParams['target']);

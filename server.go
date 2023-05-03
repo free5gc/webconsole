@@ -1,50 +1,94 @@
 package main
 
 import (
-	"fmt"
 	"os"
+	"path/filepath"
+	"runtime/debug"
 
 	"github.com/urfave/cli"
 
+	logger_util "github.com/free5gc/util/logger"
 	"github.com/free5gc/util/version"
+	"github.com/free5gc/webconsole/backend/factory"
 	"github.com/free5gc/webconsole/backend/logger"
 	"github.com/free5gc/webconsole/backend/webui_service"
 )
 
-var WEBUI = &webui_service.WEBUI{}
+var WEBUI *webui_service.WebuiApp
 
 func main() {
+	defer func() {
+		if p := recover(); p != nil {
+			// Print stack for panic to log. Fatalf() will let program exit.
+			logger.MainLog.Fatalf("panic: %v\n%s", p, string(debug.Stack()))
+		}
+	}()
 	app := cli.NewApp()
 	app.Name = "webui"
 	app.Usage = "free5GC Web Console"
 	app.Action = action
-	app.Flags = WEBUI.GetCliCmd()
+	app.Flags = []cli.Flag{
+		cli.StringFlag{
+			Name:  "config, c",
+			Usage: "Load configuration from `FILE`",
+		},
+		cli.StringSliceFlag{
+			Name:  "log, l",
+			Usage: "Output NF log to `FILE`",
+		},
+	}
 	if err := app.Run(os.Args); err != nil {
-		logger.AppLog.Errorf("Web Console Run error: %v", err)
+		logger.MainLog.Errorf("WEBUI Run error: %v\n", err)
 	}
 }
 
-func action(c *cli.Context) error {
-	if err := initLogFile(c.String("log"), c.String("log5gc")); err != nil {
-		logger.AppLog.Errorf("%+v", err)
+func action(cliCtx *cli.Context) error {
+	tlsKeyLogPath, err := initLogFile(cliCtx.StringSlice("log"))
+	if err != nil {
 		return err
 	}
 
-	if err := WEBUI.Initialize(c); err != nil {
-		return fmt.Errorf("Failed to initialize !! %+v", err)
+	logger.MainLog.Infoln("WEBUI version: ", version.GetVersion())
+
+	cfg, err := factory.ReadConfig(cliCtx.String("config"))
+	if err != nil {
+		return err
 	}
+	factory.WebuiConfig = cfg
 
-	logger.AppLog.Infoln(c.App.Name)
-	logger.AppLog.Infoln("webconsole version: ", version.GetVersion())
+	webui, err := webui_service.NewApp(cfg)
+	if err != nil {
+		return err
+	}
+	WEBUI = webui
 
-	WEBUI.Start()
+	webui.Start(tlsKeyLogPath)
 
 	return nil
 }
 
-func initLogFile(logNfPath, log5gcPath string) error {
-	if err := logger.LogFileHook(logNfPath, log5gcPath); err != nil {
-		return err
+func initLogFile(logNfPath []string) (string, error) {
+	logTlsKeyPath := ""
+
+	for _, path := range logNfPath {
+		if err := logger_util.LogFileHook(logger.Log, path); err != nil {
+			return "", err
+		}
+		if logTlsKeyPath != "" {
+			continue
+		}
+
+		nfDir, _ := filepath.Split(path)
+		tmpDir := filepath.Join(nfDir, "key")
+		if err := os.MkdirAll(tmpDir, 0o775); err != nil {
+			logger.InitLog.Errorf("Make directory %s failed: %+v", tmpDir, err)
+
+			return "", err
+		}
+
+		_, name := filepath.Split(factory.WebuiDefaultTLSKeyLogPath)
+		logTlsKeyPath = filepath.Join(tmpDir, name)
 	}
-	return nil
+
+	return logTlsKeyPath, nil
 }
