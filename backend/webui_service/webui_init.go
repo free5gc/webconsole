@@ -1,16 +1,11 @@
 package webui_service
 
 import (
-	"bufio"
-	"fmt"
-	"os/exec"
-	"path/filepath"
-	"runtime/debug"
-	"sync"
+	"io/ioutil"
+	"os"
 
 	"github.com/gin-contrib/cors"
 	"github.com/sirupsen/logrus"
-	"github.com/urfave/cli"
 
 	"github.com/free5gc/util/mongoapi"
 	"github.com/free5gc/webconsole/backend/WebUI"
@@ -19,118 +14,70 @@ import (
 	"github.com/free5gc/webconsole/backend/webui_context"
 )
 
-type WEBUI struct{}
-
-type (
-	// Commands information.
-	Commands struct {
-		config string
-		public string
-	}
-)
-
-var commands Commands
-
-var cliCmd = []cli.Flag{
-	cli.StringFlag{
-		Name:  "public, p",
-		Usage: "Load public path from `FOLDER`",
-	},
-	cli.StringFlag{
-		Name:  "config, c",
-		Usage: "Load configuration from `FILE`",
-	},
-	cli.StringFlag{
-		Name:  "log, l",
-		Usage: "Output NF log to `FILE`",
-	},
-	cli.StringFlag{
-		Name:  "log5gc, lc",
-		Usage: "Output free5gc log to `FILE`",
-	},
+type WebuiApp struct {
+	cfg      *factory.Config
+	webuiCtx *webui_context.WEBUIContext
 }
 
-var initLog *logrus.Entry
+func NewApp(cfg *factory.Config) (*WebuiApp, error) {
+	webui := &WebuiApp{cfg: cfg}
+	webui.SetLogEnable(cfg.GetLogEnable())
+	webui.SetLogLevel(cfg.GetLogLevel())
+	webui.SetReportCaller(cfg.GetLogReportCaller())
 
-func (*WEBUI) GetCliCmd() (flags []cli.Flag) {
-	return cliCmd
+	webui.webuiCtx = webui_context.GetSelf()
+	return webui, nil
 }
 
-func (webui *WEBUI) Initialize(c *cli.Context) error {
-	commands = Commands{
-		config: c.String("config"),
-		public: c.String("public"),
-	}
-
-	initLog = logger.InitLog
-
-	if commands.config != "" {
-		if err := factory.InitConfigFactory(commands.config); err != nil {
-			return err
-		}
-	} else {
-		if err := factory.InitConfigFactory("./config/webuicfg.yaml"); err != nil {
-			return err
-		}
-	}
-
-	if commands.public != "" {
-		PublicPath = filepath.Clean(commands.public)
-	}
-
-	webui.setLogLevel()
-
-	return nil
-}
-
-func (webui *WEBUI) setLogLevel() {
-	if factory.WebUIConfig.Logger == nil {
-		initLog.Warnln("Webconsole config without log level setting!!!")
+func (a *WebuiApp) SetLogEnable(enable bool) {
+	logger.MainLog.Infof("Log enable is set to [%v]", enable)
+	if enable && logger.Log.Out == os.Stderr {
+		return
+	} else if !enable && logger.Log.Out == ioutil.Discard {
 		return
 	}
-
-	if factory.WebUIConfig.Logger.WEBUI != nil {
-		if factory.WebUIConfig.Logger.WEBUI.DebugLevel != "" {
-			if level, err := logrus.ParseLevel(factory.WebUIConfig.Logger.WEBUI.DebugLevel); err != nil {
-				initLog.Warnf("WebUI Log level [%s] is invalid, set to [info] level",
-					factory.WebUIConfig.Logger.WEBUI.DebugLevel)
-				logger.SetLogLevel(logrus.InfoLevel)
-			} else {
-				initLog.Infof("WebUI Log level is set to [%s] level", level)
-				logger.SetLogLevel(level)
-			}
-		} else {
-			initLog.Warnln("WebUI Log level not set. Default set to [info] level")
-			logger.SetLogLevel(logrus.InfoLevel)
-		}
-		logger.SetReportCaller(factory.WebUIConfig.Logger.WEBUI.ReportCaller)
+	a.cfg.SetLogEnable(enable)
+	if enable {
+		logger.Log.SetOutput(os.Stderr)
+	} else {
+		logger.Log.SetOutput(ioutil.Discard)
 	}
 }
 
-func (webui *WEBUI) FilterCli(c *cli.Context) (args []string) {
-	for _, flag := range webui.GetCliCmd() {
-		name := flag.GetName()
-		value := fmt.Sprint(c.Generic(name))
-		if value == "" {
-			continue
-		}
-
-		args = append(args, "--"+name, value)
+func (a *WebuiApp) SetLogLevel(level string) {
+	lvl, err := logrus.ParseLevel(level)
+	if err != nil {
+		logger.MainLog.Warnf("Log level [%s] is invalid", level)
+		return
 	}
-	return args
+	logger.MainLog.Infof("Log level is set to [%s]", level)
+	if lvl == logger.Log.GetLevel() {
+		return
+	}
+	a.cfg.SetLogLevel(level)
+	logger.Log.SetLevel(lvl)
 }
 
-func (webui *WEBUI) Start() {
+func (a *WebuiApp) SetReportCaller(reportCaller bool) {
+	logger.MainLog.Infof("Report Caller is set to [%v]", reportCaller)
+	if reportCaller == logger.Log.ReportCaller {
+		return
+	}
+	a.cfg.SetLogReportCaller(reportCaller)
+	logger.Log.SetReportCaller(reportCaller)
+}
+
+func (a *WebuiApp) Start(tlsKeyLogPath string) {
 	// get config file info from WebUIConfig
-	mongodb := factory.WebUIConfig.Configuration.Mongodb
+	mongodb := factory.WebuiConfig.Configuration.Mongodb
 
 	// Connect to MongoDB
 	if err := mongoapi.SetMongoDB(mongodb.Name, mongodb.Url); err != nil {
-		initLog.Errorf("Server start err: %+v", err)
+		logger.InitLog.Errorf("Server start err: %+v", err)
 		return
 	}
 
-	initLog.Infoln("Server started")
+	logger.InitLog.Infoln("Server started")
 
 	router := WebUI.NewRouter()
 
@@ -146,79 +93,10 @@ func (webui *WEBUI) Start() {
 		MaxAge:           86400,
 	}))
 
-	self := webui_context.WEBUI_Self()
+	self := webui_context.GetSelf()
 	self.UpdateNfProfiles()
 
 	router.NoRoute(ReturnPublic())
 
-	initLog.Infoln(router.Run(":5000"))
-}
-
-func (webui *WEBUI) Exec(c *cli.Context) error {
-	initLog.Traceln("args:", c.String("webuicfg"))
-	args := webui.FilterCli(c)
-	initLog.Traceln("filter: ", args)
-	command := exec.Command("./webui", args...)
-
-	if err := webui.Initialize(c); err != nil {
-		return err
-	}
-
-	stdout, err := command.StdoutPipe()
-	if err != nil {
-		initLog.Fatalln(err)
-	}
-	wg := sync.WaitGroup{}
-	wg.Add(3)
-	go func() {
-		defer func() {
-			if p := recover(); p != nil {
-				// Print stack for panic to log. Fatalf() will let program exit.
-				logger.InitLog.Fatalf("panic: %v\n%s", p, string(debug.Stack()))
-			}
-		}()
-
-		in := bufio.NewScanner(stdout)
-		for in.Scan() {
-			fmt.Println(in.Text())
-		}
-		wg.Done()
-	}()
-
-	stderr, err := command.StderrPipe()
-	if err != nil {
-		initLog.Fatalln(err)
-	}
-	go func() {
-		defer func() {
-			if p := recover(); p != nil {
-				// Print stack for panic to log. Fatalf() will let program exit.
-				logger.InitLog.Fatalf("panic: %v\n%s", p, string(debug.Stack()))
-			}
-		}()
-
-		in := bufio.NewScanner(stderr)
-		for in.Scan() {
-			fmt.Println(in.Text())
-		}
-		wg.Done()
-	}()
-
-	go func() {
-		defer func() {
-			if p := recover(); p != nil {
-				// Print stack for panic to log. Fatalf() will let program exit.
-				logger.InitLog.Fatalf("panic: %v\n%s", p, string(debug.Stack()))
-			}
-		}()
-
-		if errCmd := command.Start(); errCmd != nil {
-			fmt.Println("command.Start Fails!")
-		}
-		wg.Done()
-	}()
-
-	wg.Wait()
-
-	return err
+	logger.InitLog.Infoln(router.Run(":5000"))
 }

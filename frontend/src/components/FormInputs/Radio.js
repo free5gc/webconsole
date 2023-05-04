@@ -6,8 +6,8 @@ import checkImage from 'assets/images/radio-2.svg';
 
 class Radio extends Component {
 
-  componentWillReceiveProps(props) {
-    console.log(props);
+  static getDerivedStateFromProps(nextProps, prevState){
+    console.log(nextProps);
   }
 
   render() {

@@ -166,6 +166,13 @@ var routes = Routes{
 	},
 
 	{
+		"PostMultiSubscriber",
+		http.MethodPost,
+		"/subscriber/:ueId/:servingPlmnId/:userNumber",
+		PostSubscriberByID,
+	},
+
+	{
 		"PutSubscriberByID",
 		http.MethodPut,
 		"/subscriber/:ueId/:servingPlmnId",

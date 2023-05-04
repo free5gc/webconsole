@@ -1,11 +1,18 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import registerServiceWorker from './registerServiceWorker';
+import {Provider} from 'react-redux';
 import {HashRouter} from 'react-router-dom';
-import './assets/styles/base.scss';
+
 import App from './pages/App';
 import configureStore from './config/configureStore';
-import {Provider} from 'react-redux';
+import registerServiceWorker from './registerServiceWorker';
+
+// dependency CSS
+import 'bootstrap/dist/css/bootstrap.min.css';
+import '@fortawesome/fontawesome-free/css/all.min.css';
+
+import './assets/styles/base.scss';
+
 
 export const store = configureStore();
 const rootElement = document.getElementById('root');

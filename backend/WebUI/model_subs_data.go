@@ -14,4 +14,5 @@ type SubsData struct {
 	AmPolicyData                      models.AmPolicyData                        `json:"AmPolicyData"`
 	SmPolicyData                      models.SmPolicyData                        `json:"SmPolicyData"`
 	FlowRules                         []FlowRule                                 `json:"FlowRules"`
+	QosFlows                          []QosFlow                                  `json:"QosFlows"`
 }
