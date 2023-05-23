@@ -16,6 +16,7 @@ import UEInfo from '../Dashboard';
 import UEInfoDetail from '../UEInfoDetail';
 import Tenants from '../Tenants';
 import Users from '../Users';
+import UEChargingRecord from '../UEChargingRecord';
 
 const Main = ({
                 mobileNavVisibility,
@@ -51,6 +52,7 @@ const Main = ({
           <Route exact path="/ueinfo/:id" component={UEInfoDetail}/>
           <Route exact path="/tenants" component={Tenants}/>
           <Route exact path="/users/:id" component={Users}/>
+          <Route exact path="/charging_record" component={UEChargingRecord}/>
 
           <Footer/>
         </div>

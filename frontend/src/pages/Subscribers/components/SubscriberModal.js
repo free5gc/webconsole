@@ -91,6 +91,41 @@ function smDatasFromSliceConfiguration(sliceConfiguration) {
   })
 }
 
+function chgDatasFromSliceConfiguration(sliceConfigurations) {
+  var chgDatas = []
+  sliceConfigurations.forEach(sliceConfiguration => {
+    chgDatas.push(
+      Object.assign(
+        { 
+          snssai: snssaiToString(sliceConfiguration.snssai),
+          level : "pdu"
+        },
+        sliceConfiguration.chargingData
+      )
+    )
+
+    sliceConfiguration.dnnConfigurations.forEach(dnnConfiguration => {
+      if (dnnConfiguration.flowRules !== undefined) {
+        dnnConfiguration.flowRules.forEach(flowRule => {
+          chgDatas.push(
+            Object.assign(
+              { 
+                snssai: snssaiToString(sliceConfiguration.snssai), 
+                dnn: dnn.dnn, 
+                filter: flowRule.filter ,
+                level : "flow"
+              },
+              flowRule.chargingData
+            )
+          )
+        })
+      }
+    })
+  })
+
+  return chgDatas
+}
+
 function qosFlowsFromSliceConfiguration(sliceConfigurations) {
   var qosFlows = [];
   sliceConfigurations.forEach(sliceConfiguration => {
@@ -142,21 +177,31 @@ function flowRulesFromSliceConfiguration(sliceConfigurations) {
 
 function sliceConfigurationsFromSubscriber(subscriber) {
   const defaultSingleNssais = subscriber["AccessAndMobilitySubscriptionData"]["nssai"]["defaultSingleNssais"] ? subscriber["AccessAndMobilitySubscriptionData"]["nssai"]["defaultSingleNssais"].map(nssai => {
+    const snssai = {
+      sst: nssai.sst,
+      sd: nssai.sd,
+      isDefault: false
+    }
+    const chargingData = subscriber["ChgDatas"].find(
+      data => data.snssai === snssaiToString(snssai) && data.level == "pdu");
     return {
-      snssai: {
-        sst: nssai.sst,
-        sd: nssai.sd,
-        isDefault: true
-      }
+      snssai: snssai,
+      chargingData: chargingData
     }
   }) : [];
-  const singleNssais = subscriber["AccessAndMobilitySubscriptionData"]["nssai"]["singleNssais"] ? subscriber["AccessAndMobilitySubscriptionData"]["nssai"]["singleNssais"].map(nssai => {
+  const singleNssais = subscriber["AccessAndMobilitySubscriptionData"]["nssai"]["singleNssais"] ? subscriber["AccessAndMobilitySubscriptionData"]["nssai"]["singleNssais"].map(nssai => {    
+    const snssai = {
+      sst: nssai.sst,
+      sd: nssai.sd,
+      isDefault: false
+    }
+    const chargingData = subscriber["ChgDatas"].find(
+      data => data.snssai === snssaiToString(snssai) && 
+      data.level == "pdu"
+    );
     return {
-      snssai: {
-        sst: nssai.sst,
-        sd: nssai.sd,
-        isDefault: false
-      }
+      snssai: snssai,
+      chargingData: chargingData
     }
   }) : [];
 
@@ -177,6 +222,14 @@ function sliceConfigurationsFromSubscriber(subscriber) {
         flowRules = qosFlowsData
           .filter(rule => rule.snssai === snssaiToString(sliceConf.snssai) && dnn === rule.dnn)
           .map(rule => {
+
+            const chargingData = subscriber["ChgDatas"].find(
+              data => data.snssai === snssaiToString(sliceConf.snssai) && 
+              data.dnn === rule.dnn && 
+              data.filter === rule.filter && 
+              data.level == "flow"
+            );
+
             return {
               "5qi": rule["5qi"],
               gbrUL: rule.gbrUL,
@@ -184,7 +237,8 @@ function sliceConfigurationsFromSubscriber(subscriber) {
               mbrUL: rule.mbrUL,
               mbrDL: rule.mbrDL,
               precedence: rule.flowRules[0].precedence,
-              filter: rule.flowRules[0].filter
+              filter: rule.flowRules[0].filter,
+              chargingData: chargingData
             }
           })
       }
@@ -206,7 +260,8 @@ function sliceConfigurationsFromSubscriber(subscriber) {
           flowRules: flowRules, // new
           upSecurityChk: true,
           upIntegrity: dnnConfigs[dnn].upSecurity.upIntegr,
-          upConfidentiality: dnnConfigs[dnn].upSecurity.upConfid
+          upConfidentiality: dnnConfigs[dnn].upSecurity.upConfid,
+          chargingData: chargingData
         };
       }
       return {
@@ -215,7 +270,8 @@ function sliceConfigurationsFromSubscriber(subscriber) {
         uplinkAmbr: dnnConfigs[dnn].sessionAmbr.uplink,
         downlinkAmbr: dnnConfigs[dnn].sessionAmbr.downlink,
         "5qi": dnnConfigs[dnn]["5gQosProfile"]["5qi"],
-        flowRules: flowRules // new
+        flowRules: flowRules, // new
+        chargingData: chargingData
       };
     });
   });
@@ -387,6 +443,7 @@ class SubscriberModal extends Component {
       },
       "FlowRules": flowRulesFromSliceConfiguration(formData["sliceConfigurations"]),
       "QosFlows": qosFlowsFromSliceConfiguration(formData["sliceConfigurations"]),
+      "ChgDatas": chgDatasFromSliceConfiguration(formData["sliceConfigurations"]),
     };
     if (this.state.editMode) {
       this.props.onModify(subscriberData);

@@ -164,7 +164,11 @@ let subModalSchema = {
           type: "array",
           title: "DNN Configurations",
           items: { $ref: "#/definitions/DnnConfiguration" },
-        }
+        },
+        chargingData: {
+          title: "Charging Config",
+          $ref: "#/definitions/chargingData",
+        },
       }
     },
     DnnConfiguration: {
@@ -194,7 +198,7 @@ let subModalSchema = {
         flowRules: {
           type: "array",
           items: { $ref: "#/definitions/FlowInformation" },
-          maxItems: 1,
+          maxItems: 3,
           title: "Flow Rules"
         },
         upSecurityChk: {
@@ -274,6 +278,10 @@ let subModalSchema = {
           $ref: "#/definitions/bitRate",
           title: "Downlink MBR",
         },
+        chargingData: {
+          $ref: "#/definitions/chargingData",
+          title: "Charging Config",
+        },
       }
     },
     IPFilter: {
@@ -282,6 +290,51 @@ let subModalSchema = {
     bitRate: {
       type: "string",
       pattern: "^[0-9]+(\\.[0-9]+)? (bps|Kbps|Mbps|Gbps|Tbps)$"
+    },
+    chargingData: {
+      type: "object",
+      required: ["chargingMethod"],
+      properties: {
+        chargingMethod: {
+          type: "string",
+          title: "Charging Method",
+          enum: ["Offline", "Online"],
+          default: "Offline",
+        },
+      },
+      dependencies: {
+        chargingMethod: {
+          oneOf: [
+            {
+              properties: {
+                chargingMethod: {
+                  enum: ["Online"],
+                },
+                unitCost: {
+                  type: "string",
+                  title: "Unit cost (money per byte)",
+                  pattern: "^[0-9]+(\\.[0-9]+)?",
+                  default: "1",
+                },
+                quota: {
+                  type: "string",
+                  title: "Quota (monetary)",
+                  pattern: "^[0-9]",
+                  default: "10000",
+                },
+              },
+            },
+            {
+              type: "object",
+              properties: {
+                chargingMethod: {
+                  enum: ["Offline"],
+                },
+              },
+            },
+          ],
+        },
+      },
     },
   },
 };

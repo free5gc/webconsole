@@ -6,6 +6,7 @@ import (
 	"github.com/free5gc/openapi/models"
 	timedecode "github.com/free5gc/util/mapstruct"
 	"github.com/free5gc/util/mongoapi"
+	"github.com/free5gc/webconsole/backend/billing"
 	"github.com/free5gc/webconsole/backend/logger"
 )
 
@@ -14,6 +15,7 @@ var webuiContext WEBUIContext
 type WEBUIContext struct {
 	NFProfiles     []models.NfProfile
 	NFOamInstances []NfOamInstance
+	BillingServer  *billing.BillingDomain
 }
 
 type NfOamInstance struct {

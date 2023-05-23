@@ -4,6 +4,7 @@ import ueinfoActions from "../redux/actions/ueinfoActions";
 import UEInfo from "../models/UEInfo";
 import axios from 'axios';
 import LocalStorageHelper from "./LocalStorageHelper";
+import UEInfoWithCR from "../models/UEInfoWithCR";
 
 class UeInfoApiHelper {
 
@@ -108,6 +109,73 @@ class UeInfoApiHelper {
       }
     } catch (error) {
         console.log(error)
+    }
+
+    return false;
+  }
+
+  static async fetchUEInfoDetailChargingRecord(supi) {
+    try {
+      let url = `charging-record/${supi}`
+      // console.log("Making request to ", url, " ....")
+
+      let response = await Http.get(url);
+      if (response.status === 200 && response.data) {    
+        return response.data;
+      } else {
+        console.log("Request failed, url:", url)
+        console.log("Response: ", response.status, response.data)
+      }
+    } catch (error) {
+        console.log(error)
+    }
+
+    return 0;
+  }
+
+  static async fetchUEWithCR() {
+    const MSG_FETCH_ERROR = "Error fetching registered UEs. Is the core network up?";
+
+    try {
+      let url =  "charging-record"
+      // console.log("Making request to ", url, " ....")
+      let user = LocalStorageHelper.getUserInfo();
+      axios.defaults.headers.common['Token'] = user.accessToken;
+      let response = await Http.get(url);
+      if (response.status === 200) {
+        let registered_users = [];
+        if (response.data) {
+          registered_users = response.data.map(ue_context =>
+            new UEInfoWithCR(ue_context.Supi, ue_context.CmState, ue_context.DataTotalVolume, ue_context.DataVolumeUplink, ue_context.DataVolumeDownlink, 
+              ue_context.quotaLeft, ue_context.flowInfos)
+            );
+          store.dispatch(ueinfoActions.setUECR(registered_users));
+        } else {
+          store.dispatch(ueinfoActions.setUECR(registered_users));
+        }
+        return true;
+      } else {
+
+        console.log("Request failed, url:", url)
+        console.log("Response: ", response.status, response.data)
+
+        let err_msg;
+        if (response.data !== undefined){
+          err_msg = response.data
+        } else {
+          err_msg = MSG_FETCH_ERROR
+        }
+        store.dispatch(ueinfoActions.setUECRError(err_msg));
+      }
+    } catch (error) {
+        let err_msg;
+        if (error.response && error.response.data){
+          err_msg = error.response.data.cause || MSG_FETCH_ERROR
+        } else {
+          err_msg = MSG_FETCH_ERROR
+        }
+        console.log(error.response);
+        store.dispatch(ueinfoActions.setUECRError(err_msg));
     }
 
     return false;

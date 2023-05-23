@@ -213,4 +213,11 @@ var routes = Routes{
 		"/ue-pdu-session-info/:smContextRef",
 		GetUEPDUSessionInfo,
 	},
+
+	{
+		"Charging Record",
+		http.MethodGet,
+		"/charging-record",
+		GetChargingRecord,
+	},
 }

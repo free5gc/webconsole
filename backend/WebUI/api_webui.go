@@ -12,17 +12,20 @@ import (
 	"strings"
 	"time"
 
+	"github.com/free5gc/chf/cdr/asn"
+	"github.com/free5gc/chf/cdr/cdrFile"
+	"github.com/free5gc/chf/cdr/cdrType"
+	"github.com/free5gc/openapi/models"
+	"github.com/free5gc/util/mongoapi"
+	"github.com/free5gc/webconsole/backend/logger"
+	"github.com/free5gc/webconsole/backend/webui_context"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
-
-	"github.com/free5gc/openapi/models"
-	"github.com/free5gc/util/mongoapi"
-	"github.com/free5gc/webconsole/backend/logger"
-	"github.com/free5gc/webconsole/backend/webui_context"
 )
 
 const (
@@ -34,6 +37,7 @@ const (
 	smPolicyDataColl  = "policyData.ues.smData"
 	flowRuleDataColl  = "policyData.ues.flowRule"
 	qosFlowDataColl   = "policyData.ues.qosFlow"
+	chargingDataColl  = "policyData.ues.chargingData"
 	userDataColl      = "userData"
 	tenantDataColl    = "tenantData"
 	msisdnSupiMapColl = "subscriptionData.msisdnSupiMap"
@@ -66,6 +70,18 @@ func sliceToByte(data []map[string]interface{}) (ret []byte) {
 }
 
 func toBsonM(data interface{}) (ret bson.M) {
+	tmp, err := json.Marshal(data)
+	if err != nil {
+		logger.ProcLog.Errorf("toBsonM err: %+v", err)
+	}
+	err = json.Unmarshal(tmp, &ret)
+	if err != nil {
+		logger.ProcLog.Errorf("toBsonM err: %+v", err)
+	}
+	return
+}
+
+func toBsonA(data interface{}) (ret bson.A) {
 	tmp, err := json.Marshal(data)
 	if err != nil {
 		logger.ProcLog.Errorf("toBsonM err: %+v", err)
@@ -1057,6 +1073,12 @@ func GetSubscriberByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
+	chargingDatasInterface, err := mongoapi.RestfulAPIGetMany(chargingDataColl, filter)
+	if err != nil {
+		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
 
 	var authSubsData models.AuthenticationSubscription
 	if err := json.Unmarshal(mapToByte(authSubsDataInterface), &authSubsData); err != nil {
@@ -1106,12 +1128,21 @@ func GetSubscriberByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
+	var chargingDatas []ChargingData
+	if err := json.Unmarshal(sliceToByte(chargingDatasInterface), &chargingDatas); err != nil {
+		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
 
 	if flowRules == nil {
 		flowRules = make([]FlowRule, 0)
 	}
 	if qosFlows == nil {
 		qosFlows = make([]QosFlow, 0)
+	}
+	if chargingDatas == nil {
+		chargingDatas = make([]ChargingData, 0)
 	}
 
 	for key, SnssaiData := range smPolicyData.SmPolicySnssaiData {
@@ -1135,6 +1166,7 @@ func GetSubscriberByID(c *gin.Context) {
 		SmPolicyData:                      smPolicyData,
 		FlowRules:                         flowRules,
 		QosFlows:                          qosFlows,
+		ChargingDatas:                     chargingDatas,
 	}
 
 	c.JSON(http.StatusOK, subsData)
@@ -1287,6 +1319,23 @@ func msisdnSupiMapOperation(supi string, msisdn string, method string) {
 	}
 }
 
+func sendRechargeNotification(ueId string, rg int32) {
+	logger.ProcLog.Infoln("Send Notification to CHF due to quota change")
+	webuiSelf := webui_context.GetSelf()
+	webuiSelf.UpdateNfProfiles()
+
+	requestUri := fmt.Sprintf("%s/nchf-convergedcharging/v3/recharging/%s_%d", "http://127.0.0.113:8000", ueId, rg)
+	req, err := http.NewRequest(http.MethodPut, requestUri, nil)
+	if err != nil {
+		logger.ProcLog.Error(err)
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	if _, err = http.DefaultClient.Do(req); err != nil {
+		logger.ProcLog.Errorf("Send Charging Notification err: %+v", err)
+	}
+}
+
 func dbOperation(ueId string, servingPlmnId string, method string, subsData *SubsData, claims jwt.MapClaims) {
 	filterUeIdOnly := bson.M{"ueId": ueId}
 	filter := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId}
@@ -1322,6 +1371,9 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
 		}
 		if err := mongoapi.RestfulAPIDeleteMany(qosFlowDataColl, filter); err != nil {
+			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
+		}
+		if err := mongoapi.RestfulAPIDeleteMany(chargingDataColl, filter); err != nil {
 			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
 		}
 		if err := mongoapi.RestfulAPIDeleteOne(msisdnSupiMapColl, filterUeIdOnly); err != nil {
@@ -1400,6 +1452,50 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 			}
 			if err := mongoapi.RestfulAPIPostMany(qosFlowDataColl, filter, qosFlowBsonA); err != nil {
 				logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err)
+			}
+		}
+
+		if len(subsData.ChargingDatas) == 0 {
+			logger.ProcLog.Infoln("No Charging Data")
+		} else {
+			for _, chargingData := range subsData.ChargingDatas {
+				var previousChargingData ChargingData
+				var chargingFilter primitive.M
+				if chargingData.Dnn != "" && chargingData.Filter != "" {
+					chargingFilter = bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId,
+						"snssai": chargingData.Snssai, "dnn": chargingData.Dnn, "filter": chargingData.Filter, "level": "flow"}
+				} else {
+					chargingFilter = bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId,
+						"snssai": chargingData.Snssai, "level": "pdu"}
+				}
+
+				previousChargingDataInterface, err := mongoapi.RestfulAPIGetOne(chargingDataColl, chargingFilter)
+				if err != nil {
+					logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err)
+				}
+				json.Unmarshal(mapToByte(previousChargingDataInterface), &previousChargingData)
+
+				chargingDataBsonM := toBsonM(chargingData)
+				// Clear quota for offline charging flow
+				if chargingData.ChargingMethod == "Offline" {
+					chargingDataBsonM["quota"] = "0"
+				}
+
+				ratingGroup := previousChargingDataInterface["ratingGroup"]
+				if ratingGroup != nil {
+					rg := ratingGroup.(int32)
+					chargingDataBsonM["ratingGroup"] = rg
+					if previousChargingData.Quota != chargingData.Quota {
+						sendRechargeNotification(ueId, rg)
+					}
+				}
+
+				chargingDataBsonM["ueId"] = ueId
+				chargingDataBsonM["servingPlmnId"] = servingPlmnId
+
+				if _, err := mongoapi.RestfulAPIPutOne(chargingDataColl, chargingFilter, chargingDataBsonM); err != nil {
+					logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err)
+				}
 			}
 		}
 
@@ -1663,4 +1759,154 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 			"cause": "No SMF Found",
 		})
 	}
+}
+
+type FlowInfo struct {
+	Filter             string `bson:"Filter"`
+	DataTotalVolume    int64  `bson:"DataTotalVolume"`
+	DataVolumeUplink   int64  `bson:"DataVolumeUplink"`
+	DataVolumeDownlink int64  `bson:"DataVolumeDownlink"`
+	QuotaLeft          int64  `bson:"QuotaLeft"`
+}
+
+type RatingGroupDataUsage struct {
+	TotalVol int64
+	UlVol    int64
+	DlVol    int64
+}
+
+// Get vol from CDR
+func parseCDR(supi string) map[int64]RatingGroupDataUsage {
+	fileName := "/tmp/webconsole/" + supi + ".cdr"
+
+	newCdrFile := cdrFile.CDRFile{}
+
+	newCdrFile.Decoding(fileName)
+	dataUsage := make(map[int64]RatingGroupDataUsage)
+
+	for _, cdr := range newCdrFile.CdrList {
+		recvByte := cdr.CdrByte
+		val := reflect.New(reflect.TypeOf(&cdrType.ChargingRecord{}).Elem()).Interface()
+		asn.UnmarshalWithParams(recvByte, val, "")
+
+		chargingRecord := *(val.(*cdrType.ChargingRecord))
+
+		for _, multipleUnitUsage := range chargingRecord.ListOfMultipleUnitUsage {
+			rg := multipleUnitUsage.RatingGroup.Value
+			du := dataUsage[rg]
+
+			for _, usedUnitContainer := range multipleUnitUsage.UsedUnitContainers {
+				du.TotalVol += usedUnitContainer.DataTotalVolume.Value
+				du.UlVol += usedUnitContainer.DataVolumeUplink.Value
+				du.DlVol += usedUnitContainer.DataVolumeDownlink.Value
+			}
+
+			dataUsage[rg] = du
+		}
+	}
+
+	return dataUsage
+}
+
+func GetChargingRecord(c *gin.Context) {
+	setCorsHeader(c)
+
+	if tokenStr := c.GetHeader("Token"); tokenStr != "admin" {
+		if _, err := ParseJWT(tokenStr); err != nil {
+			logger.ProcLog.Errorln(err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{
+				"cause": "Illegal Token",
+			})
+			return
+		}
+	}
+
+	webuiSelf := webui_context.GetSelf()
+	webuiSelf.UpdateNfProfiles()
+
+	// Get supi of UEs
+	var uesJsonData interface{}
+	if amfUris := webuiSelf.GetOamUris(models.NfType_AMF); amfUris != nil {
+		requestUri := fmt.Sprintf("%s/namf-oam/v1/registered-ue-context", amfUris[0])
+
+		resp, err := httpsClient.Get(requestUri)
+		if err != nil {
+			logger.ProcLog.Error(err)
+			c.JSON(http.StatusInternalServerError, gin.H{})
+			return
+		}
+
+		json.NewDecoder(resp.Body).Decode(&uesJsonData)
+	}
+
+	// build charging records
+	uesBsonA := toBsonA(uesJsonData)
+	chargingRecordsBsonA := make([]interface{}, 0, len(uesBsonA))
+
+	for _, ueData := range uesBsonA {
+		var ueUsage RatingGroupDataUsage
+		var flowInfos []FlowInfo
+
+		ueBsonM := toBsonM(ueData)
+
+		supi := ueBsonM["Supi"].(string)
+		ratingGroupDataUsage := parseCDR(supi)
+
+		for rg, du := range ratingGroupDataUsage {
+			var chargingData ChargingData
+
+			filter := bson.M{"ueId": supi, "ratingGroup": rg}
+			chargingDataInterface, err := mongoapi.RestfulAPIGetOne(chargingDataColl, filter)
+			if err != nil {
+				logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err)
+			}
+
+			json.Unmarshal(mapToByte(chargingDataInterface), &chargingData)
+			quota, _ := strconv.ParseInt(chargingData.Quota, 10, 64)
+
+			switch chargingData.Level {
+			case "flow":
+				flowInfos = append(flowInfos, FlowInfo{
+					Filter:             chargingData.Filter,
+					DataTotalVolume:    du.TotalVol,
+					DataVolumeUplink:   du.UlVol,
+					DataVolumeDownlink: du.DlVol,
+					QuotaLeft:          quota,
+				})
+			case "pdu":
+				// UE only revord the PDU level usage to prevent count the volume of flow and pdu twice
+				ueUsage.TotalVol += du.TotalVol
+				ueUsage.UlVol += du.UlVol
+				ueUsage.DlVol += du.DlVol
+
+				// TODO: frontend should presentat pdu level charging information
+				logger.ProcLog.Tracef("Currently the frontend will not show the pdu level charging info")
+				// flowInfos = append(flowInfos, FlowInfo{
+				// 	Filter:             chargingData.Snssai,
+				// 	DataTotalVolume:    du.TotalVol,
+				// 	DataVolumeUplink:   du.UlVol,
+				// 	DataVolumeDownlink: du.DlVol,
+				// 	QuotaLeft:          quota,
+				// })
+			default:
+				logger.ProcLog.Errorf("Unknow charging level: %+v", chargingData.Level)
+			}
+		}
+
+		ueRecordsBsonM := bson.M{
+			"Supi":               supi,
+			"CmState":            ueBsonM["CmState"].(string),
+			"DataTotalVolume":    ueUsage.TotalVol,
+			"DataVolumeUplink":   ueUsage.UlVol,
+			"DataVolumeDownlink": ueUsage.DlVol,
+		}
+
+		if len(flowInfos) > 0 {
+			ueRecordsBsonM["flowInfos"] = flowInfos
+		}
+
+		chargingRecordsBsonA = append(chargingRecordsBsonA, ueRecordsBsonM)
+	}
+
+	c.JSON(http.StatusOK, chargingRecordsBsonA)
 }

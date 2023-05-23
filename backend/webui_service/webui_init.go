@@ -3,12 +3,14 @@ package webui_service
 import (
 	"io/ioutil"
 	"os"
+	"sync"
 
 	"github.com/gin-contrib/cors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/free5gc/util/mongoapi"
 	"github.com/free5gc/webconsole/backend/WebUI"
+	"github.com/free5gc/webconsole/backend/billing"
 	"github.com/free5gc/webconsole/backend/factory"
 	"github.com/free5gc/webconsole/backend/logger"
 	"github.com/free5gc/webconsole/backend/webui_context"
@@ -95,6 +97,9 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 
 	self := webui_context.GetSelf()
 	self.UpdateNfProfiles()
+
+	wg := sync.WaitGroup{}
+	self.BillingServer = billing.OpenServer(&wg)
 
 	router.NoRoute(ReturnPublic())
 

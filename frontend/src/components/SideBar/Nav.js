@@ -49,6 +49,13 @@ class Nav extends Component {
 
       {childView}
 
+      <li className={this.isPathActive('/charging_record') ? 'active' : null}>
+          <Link to="/charging_record">
+            <i className="pe-7s-network"/>
+            <p>UE Charging Record</p>
+          </Link>
+        </li>
+
       </ul>
     );
   }

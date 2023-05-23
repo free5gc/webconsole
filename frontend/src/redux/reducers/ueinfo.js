@@ -59,6 +59,9 @@ const initialState = {
     registered_ue_err_msg: '',
     smContextRef: '',
     
+    users_cr: [],
+    get_ue_cr_err: false,
+    ue_cr_err_msg: '',
   };
 
 export default function reducer(state = initialState, action) {
@@ -89,6 +92,16 @@ switch (action.type) {
     case actions.SET_UE_DETAIL_SM_CTX_REF:
         nextState.smContextRef = action.smContextRef
         return nextState;
+
+    case actions.SET_UE_CR:
+        nextState.users_cr = action.users_cr;
+        return nextState;
+
+    case actions.SET_UE_CR_ERR:
+        nextState.get_ue_cr_err = action.get_ue_cr_err
+        nextState.ue_cr_err_msg = action.ue_cr_err_msg
+        return nextState;
+    
     default:
     return state;
 }

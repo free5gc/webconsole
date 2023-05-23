@@ -4,6 +4,7 @@ import { connect } from "react-redux";
 import { Button, Table } from "react-bootstrap";
 import SubscriberModal from "./components/SubscriberModal";
 import ApiHelper from "../../util/ApiHelper";
+import Subscriber from '../../models/Subscriber';
 
 
 class SubscriberOverview extends Component {
@@ -33,6 +34,7 @@ class SubscriberOverview extends Component {
     if (subscriber.FlowRules !== undefined && subscriber.FlowRules !== null) {
       subscriber.FlowRules.forEach(FlowRule => {
         let i = 0;
+        
         subscriber.QosFlows.forEach(QosFlow => {
           if (QosFlow.snssai === FlowRule.snssai &&
               QosFlow.dnn === FlowRule.dnn &&
@@ -53,7 +55,7 @@ class SubscriberOverview extends Component {
         })
       });
     }
-    delete origiData.FlowRules;
+    // delete origiData.FlowRules;
     this.setState({
       subscriberModalOpen: true,
       subscriberModalData: origiData,
