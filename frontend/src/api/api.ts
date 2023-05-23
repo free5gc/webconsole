@@ -868,6 +868,49 @@ export interface Tenant {
 /**
  * 
  * @export
+ * @interface ChargingRecord
+ */
+ export interface UeChargingRecord {
+    /**
+     * 
+     * @type {string}
+     * @memberof Tenant
+     */
+     'SUPI'?: string;
+     /**
+      * 
+      * @type {string}
+      * @memberof Tenant
+      */
+     'Status'?: string;
+     /**
+     * 
+     * @type {string}
+     * @memberof Tenant
+     */
+    'Quota Left'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Tenant
+     */
+    'Data Total Volume'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Tenant
+     */
+     'Data Volume Downlink'?: string;
+     /**
+      * 
+      * @type {string}
+      * @memberof Tenant
+      */
+     'tenantName'?: string;
+}
+/**
+ * 
+ * @export
  * @interface Tunnel
  */
 export interface Tunnel {

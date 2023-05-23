@@ -62,6 +62,14 @@ export const MainListItems = () => {
       ) : (
         <div />
       )}
+      <Link to="/charging-record" style={{ color: "inherit", textDecoration: "inherit" }}>
+        <ListItemButton>
+          <ListItemIcon>
+            <InsertDriveFile />
+          </ListItemIcon>
+          <ListItemText primary="UE CHARGING RECORD" />
+        </ListItemButton>
+      </Link>
     </React.Fragment>
   );
 };

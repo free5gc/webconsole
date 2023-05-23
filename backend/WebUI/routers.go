@@ -229,4 +229,11 @@ var routes = Routes{
 		"/change-password",
 		ChangePasswordInfo,
 	},
+
+	{
+		"Charging Record",
+		http.MethodGet,
+		"/charging-record",
+		GetChargingRecord,
+	},
 }

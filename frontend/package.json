@@ -23,6 +23,7 @@
     "dayjs": "^1.11.6",
     "js-file-download": "^0.4.12",
     "react": "^18.2.0",
+    "react-bootstrap-table-next": "4.0.3",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.8.1",
     "react-scripts": "5.0.1",
