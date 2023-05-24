@@ -2,8 +2,10 @@ package billing
 
 import (
 	"io/ioutil"
+	"strconv"
 	"time"
 
+	"github.com/free5gc/webconsole/backend/factory"
 	"github.com/free5gc/webconsole/backend/logger"
 	"github.com/jlaffaye/ftp"
 )
@@ -11,9 +13,12 @@ import (
 // The ftp client is for CDR Pull method, that is the billing domain actively query CDR file from CHF
 func FTPLogin() (*ftp.ServerConn, error) {
 	// FTP server is for CDR transfer
+	billingConfig := factory.WebuiConfig.Configuration.BillingServer
+	addr := billingConfig.HostIPv4 + ":" + strconv.Itoa(billingConfig.Port)
+
 	var c *ftp.ServerConn
 
-	c, err := ftp.Dial("127.0.0.113:2121", ftp.DialWithTimeout(5*time.Second))
+	c, err := ftp.Dial(addr, ftp.DialWithTimeout(5*time.Second))
 	if err != nil {
 		return nil, err
 	}
