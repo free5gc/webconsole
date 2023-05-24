@@ -108,6 +108,8 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 	self.UpdateNfProfiles()
 
 	wg := sync.WaitGroup{}
+	wg.Add(1)
+
 	self.BillingServer = billing.OpenServer(&wg)
 
 	router.NoRoute(ReturnPublic())
@@ -117,4 +119,6 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 	} else {
 		logger.InitLog.Infoln(router.Run(":5000"))
 	}
+
+	wg.Wait()
 }

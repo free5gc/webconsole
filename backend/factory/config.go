@@ -54,7 +54,7 @@ type Logger struct {
 
 type WebServer struct {
 	Scheme string `yaml:"scheme" valid:"required"`
-	IP     string `yaml:"ipv4Address" valid:"required"`
+	IP     string `yaml:"ipv4Address,omitempty"`
 	PORT   string `yaml:"port" valid:"required"`
 }
 
