@@ -6,6 +6,13 @@ configuration:
   mongodb: # the mongodb connected by this webui
     name: free5gc # name of the mongodb
     url: mongodb://localhost:27017 # a valid URL of the mongodb
+  billingServer:
+    hostIPv4: 127.0.0.1
+    listenPort: 2122
+    port: 2121
+    tls:
+      pem: config/TLS/chf.pem
+      key: config/TLS/chf.key
 
 logger: # log output setting
   enable: true # true or false
