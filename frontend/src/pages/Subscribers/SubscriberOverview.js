@@ -35,12 +35,19 @@ class SubscriberOverview extends Component {
         let i = 0;
         subscriber.QosFlows.forEach(QosFlow => {
           if (QosFlow.snssai === FlowRule.snssai &&
-            QosFlow.dnn === FlowRule.dnn &&
-            QosFlow["5qi"] === FlowRule.qfi) {
+              QosFlow.dnn === FlowRule.dnn &&
+              QosFlow["5qi"] === FlowRule.qfi) 
+          {
             if (origiData.QosFlows[i].flowRules === undefined) {
               origiData.QosFlows[i].flowRules = [];
             }
-            origiData.QosFlows[i].flowRules.push(Object.assign({ precedence: FlowRule.precedence, filter: FlowRule.filter }))
+            origiData.QosFlows[i].flowRules.push(Object.assign(
+                {
+                  precedence: FlowRule.precedence, 
+                  filter: FlowRule.filter,
+                },
+                FlowRule
+                ))
           }
           i++;
         })

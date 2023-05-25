@@ -245,11 +245,18 @@ let subModalSchema = {
           $ref: "#/definitions/IPFilter",
           title: "IP Filter"
         },
+        precedence: {
+          type: "integer",
+          title: "Precedence",
+          minimum: 1,
+          maximum: 256,
+          default: 128,
+        },
         "5qi": {
           type: "integer",
           minimum: 0,
           maximum: 255,
-          title: "5QI"
+          title: "5QI",
         },
         gbrUL: {
           $ref: "#/definitions/bitRate",
