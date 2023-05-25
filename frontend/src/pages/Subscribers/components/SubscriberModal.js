@@ -93,35 +93,50 @@ function smDatasFromSliceConfiguration(sliceConfiguration) {
 
 function qosFlowsFromSliceConfiguration(sliceConfigurations) {
   var qosFlows = [];
-  sliceConfigurations.forEach(slice => {
-    slice.dnnConfigurations.forEach(dnn => {
-      if (dnn.qosFlows !== undefined) {
-        dnn.qosFlows.forEach(qosFlow => {
+  sliceConfigurations.forEach(sliceConfiguration => {
+    sliceConfiguration.dnnConfigurations.forEach(dnnConfiguration => {
+      if (dnnConfiguration.flowRules !== undefined) {
+        dnnConfiguration.flowRules.forEach(flowRule => {
           qosFlows.push(
-            Object.assign({ snssai: snssaiToString(slice.snssai), dnn: dnn.dnn, qfi: qosFlow["5qi"] },
-              qosFlow))
+            Object.assign(
+              { 
+                snssai: snssaiToString(sliceConfiguration.snssai), 
+                dnn: dnnConfiguration.dnn,
+                qfi: flowRule["5qi"] 
+              },
+              flowRule
+            )
+          )
         })
       }
     })
   })
+
   return qosFlows
 }
 
 function flowRulesFromSliceConfiguration(sliceConfigurations) {
   var flowRules = []
-  sliceConfigurations.forEach(slice => {
-    slice.dnnConfigurations.forEach(dnn => {
-      if (dnn.qosFlows !== undefined) {
-        dnn.qosFlows.forEach(qosFlow => {
-          if (qosFlow.flowRules !== undefined) {
-            qosFlow.flowRules.forEach(flowRule => {
-              flowRules.push(Object.assign({ snssai: snssaiToString(slice.snssai), dnn: dnn.dnn, qfi: qosFlow["5qi"] }, flowRule))
-            })
-          }
+  sliceConfigurations.forEach(sliceConfiguration => {
+    sliceConfiguration.dnnConfigurations.forEach(dnnConfiguration => {
+      if (dnnConfiguration.flowRules !== undefined){
+        dnnConfiguration.flowRules.forEach(flowRule => {
+          flowRules.push(
+            Object.assign(
+              {
+                filter: flowRule.filter,
+                precedence: flowRule.precedence,
+                snssai: snssaiToString(sliceConfiguration.snssai),
+                dnn: dnnConfiguration.dnn,
+                qfi: flowRule["5qi"],
+              }
+            )
+          )
         })
       }
     })
   })
+
   return flowRules
 }
 
@@ -156,10 +171,10 @@ function sliceConfigurationsFromSubscriber(subscriber) {
     const dnnConfigs = sessionManagementSubscriptionData.find(data => data.singleNssai.sst === sliceConf.snssai.sst && data.singleNssai.sd === sliceConf.snssai.sd).dnnConfigurations;
     sliceConf.dnnConfigurations = Object.keys(dnnConfigs).map(dnn => {
 
-      let qosFlows = [];
+      let flowRules = []; 
       const qosFlowsData = subscriber["QosFlows"];
       if (qosFlowsData && qosFlowsData.length !== 0) {
-        qosFlows = qosFlowsData
+        flowRules = qosFlowsData
           .filter(rule => rule.snssai === snssaiToString(sliceConf.snssai) && dnn === rule.dnn)
           .map(rule => {
             return {
@@ -168,13 +183,11 @@ function sliceConfigurationsFromSubscriber(subscriber) {
               gbrDL: rule.gbrDL,
               mbrUL: rule.mbrUL,
               mbrDL: rule.mbrDL,
-              flowRules: rule.flowRules
+              precedence: rule.flowRules[0].precedence,
+              filter: rule.flowRules[0].filter
             }
           })
       }
-
-
-
 
       let staticIps = "";
       const staticIpAddress = dnnConfigs[dnn].staticIpAddress
@@ -190,7 +203,7 @@ function sliceConfigurationsFromSubscriber(subscriber) {
           uplinkAmbr: dnnConfigs[dnn].sessionAmbr.uplink,
           downlinkAmbr: dnnConfigs[dnn].sessionAmbr.downlink,
           "5qi": dnnConfigs[dnn]["5gQosProfile"]["5qi"],
-          qosFlows: qosFlows,
+          flowRules: flowRules, // new
           upSecurityChk: true,
           upIntegrity: dnnConfigs[dnn].upSecurity.upIntegr,
           upConfidentiality: dnnConfigs[dnn].upSecurity.upConfid
@@ -202,11 +215,11 @@ function sliceConfigurationsFromSubscriber(subscriber) {
         uplinkAmbr: dnnConfigs[dnn].sessionAmbr.uplink,
         downlinkAmbr: dnnConfigs[dnn].sessionAmbr.downlink,
         "5qi": dnnConfigs[dnn]["5gQosProfile"]["5qi"],
-        qosFlows: qosFlows
+        flowRules: flowRules // new
       };
     });
   });
-
+  
   return sliceConfigurations;
 }
 
@@ -344,8 +357,8 @@ class SubscriberModal extends Component {
         "subscribedSnssaiInfos": _.fromPairs(
           _.map(formData["sliceConfigurations"], slice => [snssaiToString(slice.snssai),
           {
-            "dnnInfos": _.map(slice.dnnConfigurations, dnnCofig => {
-              return { "dnn": dnnCofig.dnn }
+            "dnnInfos": _.map(slice.dnnConfigurations, dnnConfig => {
+              return { "dnn": dnnConfig.dnn }
             })
           }]))
       },
