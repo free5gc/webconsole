@@ -7,5 +7,4 @@ type ChargingData struct {
 	ChargingMethod string `json:"chargingMethod,omitempty" yaml:"chargingMethod" bson:"chargingMethod" mapstructure:"chargingMethod"`
 	Quota          string `json:"quota" yaml:"quota" bson:"quota" mapstructure:"quota"`
 	UnitCost       string `json:"unitCost,omitempty" yaml:"unitCost" bson:"unitCost" mapstructure:"unitCost"`
-	Level          string `json:"level,omitempty" yaml:"level" bson:"level" mapstructure:"level"`
 }

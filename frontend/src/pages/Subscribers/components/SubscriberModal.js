@@ -98,7 +98,8 @@ function chgDatasFromSliceConfiguration(sliceConfigurations) {
       Object.assign(
         { 
           snssai: snssaiToString(sliceConfiguration.snssai),
-          level : "pdu"
+          filter: "",
+          dnn : "",
         },
         sliceConfiguration.chargingData
       )
@@ -111,9 +112,8 @@ function chgDatasFromSliceConfiguration(sliceConfigurations) {
             Object.assign(
               { 
                 snssai: snssaiToString(sliceConfiguration.snssai), 
-                dnn: dnn.dnn, 
-                filter: flowRule.filter ,
-                level : "flow"
+                dnn: dnnConfiguration.dnn, 
+                filter: flowRule.filter
               },
               flowRule.chargingData
             )
@@ -180,10 +180,14 @@ function sliceConfigurationsFromSubscriber(subscriber) {
     const snssai = {
       sst: nssai.sst,
       sd: nssai.sd,
-      isDefault: false
+      isDefault: true
     }
     const chargingData = subscriber["ChgDatas"].find(
-      data => data.snssai === snssaiToString(snssai) && data.level == "pdu");
+      data => data.snssai === snssaiToString(snssai) && 
+      !data.dnn &&
+      !data.filter
+    );
+
     return {
       snssai: snssai,
       chargingData: chargingData
@@ -197,7 +201,8 @@ function sliceConfigurationsFromSubscriber(subscriber) {
     }
     const chargingData = subscriber["ChgDatas"].find(
       data => data.snssai === snssaiToString(snssai) && 
-      data.level == "pdu"
+      !data.dnn &&
+      !data.filter
     );
     return {
       snssai: snssai,
@@ -226,8 +231,7 @@ function sliceConfigurationsFromSubscriber(subscriber) {
             const chargingData = subscriber["ChgDatas"].find(
               data => data.snssai === snssaiToString(sliceConf.snssai) && 
               data.dnn === rule.dnn && 
-              data.filter === rule.filter && 
-              data.level == "flow"
+              data.filter === rule.flowRules[0].filter
             );
 
             return {
@@ -237,8 +241,8 @@ function sliceConfigurationsFromSubscriber(subscriber) {
               mbrUL: rule.mbrUL,
               mbrDL: rule.mbrDL,
               precedence: rule.flowRules[0].precedence,
-              filter: rule.flowRules[0].filter,
-              chargingData: chargingData
+              chargingData: chargingData,
+              filter: rule.flowRules[0].filter
             }
           })
       }
@@ -260,8 +264,7 @@ function sliceConfigurationsFromSubscriber(subscriber) {
           flowRules: flowRules, // new
           upSecurityChk: true,
           upIntegrity: dnnConfigs[dnn].upSecurity.upIntegr,
-          upConfidentiality: dnnConfigs[dnn].upSecurity.upConfid,
-          chargingData: chargingData
+          upConfidentiality: dnnConfigs[dnn].upSecurity.upConfid
         };
       }
       return {
@@ -270,8 +273,7 @@ function sliceConfigurationsFromSubscriber(subscriber) {
         uplinkAmbr: dnnConfigs[dnn].sessionAmbr.uplink,
         downlinkAmbr: dnnConfigs[dnn].sessionAmbr.downlink,
         "5qi": dnnConfigs[dnn]["5gQosProfile"]["5qi"],
-        flowRules: flowRules, // new
-        chargingData: chargingData
+        flowRules: flowRules // new
       };
     });
   });

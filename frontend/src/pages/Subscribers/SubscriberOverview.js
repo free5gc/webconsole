@@ -34,7 +34,7 @@ class SubscriberOverview extends Component {
     if (subscriber.FlowRules !== undefined && subscriber.FlowRules !== null) {
       subscriber.FlowRules.forEach(FlowRule => {
         let i = 0;
-        
+
         subscriber.QosFlows.forEach(QosFlow => {
           if (QosFlow.snssai === FlowRule.snssai &&
               QosFlow.dnn === FlowRule.dnn &&
@@ -55,7 +55,7 @@ class SubscriberOverview extends Component {
         })
       });
     }
-    // delete origiData.FlowRules;
+    delete origiData.FlowRules;
     this.setState({
       subscriberModalOpen: true,
       subscriberModalData: origiData,
