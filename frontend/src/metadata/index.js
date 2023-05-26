@@ -240,6 +240,7 @@ let subModalSchema = {
     },
     FlowInformation: {
       type: "object",
+      required: ["5qi", "filter", "precedence"],
       properties: {
         filter: {
           $ref: "#/definitions/IPFilter",
