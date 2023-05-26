@@ -1554,12 +1554,21 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 			for _, chargingData := range subsData.ChargingDatas {
 				var previousChargingData ChargingData
 				var chargingFilter primitive.M
+
+				chargingDataBsonM := toBsonM(chargingData)
+				// Clear quota for offline charging flow
+				if chargingData.ChargingMethod == "Offline" {
+					chargingDataBsonM["quota"] = "0"
+				}
+
 				if chargingData.Dnn != "" && chargingData.Filter != "" {
 					chargingFilter = bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId,
-						"snssai": chargingData.Snssai, "dnn": chargingData.Dnn, "filter": chargingData.Filter, "level": "flow"}
+						"snssai": chargingData.Snssai, "dnn": chargingData.Dnn, "filter": chargingData.Filter}
 				} else {
 					chargingFilter = bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId,
-						"snssai": chargingData.Snssai, "level": "pdu"}
+						"snssai": chargingData.Snssai, "dnn": "", "filter": ""}
+					chargingDataBsonM["dnn"] = ""
+					chargingDataBsonM["filter"] = ""
 				}
 
 				previousChargingDataInterface, err := mongoapi.RestfulAPIGetOne(chargingDataColl, chargingFilter)
@@ -1567,12 +1576,6 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 					logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err)
 				}
 				json.Unmarshal(mapToByte(previousChargingDataInterface), &previousChargingData)
-
-				chargingDataBsonM := toBsonM(chargingData)
-				// Clear quota for offline charging flow
-				if chargingData.ChargingMethod == "Offline" {
-					chargingDataBsonM["quota"] = "0"
-				}
 
 				ratingGroup := previousChargingDataInterface["ratingGroup"]
 				if ratingGroup != nil {
@@ -2014,8 +2017,7 @@ func GetChargingRecord(c *gin.Context) {
 			json.Unmarshal(mapToByte(chargingDataInterface), &chargingData)
 			quota, _ := strconv.ParseInt(chargingData.Quota, 10, 64)
 
-			switch chargingData.Level {
-			case "flow":
+			if chargingData.Filter != "" && chargingData.Dnn != "" {
 				flowInfos = append(flowInfos, FlowInfo{
 					Filter:             chargingData.Filter,
 					DataTotalVolume:    du.TotalVol,
@@ -2023,7 +2025,7 @@ func GetChargingRecord(c *gin.Context) {
 					DataVolumeDownlink: du.DlVol,
 					QuotaLeft:          quota,
 				})
-			case "pdu":
+			} else {
 				// UE only revord the PDU level usage to prevent count the volume of flow and pdu twice
 				ueUsage.TotalVol += du.TotalVol
 				ueUsage.UlVol += du.UlVol
@@ -2038,8 +2040,6 @@ func GetChargingRecord(c *gin.Context) {
 				// 	DataVolumeDownlink: du.DlVol,
 				// 	QuotaLeft:          quota,
 				// })
-			default:
-				logger.ProcLog.Errorf("Unknow charging level: %+v", chargingData.Level)
 			}
 		}
 
