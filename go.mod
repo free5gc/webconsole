@@ -96,5 +96,3 @@ require (
 	golang.org/x/oauth2 v0.8.0 // indirect
 	google.golang.org/api v0.122.0 // indirect
 )
-
-replace github.com/free5gc/chf => /home/free5gc/free5gc/NFs/chf
