@@ -240,6 +240,7 @@ let subModalSchema = {
     },
     FlowInformation: {
       type: "object",
+      required: ["5qi", "filter", "precedence"],
       properties: {
         filter: {
           $ref: "#/definitions/IPFilter",
@@ -257,6 +258,7 @@ let subModalSchema = {
           minimum: 0,
           maximum: 255,
           title: "5QI",
+          default: 9,
         },
         gbrUL: {
           $ref: "#/definitions/bitRate",
