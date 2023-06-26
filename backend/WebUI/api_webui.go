@@ -91,7 +91,7 @@ func setCorsHeader(c *gin.Context) {
 	c.Writer.Header().Set(
 		"Access-Control-Allow-Headers",
 		"Content-Type, Content-Length, Accept-Encoding, "+
-			"X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With",
+			"X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, Token",
 	)
 	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, PATCH, DELETE")
 }
@@ -422,6 +422,8 @@ func generateHash(password string) error {
 func Login(c *gin.Context) {
 	setCorsHeader(c)
 
+	EnsureAdminTenant()
+
 	login := LoginRequest{}
 	err := json.NewDecoder(c.Request.Body).Decode(&login)
 	if err != nil {
@@ -504,7 +506,11 @@ func ParseJWT(tokenStr string) (jwt.MapClaims, error) {
 // Check of admin user. This should be done with proper JWT token.
 func CheckAuth(c *gin.Context) bool {
 	tokenStr := c.GetHeader("Token")
-	if tokenStr == "admin" {
+	claims, err := ParseJWT(tokenStr)
+	if err != nil {
+		return false
+	}
+	if claims["tenantId"].(string) == DEFAULT_ADMIN_TENANT {
 		return true
 	} else {
 		return false
@@ -931,13 +937,7 @@ func GetSubscribers(c *gin.Context) {
 
 	logger.ProcLog.Infoln("Get All Subscribers List")
 
-	tokenStr := c.GetHeader("Token")
-
-	var claims jwt.MapClaims = nil
-	var err error = nil
-	if tokenStr != "admin" {
-		claims, err = ParseJWT(tokenStr)
-	}
+	userTenantId, err := GetTenantId(c)
 	if err != nil {
 		logger.ProcLog.Errorln(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -975,7 +975,7 @@ func GetSubscribers(c *gin.Context) {
 			return
 		}
 
-		if tokenStr == "admin" || tenantId == claims["tenantId"].(string) {
+		if userTenantId == DEFAULT_ADMIN_TENANT || userTenantId == tenantId {
 			tmp := SubsListIE{
 				PlmnID: servingPlmnId.(string),
 				UeId:   ueId.(string),
@@ -1610,7 +1610,7 @@ func GetRegisteredUEContext(c *gin.Context) {
 			return
 		}
 
-		if tenantId == "" {
+		if tenantId == DEFAULT_ADMIN_TENANT {
 			sendResponseToClient(c, resp)
 		} else {
 			sendResponseToClientFilterTenant(c, resp, tenantId)
@@ -1663,4 +1663,79 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 			"cause": "No SMF Found",
 		})
 	}
+}
+
+func ChangePasswordInfo(c *gin.Context) {
+	setCorsHeader(c)
+
+	// Need to get tenantId.
+	tenantId, err := GetTenantId(c)
+	if err != nil {
+		logger.ProcLog.Errorln(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{})
+		return
+	}
+
+	var newUserData User
+	if err := c.ShouldBindJSON(&newUserData); err != nil {
+		logger.ProcLog.Errorln(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{})
+		return
+	}
+
+	filterEmailOnly := bson.M{"tenantId": tenantId, "email": newUserData.Email}
+	userDataInterface, err := mongoapi.RestfulAPIGetOne(userDataColl, filterEmailOnly)
+	if err != nil {
+		logger.ProcLog.Errorf("ChangePassword err: %+v", err)
+	}
+	if len(userDataInterface) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	var userData User
+	json.Unmarshal(mapToByte(userDataInterface), &userData)
+
+	if newUserData.EncryptedPassword != "" {
+		hash, _ := bcrypt.GenerateFromPassword([]byte(newUserData.EncryptedPassword), 12)
+		userData.EncryptedPassword = string(hash)
+	}
+
+	userBsonM := toBsonM(userData)
+	if _, err := mongoapi.RestfulAPIPost(userDataColl, filterEmailOnly, userBsonM); err != nil {
+		logger.ProcLog.Errorf("PutUserByID err: %+v", err)
+	}
+
+	c.JSON(http.StatusOK, userData)
+}
+
+const DEFAULT_ADMIN_EMAIL = "admin"
+const DEFAULT_ADMIN_TENANT = "AdminTenant"
+const DEFAULT_ADMIN_USER_PASSWORD = "free5gc"
+
+// EnsureAdminTenant creates default admin user tenant when it does not exist.
+func EnsureAdminTenant() {
+	adminTenantOnly := bson.M{"tenantId": DEFAULT_ADMIN_TENANT}
+	userDataInterface, err := mongoapi.RestfulAPIGetOne(userDataColl, adminTenantOnly)
+	if err == nil && len(userDataInterface) != 0 {
+		// Admin user already created.
+		return
+	}
+
+	var userData User
+	userData.Email = DEFAULT_ADMIN_EMAIL
+	userData.TenantId = DEFAULT_ADMIN_TENANT
+	hash, _ := bcrypt.GenerateFromPassword([]byte(DEFAULT_ADMIN_USER_PASSWORD), 12)
+	userData.EncryptedPassword = string(hash)
+
+	userBsonM := toBsonM(userData)
+	if _, err := mongoapi.RestfulAPIPost(userDataColl, adminTenantOnly, userBsonM); err != nil {
+		logger.ProcLog.Errorf("PutUserByID err: %+v", err)
+	}
+}
+
+func OptionsSubscribers(c *gin.Context) {
+	setCorsHeader(c)
+
+	c.JSON(http.StatusNoContent, gin.H{})
 }
