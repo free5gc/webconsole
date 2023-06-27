@@ -1,0 +1,112 @@
+.subscribers__header {
+  h4 {
+    display: inline-block;
+  }
+
+  .subscribers__button {
+    float: right;
+    margin-top: 10px;
+  }
+}
+
+.subscribers__content {
+  padding: 10px 30px 20px 30px !important;
+}
+
+.subscribers__table {
+  &>thead>tr {
+    cursor: auto;
+    font-size: 17px;
+  }
+
+  &>tbody>tr>td {
+    //cursor: pointer;
+    font-size: 20px;
+    padding: 6px;
+
+    &>i {
+      cursor: pointer;
+      color: rgba(0, 0, 0, 0.55);
+    }
+  }
+}
+
+.dashboard__title {
+  margin: 15px 0;
+  color: #116fb3;
+  letter-spacing: 1px;
+  line-height: 17px;
+  font-weight: 300;
+}
+
+.subscriber-config-block {
+  //text-align: center;
+  border: 1px solid #aaa;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.slice-block {
+  border: 1px solid #aaa;
+  padding: 2px;
+  margin: 2px;
+  border-radius: 5px;
+}
+
+.dnn-block {
+  border: 1px solid #aaa;
+  padding: 2px;
+  margin: 2px;
+  margin-top: 10px;
+  border-radius: 5px;
+  display: flex;
+  flex-flow: row wrap;
+  //align-items: center;
+  //justify-content: center; TODO
+  justify-content: space-between;
+}
+
+.single-dnn {
+  margin: 2px;
+  padding: 2px;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  width: 49%;
+}
+
+.flow-block {
+  border: 1px solid #aaa;
+  padding: 2px;
+  margin: 2px;
+  margin-top: 10px;
+  border-radius: 5px;
+  display: flex;
+  flex-flow: row wrap;
+}
+
+.single-flow {
+  margin: 2px;
+  padding: 2px;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  width: 100%;
+}
+
+.add-button {
+  margin-left: auto;
+  height: 30px;
+}
+
+#select {
+  display: block;
+}
+
+.form-group label {
+  margin-top: 20px;
+  margin-right: 10px;
+}
+
+hr.config {
+  border: 2px solid #aaa;
+  border-radius: 5px;
+}
