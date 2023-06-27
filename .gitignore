@@ -12,7 +12,6 @@
 bin/
 log/
 vendor/
-public/
 
 node_modules/
 yarn.lock
