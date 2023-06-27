@@ -5,8 +5,8 @@ import (
 )
 
 type SubsData struct {
-	PlmnID                            string                                     `json:"plmnID"`
-	UeId                              string                                     `json:"ueId"`
+	PlmnId                            string                                     `json:"plmnId"`
+	Supi                              string                                     `json:"supi"`
 	AuthenticationSubscription        models.AuthenticationSubscription          `json:"AuthenticationSubscription"`
 	AccessAndMobilitySubscriptionData models.AccessAndMobilitySubscriptionData   `json:"AccessAndMobilitySubscriptionData"`
 	SessionManagementSubscriptionData []models.SessionManagementSubscriptionData `json:"SessionManagementSubscriptionData"`
