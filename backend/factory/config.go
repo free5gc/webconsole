@@ -40,7 +40,7 @@ type Info struct {
 }
 
 type Configuration struct {
-	WebServer *WebServer `yaml:"webServer,omitempty" valid:"optional"`
+	Webserver *Webserver `yaml:"webserver" valid:"required"`
 	Mongodb   *Mongodb   `yaml:"mongodb" valid:"required"`
 }
 
@@ -50,10 +50,9 @@ type Logger struct {
 	ReportCaller bool   `yaml:"reportCaller" valid:"type(bool)"`
 }
 
-type WebServer struct {
-	Scheme string `yaml:"scheme" valid:"required"`
-	IP     string `yaml:"ipv4Address" valid:"required"`
-	PORT   string `yaml:"port" valid:"required"`
+type Webserver struct {
+	Host string `yaml:"host" valid:"required"`
+	Port string `yaml:"port" valid:"required"`
 }
 
 type Mongodb struct {
