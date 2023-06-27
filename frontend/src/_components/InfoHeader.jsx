@@ -14,7 +14,6 @@ function InfoHeader({ refreshAction, headline }) {
   // execute every time the refreshInterval changes to set the interval correctly
   // update the time value every x ms, which triggers refresh (see below)
   useEffect(() => {
-    console.log(`refresh interval changed to ${refreshInterval}`);
     if (refreshInterval === 0)
       return;
     const interval = setInterval(() => setTime(Date.now()), refreshInterval);
@@ -25,7 +24,6 @@ function InfoHeader({ refreshAction, headline }) {
 
   // refresh every time the 'time' value changes
   useEffect(() => {
-    console.log(`dispatch refresh action for time ${time}`);
     dispatch(refreshAction());
     // eslint-disable-next-line
   }, [ time, dispatch ]);

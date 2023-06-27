@@ -7,7 +7,6 @@ export { UeDetailsModal };
 
 const AmfInfo = (props) => {
   let { supi, accesstype, cmstate, guti, pdusessions, tac, mcc, mnc } = props.amfInfo;
-  console.log(props.amfInfo);
   return (
     <div className="content subscribers__content">
       <Table className="subscribers__table" striped bordered hover>
@@ -103,7 +102,6 @@ function UeDetailsModal(props) {
       <Modal.Body>
         {!_.isEmpty(detailedUe) && !detailedUe.loading && !detailedUe.error &&
           <>
-            {/*console.log('detailed UE: ', detailedUe)*/}
             <div>
               <h4>AMF Information</h4>
               <AmfInfo amfInfo={detailedUe.amfInfo} />

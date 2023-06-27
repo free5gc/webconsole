@@ -109,8 +109,6 @@ function createExtraReducers() {
           else this[lower] = value;
         });
 
-        console.log(smfInfo);
-
         let amfInfo = _.find(state.ues, { 'supi': smfInfo.supi }, null);
         if (!amfInfo)
           state.detailedUe = { error: { message: 'Cannot find matching UE context in AMF. Check SUPI of SMF context!' } };

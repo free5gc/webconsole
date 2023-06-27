@@ -96,7 +96,6 @@ function createReducers() {
   };
 
   function setDetailedSubscriber(state, action) {
-    //console.log('setting detailedSubscriber from ', action.payload);
     state.detailedSubscriber = action.payload;
   }
 }
