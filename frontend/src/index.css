@@ -1,0 +1,28 @@
+.app-container {
+  min-height: 350px;
+}
+
+html, body {
+  font-family: 'Open Sans', sans-serif;
+  background: white;
+  overflow: hidden;
+}
+
+body, .wrapper {
+  min-height: 100vh;
+  position: relative;
+}
+
+.wrapper {
+  height: 100vh;
+}
+
+.main-panel > .content {
+  min-height: 550px;
+  padding: 10px;
+}
+
+.main-panel, .sidebar {
+  max-height: 100%;
+  height: 100%;
+}

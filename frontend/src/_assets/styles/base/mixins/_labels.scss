@@ -1,0 +1,23 @@
+@use "../variables";
+
+@mixin label-style(){
+     padding: variables.$padding-label-vertical variables.$padding-label-horizontal;
+     border: 1px solid variables.$default-color;
+     border-radius: variables.$border-radius-small;
+     color: variables.$default-color;
+     font-weight: variables.$font-weight-semi;
+     font-size: variables.$font-size-small;
+     text-transform: uppercase;
+     display: inline-block;
+     vertical-align: middle;
+}
+
+@mixin label-color($color){
+     border-color: $color;
+     color: $color;
+}
+@mixin label-color-fill($color){
+     border-color: $color;
+     color: variables.$white-color;
+     background-color: $color;
+}

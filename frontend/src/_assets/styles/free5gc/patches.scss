@@ -1,0 +1,18 @@
+@use "variables";
+
+// BootstrapTable
+.react-bs-table-container {
+  td {
+    outline: none;
+  }
+
+  &.row-clickable table {
+    > tbody > tr {
+      cursor: pointer;
+
+      &:hover {
+        background-color: variables.$table-hover-color;
+      }
+    }
+  }
+}

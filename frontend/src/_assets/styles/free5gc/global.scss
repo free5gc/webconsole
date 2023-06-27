@@ -1,0 +1,46 @@
+@use "../base/_variables";
+@use "variables" as variables2;
+
+.pointer {
+  cursor: pointer;
+}
+
+.btn-login {
+  @extend .btn-primary !optional;
+  margin-top: 24px;
+  height: 44px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.page-title {
+  > i {
+    font-size: 24px;
+    color: variables.$primary-color;
+  }
+}
+
+.sync-button {
+  margin-left: 10px;
+  font-size: 18px !important;
+  color: variables.$primary-color;
+  cursor: pointer;
+}
+
+table tbody tr.highlight {
+  td {
+    background-color: rgba(255, 166, 55, 0.36);
+  }
+}
+
+
+// ---------------------- Tasks ---------------------- //
+.tasks-table {
+  tr {
+    height: 43px;
+  }
+  td {
+    vertical-align: middle !important;
+  }
+}
