@@ -48,8 +48,6 @@ function SubscriberModal(props) {
     let previousMsisdn = _.get(detailedSubscriber, 'AccessAndMobilitySubscriptionData.gpsis')?.filter(gpsi => gpsi.includes('msisdn-'))[0];
     let newMsisdn = _.get(marshalledData, 'AccessAndMobilitySubscriptionData.gpsis')?.filter(gpsi => gpsi.includes('msisdn-'))[0];
 
-    console.log(previousSupi, newSupi, previousMsisdn, newMsisdn);
-
     // A susbcriber cannot be created if it has the same SUPI as the previous one
     if (props.duplicateSubscriber
       && _.isEqual(previousSupi, newSupi)) {
@@ -378,7 +376,6 @@ function SubscriberModal(props) {
               if (props.newSubscriber) {
                 reset(defaultSubscriber);
               } else {
-                console.log('reset called');
                 reset(backendToFrontend(detailedSubscriber));
               }
             }}>
