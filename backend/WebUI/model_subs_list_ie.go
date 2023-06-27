@@ -1,7 +1,7 @@
 package WebUI
 
 type SubsListIE struct {
-	PlmnID string `json:"plmnID"`
-	UeId   string `json:"ueId"`
+	PlmnId string `json:"plmnId"`
+	Supi   string `json:"supi"`
 	Msisdn string `json:"msisdn"`
 }

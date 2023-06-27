@@ -147,70 +147,80 @@ var routes = Routes{
 	{
 		"GetSubscribers",
 		http.MethodGet,
-		"/subscriber",
+		"/subscribers",
 		GetSubscribers,
 	},
 
 	{
 		"GetSubscriberByID",
 		http.MethodGet,
-		"/subscriber/:ueId/:servingPlmnId",
+		"/subscribers/:supi/:plmnId",
 		GetSubscriberByID,
 	},
 
 	{
 		"PostSubscriberByID",
 		http.MethodPost,
-		"/subscriber/:ueId/:servingPlmnId",
+		"/subscribers/:supi/:plmnId",
 		PostSubscriberByID,
 	},
 
 	{
-		"PostMultiSubscriber",
+		"PostMultipleSubscribersByID",
 		http.MethodPost,
-		"/subscriber/:ueId/:servingPlmnId/:userNumber",
-		PostSubscriberByID,
+		"/subscribers/:supi/:plmnId/:userNumber",
+		PostMultipleSubscribersByID,
 	},
 
 	{
 		"PutSubscriberByID",
 		http.MethodPut,
-		"/subscriber/:ueId/:servingPlmnId",
+		"/subscribers/:supi/:plmnId",
 		PutSubscriberByID,
 	},
 
 	{
 		"DeleteSubscriberByID",
 		http.MethodDelete,
-		"/subscriber/:ueId/:servingPlmnId",
+		"/subscribers/:supi/:plmnId",
 		DeleteSubscriberByID,
 	},
 
 	{
 		"PatchSubscriberByID",
 		http.MethodPatch,
-		"/subscriber/:ueId/:servingPlmnId",
+		"/subscribers/:supi/:plmnId",
 		PatchSubscriberByID,
 	},
 
+	// AMF currently returns all contexts at once
 	{
-		"Registered UE Context",
+		"GetAmfUeContexts",
 		http.MethodGet,
-		"/registered-ue-context",
-		GetRegisteredUEContext,
+		"/amf-ue-contexts",
+		GetAmfUeContexts,
 	},
 
-	{
-		"Individual Registered UE Context",
-		http.MethodGet,
-		"/registered-ue-context/:supi",
-		GetRegisteredUEContext,
-	},
+	// AMF currently returns all contexts at once
+	//{
+	//	"GetAmfUeContextByID",
+	//	http.MethodGet,
+	//	"/amf-ue-contexts/:supi",
+	//	GetAmfUeContextByID,
+	//},
+
+	// not implemented, as not required, only need a single context
+	//{
+	//	"GetSmfUeContexts",
+	//	http.MethodGet,
+	//	"/ue-session-contexts",
+	//	GetSmfUeContexts,
+	//},
 
 	{
-		"UE PDU Session Info",
+		"GetUeSessionContextByID",
 		http.MethodGet,
-		"/ue-pdu-session-info/:smContextRef",
-		GetUEPDUSessionInfo,
+		"/ue-session-contexts/:smContextRef",
+		GetUeSessionContextByID,
 	},
 }
