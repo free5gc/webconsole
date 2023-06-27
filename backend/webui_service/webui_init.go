@@ -104,5 +104,12 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 
 	router.NoRoute(ReturnPublic())
 
-	logger.InitLog.Infoln(router.Run(webserver.Host + ":" + webserver.Port))
+	var url string
+	if webserver.Host == "localhost" {
+		url = ":" + webserver.Port
+	} else {
+		url = webserver.Host + ":" + webserver.Port
+	}
+
+	logger.InitLog.Infoln(router.Run(url))
 }
