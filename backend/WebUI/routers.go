@@ -3,6 +3,8 @@ package WebUI
 import (
 	"net/http"
 
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 
 	logger_util "github.com/free5gc/util/logger"
@@ -27,32 +29,70 @@ type Routes []Route
 // NewRouter returns a new router.
 func NewRouter() *gin.Engine {
 	router := logger_util.NewGinWithLogrus(logger.GinLog)
-	AddService(router)
+
+	router.Use(cors.New(cors.Config{
+		AllowMethods: []string{"GET", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"},
+		AllowHeaders: []string{
+			"Origin", "Content-Length", "Content-Type", "User-Agent",
+			"Referrer", "Host", "Token", "X-Requested-With",
+		},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		AllowAllOrigins:  true,
+		MaxAge:           86400,
+	}))
+
+	router.SetTrustedProxies(nil)
+
+	// Serve favicon
+	router.StaticFile("/favicon.ico", "./public/favicon.ico")
+
+	// Serve frontend static files
+	router.Use(static.Serve("/", static.LocalFile("./public", true)))
+
+	// Allow reload in frontend, e.g. /subscribers
+	// Otherwise gin thinks it's an API call
+	// This lets react take care of routing /subscribers
+	router.NoRoute(func(c *gin.Context) {
+		c.File("./public/index.html")
+	})
+
+	router.NoMethod(func(c *gin.Context) {
+		c.AbortWithStatusJSON(405, "Not allowed")
+	})
+
+	// Serve API
+	AddApi(router)
+
 	return router
 }
 
-func AddService(engine *gin.Engine) *gin.RouterGroup {
-	group := engine.Group("/api")
+func AddApi(engine *gin.Engine) {
+	api := engine.Group("/api")
 
-	for _, route := range routes {
+	api.GET("/", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "API working",
+		})
+	})
+
+	for _, route := range apiEndpoints {
 		switch route.Method {
 		case http.MethodGet:
-			group.GET(route.Pattern, route.HandlerFunc)
+			api.GET(route.Pattern, route.HandlerFunc)
 		case http.MethodPost:
-			group.POST(route.Pattern, route.HandlerFunc)
+			api.POST(route.Pattern, route.HandlerFunc)
 		case http.MethodPut:
-			group.PUT(route.Pattern, route.HandlerFunc)
+			api.PUT(route.Pattern, route.HandlerFunc)
 		case http.MethodDelete:
-			group.DELETE(route.Pattern, route.HandlerFunc)
+			api.DELETE(route.Pattern, route.HandlerFunc)
 		case http.MethodPatch:
-			group.PATCH(route.Pattern, route.HandlerFunc)
+			api.PATCH(route.Pattern, route.HandlerFunc)
 		}
 	}
-
-	return group
 }
 
-var routes = Routes{
+var apiEndpoints = Routes{
 	{
 		"GetExample",
 		http.MethodGet,
