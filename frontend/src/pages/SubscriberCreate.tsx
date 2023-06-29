@@ -81,6 +81,10 @@ export default function SubscriberCreate() {
   };
 
   const onCreate = () => {
+    if (data.SessionManagementSubscriptionData === undefined) {
+      alert("Please add at least one S-NSSAI");
+      return;
+    }
     for (let i = 0; i < data.SessionManagementSubscriptionData!.length; i++) {
       const nssai = data.SessionManagementSubscriptionData![i];
       const key = nssai2KeyString(nssai.singleNssai!);
@@ -113,7 +117,7 @@ export default function SubscriberCreate() {
         navigation("/subscriber");
       })
       .catch((err) => {
-        alert(err.response.data.message);
+        alert(err.response.data.cause);
       });
   };
 
