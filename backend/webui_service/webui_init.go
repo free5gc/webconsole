@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/gin-contrib/cors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/free5gc/util/mongoapi"
@@ -78,8 +77,6 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 		return
 	}
 
-	logger.InitLog.Infoln("Server started")
-
 	router := WebUI.NewRouter()
 	WebUI.SetAdmin()
 	if err := WebUI.InitJwtKey(); err != nil {
@@ -87,22 +84,8 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 		return
 	}
 
-	router.Use(cors.New(cors.Config{
-		AllowMethods: []string{"GET", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"},
-		AllowHeaders: []string{
-			"Origin", "Content-Length", "Content-Type", "User-Agent",
-			"Referrer", "Host", "Token", "X-Requested-With",
-		},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		AllowAllOrigins:  true,
-		MaxAge:           86400,
-	}))
-
 	self := webui_context.GetSelf()
 	self.UpdateNfProfiles()
-
-	router.NoRoute(ReturnPublic())
 
 	var url string
 	if webserver.Host == "localhost" {
