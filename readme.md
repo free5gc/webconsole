@@ -16,9 +16,9 @@ sudo apt-get install -y nodejs yarn
 
 ## Run the Webconsole
 
-### Run for Usage
+### Simple Usage
 
-If you just want to use the free5gc webconsole, use the binary. 
+Th easiest way to use the webconsole is via the binary.
 
 Navigate to the free5gc main folder `~/free5gc`. Build the webconsole binary with 
 ```bash
@@ -39,14 +39,16 @@ Password: free5gc
 ```
 
 
-### Run for Development
+### Run for Development (hot-reload frontend)
 
 For development, you can run the backend and frontend separately and use the hot-reload feature of ReactJS.
 
-To do this,
+Info for beginners: The golang webserver serves both static (frontend) and API on port `5000` (per default). Currently, urls with prefix `/api` are considered as API calls, the rest leads to the frontend. The static files are served from `~/free5gc/webconsole/public`. The frontend is developed in `~/free5gc/webconsole/frontend`, therefore, changes to these files have no effect in the webconsole shown in your browser. But you can start the frontend separately on a development webserver with a different port with `yarn` to use hot-reload (auto-refresh on changes). It will access the API at port `5000` (per default) and itself is accessed on port `3000`.
+
+To start a separate frontend webserver,
 
 1. Navigate to `~/free5gc/webconsole` folder.
-1. Change the URL of the backend webserver to your external IP address. Change the frontend API URL to the same address. See [Configure Webserver and Frontend Parameters](#configure-webserver-and-frontend-parameters).
+1. Change the URL of the backend webserver to your external IP address. Change the frontend API URL to the same external IP address. See [Configure Webserver and Frontend Parameters](#configure-webserver-and-frontend-parameters).
 1. Start the backend server with 
    ```bash
    go run server.go
@@ -74,13 +76,15 @@ Password: free5gc
 
 ## Configure Webserver and Frontend Parameters
 
-To configure the URL for the webconsole server, open `~/free5gc/webconsole/config/webuicfg.yaml` and modify the `webserver` settings:
+Let's assume your externally reachable IP is `172.16.5.60`.
+
+To configure the URL for the golang server, open `~/free5gc/webconsole/config/webuicfg.yaml` and modify the `webserver` settings:
 ```yaml
   webserver:
-    host: localhost
+    host: https://172.16.5.60
     port: 5000
 ```
 
 For the frontend, the configuration is done via environment variables. 
 
-Open `~/free5gc/webconsole/frontend/.env` and modify the settings.
+Open `~/free5gc/webconsole/frontend/.env` and modify the `REACT_APP_API_URL` to `https://172.16.5.60:5000/api`.
