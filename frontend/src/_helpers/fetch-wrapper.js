@@ -19,7 +19,6 @@ function request(method) {
       mode: 'cors',
       headers: {
         'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
       },
     };
 
