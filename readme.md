@@ -81,10 +81,32 @@ Let's assume your externally reachable IP is `172.16.5.60`.
 To configure the URL for the golang server, open `~/free5gc/webconsole/config/webuicfg.yaml` and modify the `webserver` settings:
 ```yaml
   webserver:
-    host: https://172.16.5.60
+    host: 172.16.5.60
     port: 5000
 ```
 
 For the frontend, the configuration is done via environment variables. 
 
-Open `~/free5gc/webconsole/frontend/.env` and modify the `REACT_APP_API_URL` to `https://172.16.5.60:5000/api`.
+Open `~/free5gc/webconsole/frontend/.env` and modify the `REACT_APP_API_URL` to `172.16.5.60:5000/api`.
+
+
+## Troubleshooting
+
+This is a collection of common issues and suggested fixes:
+
+- 404 not found when starting webconsole with `go run server.go`
+  - check the `~/free5gc/webconsole/public` folder exisis
+  - the webserver tries to serve its static files from this folder
+  - create it using the Makefile in the free5gc parent directory
+
+- "NetworkError when attempting to fetch resource" or "Failed to fetch" error
+  - this likely is a problem with CORS
+  - if you run the webconsole with `yarn start` and `go run server.go`, this means you forgot to change the server's IP in `webuicfg.yaml` and `.env` to the same IP.
+  - alternatively, your `REACT_APP_API_URL` does not start with `http(s)://`; this is required by cors
+
+- "/bin/sh: 1: react-scripts: not found" when running `yarn start`
+  - the required node modules are not installed yet
+  - run `yarn install` in the `~/free5gc/webconsole/frontend` folder to install them
+
+- "error Couldn't find a package.json" when running `yarn start`
+  - you are not in the `~/free5gc/webconsole/frontend` folder
