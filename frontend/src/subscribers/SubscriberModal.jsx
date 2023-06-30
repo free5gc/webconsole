@@ -45,23 +45,16 @@ function SubscriberModal(props) {
 
     let previousSupi = _.get(detailedSubscriber, 'supi');
     let newSupi = _.get(marshalledData, 'supi');
+    let previousPlmnId = _.get(detailedSubscriber, 'plmnId');
+    let newPlmnId = _.get(marshalledData, 'plmnId');
     let previousMsisdn = _.get(detailedSubscriber, 'AccessAndMobilitySubscriptionData.gpsis')?.filter(gpsi => gpsi.includes('msisdn-'))[0];
     let newMsisdn = _.get(marshalledData, 'AccessAndMobilitySubscriptionData.gpsis')?.filter(gpsi => gpsi.includes('msisdn-'))[0];
 
-    // A susbcriber cannot be created if it has the same SUPI as the previous one
+    // A susbcriber cannot be created if it has the same SUPI and PLMN ID an as the duplicated one
     if (props.duplicateSubscriber
-      && _.isEqual(previousSupi, newSupi)) {
-      //subscriber unique identifier was not modified, do not accept submit
-      alert('You have to modify the IMSI/ SUPI!');
-      return false;
-    }
-
-    // A susbcriber cannot be created if it has the same MSISDN as the previous one (except for empty msisdn)
-    if (props.duplicateSubscriber
-      && newMsisdn !== 'msisdn-'
-      && _.isEqual(previousMsisdn, newMsisdn)) {
-      //subscriber unique identifier was not modified, do not accept submit
-      alert('You have to modify the MSISDN!');
+      && _.isEqual(previousSupi, newSupi)
+      && _.isEqual(previousPlmnId, newPlmnId)) {
+      alert('The SUPI already exists for this PLMN. Choose a different SUPI or PLMN ID!');
       return false;
     }
 
@@ -73,13 +66,22 @@ function SubscriberModal(props) {
       return false;
     }
 
-    // If a subscriber is created with a duplicate SUPI or MSISDN, do not accept and warn
+    // If a new subscriber is created with a duplicate SUPI-PLMN ID combination, do not accept and warn
     // Otherwise the existing subscriber will be overwritten accidentally
     if ((props.duplicateSubscriber || props.newSubscriber)
       && _.filter(subscribers, function (sub) {
-        return sub.supi === newSupi || (newMsisdn !== 'msisdn-' && _.isEqual('msisdn-' + sub.msisdn, newMsisdn))
+        return sub.supi === newSupi && (_.isEqual(sub.plmnId, newPlmnId))
       }).length > 0) {
-      alert('SUPI and/ or MSISDN already exist. You have to modify the SUPI and/ or MSISDN!');
+      alert('The SUPI already exists for this PLMN. Choose a different SUPI or PLMN ID!');
+      return false;
+    }
+
+    // If a subscriber is created with a duplicate MSISDN, do not accept
+    if ((props.duplicateSubscriber || props.newSubscriber)
+      && _.filter(subscribers, function (sub) {
+        return (newMsisdn !== 'msisdn-' && _.isEqual('msisdn-' + sub.msisdn, newMsisdn))
+      }).length > 0) {
+      alert('The MSISDN already exists. You have to modify the MSISDN!');
       return false;
     }
 
