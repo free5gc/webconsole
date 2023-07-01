@@ -94,7 +94,15 @@ export default function SubscriberUpdate() {
         navigation("/subscriber/" + data.ueId + "/" + data.plmnID);
       })
       .catch((err) => {
-        alert(err.response.data.message);
+        if (err.response) {
+          if (err.response.data.cause) {
+            alert(err.response.data.cause);
+          } else {
+            alert(err.response.data);
+          }
+        } else {
+          alert(err.message);
+        }
       });
   };
 
