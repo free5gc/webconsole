@@ -959,7 +959,7 @@ export default function SubscriberUpdate() {
             <TableRow>
               <TableCell>
                 <TextField
-                  label="Authentication Management Field"
+                  label="Authentication Management Field (AMF)"
                   variant="outlined"
                   required
                   fullWidth
