@@ -3,7 +3,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import axios from "../axios";
-import { Subscription, Nssai, DnnConfiguration, FlowRules } from "../api/api";
+import {
+  Subscription,
+  Nssai,
+  DnnConfiguration,
+  AccessAndMobilitySubscriptionData,
+  FlowRules,
+} from "../api/api";
 
 import Dashboard from "../Dashboard";
 import {
@@ -264,6 +270,18 @@ export default function SubscriberCreate() {
     }
   };
 
+  const msisdnValue = (subData: AccessAndMobilitySubscriptionData | undefined) => {
+    if (subData === undefined) {
+      return "";
+    } else {
+      if (subData.gpsis !== undefined && subData.gpsis!.length !== 0) {
+        return subData.gpsis[0].replace("msisdn-", "");
+      } else {
+        return "";
+      }
+    }
+  };
+
   const handleChangePlmnId = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ): void => {
@@ -274,6 +292,18 @@ export default function SubscriberCreate() {
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ): void => {
     setData({ ...data, ueId: "imsi-" + event.target.value });
+  };
+
+  const handleChangeMsisdn = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ): void => {
+    setData({
+      ...data,
+      AccessAndMobilitySubscriptionData: {
+        ...data.AccessAndMobilitySubscriptionData,
+        gpsis: ["msisdn-" + event.target.value],
+      },
+    });
   };
 
   const handleChangeAuthenticationManagementField = (
@@ -936,7 +966,21 @@ export default function SubscriberCreate() {
             <TableRow>
               <TableCell>
                 <TextField
-                  label="Authentication Management Field"
+                  label="MSISDN"
+                  variant="outlined"
+                  required
+                  fullWidth
+                  value={msisdnValue(data.AccessAndMobilitySubscriptionData)}
+                  onChange={handleChangeMsisdn}
+                />
+              </TableCell>
+            </TableRow>
+          </TableBody>
+          <TableBody>
+            <TableRow>
+              <TableCell>
+                <TextField
+                  label="Authentication Management Field (AMF)"
                   variant="outlined"
                   required
                   fullWidth

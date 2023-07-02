@@ -3,7 +3,13 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import axios from "../axios";
-import { Subscription, Nssai, AuthenticationSubscription, DnnConfiguration } from "../api/api";
+import {
+  Subscription,
+  Nssai,
+  AuthenticationSubscription,
+  AccessAndMobilitySubscriptionData,
+  DnnConfiguration,
+} from "../api/api";
 
 import Dashboard from "../Dashboard";
 import {
@@ -61,6 +67,18 @@ export default function SubscriberRead() {
       return "";
     } else {
       return imsi.replace("imsi-", "");
+    }
+  };
+
+  const msisdnValue = (subData: AccessAndMobilitySubscriptionData | undefined) => {
+    if (subData === undefined) {
+      return "";
+    } else {
+      if (subData.gpsis !== undefined && subData.gpsis!.length !== 0) {
+        return subData.gpsis[0].replace("msisdn-", "");
+      } else {
+        return "";
+      }
     }
   };
 
@@ -206,7 +224,13 @@ export default function SubscriberRead() {
           </TableBody>
           <TableBody>
             <TableRow>
-              <TableCell style={{ width: "40%" }}>Authentication Management Field</TableCell>
+              <TableCell style={{ width: "40%" }}>MSISDN</TableCell>
+              <TableCell>{msisdnValue(data.AccessAndMobilitySubscriptionData)}</TableCell>
+            </TableRow>
+          </TableBody>
+          <TableBody>
+            <TableRow>
+              <TableCell style={{ width: "40%" }}>Authentication Management Field (AMF)</TableCell>
               <TableCell>
                 {data.AuthenticationSubscription?.authenticationManagementField}
               </TableCell>

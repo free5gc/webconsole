@@ -3,7 +3,13 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import axios from "../axios";
-import { Subscription, Nssai, DnnConfiguration, FlowRules } from "../api/api";
+import {
+  Subscription,
+  Nssai,
+  DnnConfiguration,
+  AccessAndMobilitySubscriptionData,
+  FlowRules,
+} from "../api/api";
 
 import Dashboard from "../Dashboard";
 import {
@@ -241,6 +247,18 @@ export default function SubscriberUpdate() {
     }
   };
 
+  const msisdnValue = (subData: AccessAndMobilitySubscriptionData | undefined) => {
+    if (subData === undefined) {
+      return "";
+    } else {
+      if (subData.gpsis !== undefined && subData.gpsis!.length !== 0) {
+        return subData.gpsis[0].replace("msisdn-", "");
+      } else {
+        return "";
+      }
+    }
+  };
+
   const handleChangePlmnId = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ): void => {
@@ -251,6 +269,18 @@ export default function SubscriberUpdate() {
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ): void => {
     setData({ ...data, ueId: "imsi-" + event.target.value });
+  };
+
+  const handleChangeMsisdn = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ): void => {
+    setData({
+      ...data,
+      AccessAndMobilitySubscriptionData: {
+        ...data.AccessAndMobilitySubscriptionData,
+        gpsis: ["msisdn-" + event.target.value],
+      },
+    });
   };
 
   const handleChangeAuthenticationManagementField = (
@@ -907,6 +937,20 @@ export default function SubscriberUpdate() {
                   value={imsiValue(data.ueId)}
                   onChange={handleChangeUeId}
                   InputLabelProps={{ shrink: true }}
+                />
+              </TableCell>
+            </TableRow>
+          </TableBody>
+          <TableBody>
+            <TableRow>
+              <TableCell>
+                <TextField
+                  label="MSISDN"
+                  variant="outlined"
+                  required
+                  fullWidth
+                  value={msisdnValue(data.AccessAndMobilitySubscriptionData)}
+                  onChange={handleChangeMsisdn}
                 />
               </TableCell>
             </TableRow>
