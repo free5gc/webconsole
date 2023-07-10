@@ -463,9 +463,11 @@ func Login(c *gin.Context) {
 	userId := userData["userId"].(string)
 	tenantId := userData["tenantId"].(string)
 
-	logger.ProcLog.Warnln("Login success", login.Username)
-	logger.ProcLog.Warnln("userid", userId)
-	logger.ProcLog.Warnln("tenantid", tenantId)
+	logger.ProcLog.Warnln("Login success {",
+		"username:", login.Username,
+		", userid:", userId,
+		", tenantid:", tenantId,
+		"}")
 
 	token := JWT(login.Username, userId, tenantId)
 	logger.ProcLog.Warnln("token", token)
@@ -504,7 +506,9 @@ func ParseJWT(tokenStr string) (jwt.MapClaims, error) {
 // Check of admin user. This should be done with proper JWT token.
 func CheckAuth(c *gin.Context) bool {
 	tokenStr := c.GetHeader("Token")
-	if tokenStr == "admin" {
+	claims, err := ParseJWT(tokenStr)
+
+	if err == nil && claims["email"] == "admin" {
 		return true
 	} else {
 		return false
@@ -514,7 +518,7 @@ func CheckAuth(c *gin.Context) bool {
 // Tenant ID
 func GetTenantId(c *gin.Context) (string, error) {
 	tokenStr := c.GetHeader("Token")
-	if tokenStr == "admin" {
+	if CheckAuth(c) {
 		return "", nil
 	}
 	claims, err := ParseJWT(tokenStr)
@@ -530,7 +534,7 @@ func GetTenants(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusNotFound, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -932,12 +936,7 @@ func GetSubscribers(c *gin.Context) {
 	logger.ProcLog.Infoln("Get All Subscribers List")
 
 	tokenStr := c.GetHeader("Token")
-
-	var claims jwt.MapClaims = nil
-	var err error = nil
-	if tokenStr != "admin" {
-		claims, err = ParseJWT(tokenStr)
-	}
+	claims, err := ParseJWT(tokenStr)
 	if err != nil {
 		logger.ProcLog.Errorln(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -975,7 +974,7 @@ func GetSubscribers(c *gin.Context) {
 			return
 		}
 
-		if tokenStr == "admin" || tenantId == claims["tenantId"].(string) {
+		if claims["email"] == "admin" || tenantId == claims["tenantId"].(string) {
 			tmp := SubsListIE{
 				PlmnID: servingPlmnId.(string),
 				UeId:   ueId.(string),
@@ -1156,13 +1155,8 @@ func PostSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Post One Subscriber Data")
 
-	var claims jwt.MapClaims = nil
-	var err error = nil
 	tokenStr := c.GetHeader("Token")
-
-	if tokenStr != "admin" {
-		claims, err = ParseJWT(tokenStr)
-	}
+	claims, err := ParseJWT(tokenStr)
 	if err != nil {
 		logger.ProcLog.Errorln(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -1571,7 +1565,6 @@ func GetRegisteredUEContext(c *gin.Context) {
 	webuiSelf.UpdateNfProfiles()
 
 	supi, supiExists := c.Params.Get("supi")
-
 	// TODO: support fetching data from multiple AMFs
 	if amfUris := webuiSelf.GetOamUris(models.NfType_AMF); amfUris != nil {
 		var requestUri string

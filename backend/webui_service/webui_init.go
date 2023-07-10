@@ -6,6 +6,8 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/free5gc/util/mongoapi"
 	"github.com/free5gc/webconsole/backend/WebUI"
@@ -75,6 +77,29 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 	if err := mongoapi.SetMongoDB(mongodb.Name, mongodb.Url); err != nil {
 		logger.InitLog.Errorf("Server start err: %+v", err)
 		return
+	}
+
+	// Create admin account
+	filter := bson.M{"email": "admin"}
+	hash, err := bcrypt.GenerateFromPassword([]byte("free5gc"), 12)
+	if err != nil {
+		logger.InitLog.Errorf("GenerateFromPassword err: %+v", err)
+	}
+
+	data := bson.M{
+		"userId":            "1",
+		"tenantId":          "1",
+		"email":             "admin",
+		"encryptedPassword": string(hash),
+	}
+
+	existed, err := mongoapi.RestfulAPIPutOne("userData", filter, data)
+	if err != nil {
+		logger.InitLog.Errorf("RestfulAPIPutOne err: %+v", err)
+	}
+
+	if existed {
+		logger.InitLog.Infof("Admin existed.")
 	}
 
 	logger.InitLog.Infoln("Server started")

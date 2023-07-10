@@ -16,7 +16,7 @@ class Login extends Component {
     password: "",
   };
 
-  conponentWillMount() {
+  componentWillMount() {
     this.setState({
       submitDisabled: false,
       errorMsg: "",
