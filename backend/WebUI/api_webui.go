@@ -5,11 +5,12 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -39,6 +40,11 @@ const (
 	msisdnSupiMapColl = "subscriptionData.msisdnSupiMap"
 )
 
+var (
+	jwtKey = "" // for generating JWT
+	mu     *sync.Mutex
+)
+
 var httpsClient *http.Client
 
 func init() {
@@ -47,6 +53,7 @@ func init() {
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 	}
+	mu = new(sync.Mutex)
 }
 
 func mapToByte(data map[string]interface{}) (ret []byte) {
@@ -401,7 +408,17 @@ func JWT(email, userId, tenantId string) string {
 	claims["email"] = email
 	claims["tenantId"] = tenantId
 
-	tokenString, err := token.SignedString([]byte(os.Getenv("SIGNINGKEY")))
+	mu.Lock()
+
+	if jwtKey == "" {
+		rand.Seed(time.Now().UnixNano())
+		for i := 0; i < 256; i++ {
+			jwtKey += string(rune(rand.Intn(128)))
+		}
+	}
+	mu.Unlock()
+
+	tokenString, err := token.SignedString([]byte(jwtKey))
 	if err != nil {
 		logger.ProcLog.Errorf("JWT err: %+v", err)
 	}
@@ -492,7 +509,7 @@ type AuthSub struct {
 // Parse JWT
 func ParseJWT(tokenStr string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("SIGNINGKEY")), nil
+		return []byte(jwtKey), nil
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "ParseJWT error")
