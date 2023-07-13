@@ -617,6 +617,7 @@ func PostTenant(c *gin.Context) {
 		return
 	}
 
+	// fmt.Println("in Post Tenant")
 	if tenantData.TenantId == "" {
 		tenantData.TenantId = uuid.Must(uuid.NewRandom()).String()
 	}
@@ -1672,5 +1673,55 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"cause": "No SMF Found",
 		})
+	}
+}
+
+// Create Admin's Tenant & Account
+func SetAdmin() {
+	err := mongoapi.RestfulAPIDeleteOne("tenantData", bson.M{"tenantName": "admin"})
+	if err != nil {
+		logger.InitLog.Errorf("RestfulAPIDeleteOne err: %+v", err)
+	}
+	err = mongoapi.RestfulAPIDeleteOne("userData", bson.M{"email": "admin"})
+	if err != nil {
+		logger.InitLog.Errorf("RestfulAPIDeleteOne err: %+v", err)
+	}
+
+	// Create Admin tenant
+	logger.InitLog.Infoln("Create tenant: admin")
+
+	adminTenantData := bson.M{
+		"tenantId":   uuid.Must(uuid.NewRandom()).String(),
+		"tenantName": "admin",
+	}
+
+	_, err = mongoapi.RestfulAPIPutOne("tenantData", bson.M{"tenantName": "admin"}, adminTenantData)
+	if err != nil {
+		logger.InitLog.Errorf("RestfulAPIPutOne err: %+v", err)
+	}
+
+	AmdinTenant, err := mongoapi.RestfulAPIGetOne("tenantData", bson.M{"tenantName": "admin"})
+	if err != nil {
+		logger.InitLog.Errorf("RestfulAPIGetOne err: %+v", err)
+	}
+
+	// Create Admin user
+	logger.InitLog.Infoln("Create user: admin")
+
+	hash, err := bcrypt.GenerateFromPassword([]byte("free5gc"), 12)
+	if err != nil {
+		logger.InitLog.Errorf("GenerateFromPassword err: %+v", err)
+	}
+
+	adminUserData := bson.M{
+		"userId":            uuid.Must(uuid.NewRandom()).String(),
+		"tenantId":          AmdinTenant["tenantId"],
+		"email":             "admin",
+		"encryptedPassword": string(hash),
+	}
+
+	_, err = mongoapi.RestfulAPIPutOne("userData", bson.M{"email": "admin"}, adminUserData)
+	if err != nil {
+		logger.InitLog.Errorf("RestfulAPIPutOne err: %+v", err)
 	}
 }
