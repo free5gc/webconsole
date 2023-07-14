@@ -73,11 +73,15 @@ class UserModal extends Component {
       "email": formData["email"],
       "password": formData["password"]
     };
-
-    if(this.state.editMode) {
-      this.props.onModify(userData);
-    } else {
-      this.props.onSubmit(userData);
+    if (formData["password"] !== formData["confirmPassword"]){
+      this.setState({ passwordNotConfirmed: true });
+    } else{
+      this.setState({ passwordNotConfirmed: false });
+      if (this.state.editMode) {
+        this.props.onModify(userData);
+      } else {
+        this.props.onSubmit(userData);
+      }
     }
   }
 
@@ -92,6 +96,9 @@ class UserModal extends Component {
           <Modal.Title id="example-modal-sizes-title-lg">
             {this.state.editMode ? "Edit User" : "New User"}
           </Modal.Title>
+          <font color="red">
+            {this.state.passwordNotConfirmed ? "Warning: (Confirm Password mismatch)": ""}
+          </font>
         </Modal.Header>
 
         <Modal.Body>

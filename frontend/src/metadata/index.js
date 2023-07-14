@@ -316,6 +316,9 @@ let subModaluiSchema = {
   password: {
     "ui:widget": "password",
   },
+  confirmPassword: {
+    "ui:widget": "password",
+  },
 };
 
 let tenantSchema = {
@@ -362,11 +365,16 @@ let userModalSchema = {
       default: "",
     },
     password: {
-      "ui:widget": "password",
       type: "string",
       title: "Password",
+      pattern: ".{6,}$",
       default: "",
     },
+    confirmPassword: {
+      type: "string",
+      title: "Confirm Password",
+      default: "",
+    }
   },
 };
 
