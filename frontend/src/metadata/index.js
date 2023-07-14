@@ -312,7 +312,10 @@ let subModaluiSchema = {
         },
       }
     }
-  }
+  },
+  password: {
+    "ui:widget": "password",
+  },
 };
 
 let tenantSchema = {
@@ -359,6 +362,7 @@ let userModalSchema = {
       default: "",
     },
     password: {
+      "ui:widget": "password",
       type: "string",
       title: "Password",
       default: "",

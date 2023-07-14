@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Modal } from "react-bootstrap";
+import { subModaluiSchema } from '../../../metadata/index'
 import Form from "react-jsonschema-form";
 import PropTypes from 'prop-types';
 import { userModalSchema } from '../../../metadata/index'
@@ -21,6 +22,7 @@ class UserModal extends Component {
   };
 
   schema = userModalSchema;
+  uiSchema = subModaluiSchema;
 
   componentDidUpdate(prevProps, prevState, snapshot) {
     if (prevProps !== this.props) {
@@ -94,7 +96,9 @@ class UserModal extends Component {
 
         <Modal.Body>
           {this.state.rerenderCounter % 2 === 0 &&
-            <Form schema={this.schema}
+            <Form 
+              schema={this.schema}
+              uiSchema={this.uiSchema}
               formData={this.state.formData}
               onChange={this.onChange.bind(this)}
               onSubmit={this.onSubmitClick.bind(this)} />
