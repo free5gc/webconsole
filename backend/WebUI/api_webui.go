@@ -556,7 +556,7 @@ func GetTenants(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, gin.H{"cause": "Illegal Token"})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -580,7 +580,7 @@ func GetTenantByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -612,7 +612,7 @@ func PostTenant(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -642,7 +642,7 @@ func PutTenantByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -682,7 +682,7 @@ func DeleteTenantByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -724,7 +724,7 @@ func GetUsers(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -761,7 +761,7 @@ func GetUserByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -801,7 +801,7 @@ func PostUserByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -855,7 +855,7 @@ func PutUserByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -931,7 +931,7 @@ func DeleteUserByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
