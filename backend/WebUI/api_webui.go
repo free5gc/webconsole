@@ -2,10 +2,10 @@ package WebUI
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -411,9 +411,14 @@ func JWT(email, userId, tenantId string) string {
 	mu.Lock()
 
 	if jwtKey == "" {
-		rand.Seed(time.Now().UnixNano())
 		for i := 0; i < 256; i++ {
-			jwtKey += string(rune(rand.Intn(128)))
+			randomBytes := make([]byte, 128)
+			_, err := rand.Read(randomBytes)
+			if err != nil {
+				logger.ProcLog.Warnln("Generate JWT Private Key error.")
+			} else {
+				jwtKey = string(randomBytes)
+			}
 		}
 	}
 	mu.Unlock()
