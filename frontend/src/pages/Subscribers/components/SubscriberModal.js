@@ -306,6 +306,9 @@ class SubscriberModal extends Component {
 
   onSubmitClick(result) {
     const formData = result.formData;
+    formData["sliceConfigurations"].forEach(slice => {
+      slice["snssai"]["sd"] = slice["snssai"]["sd"].toLowerCase()
+    })
     const OP = formData["OPOPcSelect"] === "OP" ? formData["OPOPc"] : "";
     const OPc = formData["OPOPcSelect"] === "OPc" ? formData["OPOPc"] : "";
 
