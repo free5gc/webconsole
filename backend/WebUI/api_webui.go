@@ -2,11 +2,11 @@ package WebUI
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -39,6 +39,8 @@ const (
 	msisdnSupiMapColl = "subscriptionData.msisdnSupiMap"
 )
 
+var jwtKey = "" // for generating JWT
+
 var httpsClient *http.Client
 
 func init() {
@@ -47,6 +49,67 @@ func init() {
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 	}
+}
+
+// Create Admin's Tenant & Account
+func SetAdmin() {
+	err := mongoapi.RestfulAPIDeleteOne("tenantData", bson.M{"tenantName": "admin"})
+	if err != nil {
+		logger.InitLog.Errorf("RestfulAPIDeleteOne err: %+v", err)
+	}
+	err = mongoapi.RestfulAPIDeleteOne("userData", bson.M{"email": "admin"})
+	if err != nil {
+		logger.InitLog.Errorf("RestfulAPIDeleteOne err: %+v", err)
+	}
+
+	// Create Admin tenant
+	logger.InitLog.Infoln("Create tenant: admin")
+
+	adminTenantData := bson.M{
+		"tenantId":   uuid.Must(uuid.NewRandom()).String(),
+		"tenantName": "admin",
+	}
+
+	_, err = mongoapi.RestfulAPIPutOne("tenantData", bson.M{"tenantName": "admin"}, adminTenantData)
+	if err != nil {
+		logger.InitLog.Errorf("RestfulAPIPutOne err: %+v", err)
+	}
+
+	AmdinTenant, err := mongoapi.RestfulAPIGetOne("tenantData", bson.M{"tenantName": "admin"})
+	if err != nil {
+		logger.InitLog.Errorf("RestfulAPIGetOne err: %+v", err)
+	}
+
+	// Create Admin user
+	logger.InitLog.Infoln("Create user: admin")
+
+	hash, err := bcrypt.GenerateFromPassword([]byte("free5gc"), 12)
+	if err != nil {
+		logger.InitLog.Errorf("GenerateFromPassword err: %+v", err)
+	}
+
+	adminUserData := bson.M{
+		"userId":            uuid.Must(uuid.NewRandom()).String(),
+		"tenantId":          AmdinTenant["tenantId"],
+		"email":             "admin",
+		"encryptedPassword": string(hash),
+	}
+
+	_, err = mongoapi.RestfulAPIPutOne("userData", bson.M{"email": "admin"}, adminUserData)
+	if err != nil {
+		logger.InitLog.Errorf("RestfulAPIPutOne err: %+v", err)
+	}
+}
+
+func InitJwtKey() error {
+	randomBytes := make([]byte, 256)
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return errors.Wrap(err, "Init JWT key error")
+	} else {
+		jwtKey = string(randomBytes)
+	}
+	return nil
 }
 
 func mapToByte(data map[string]interface{}) (ret []byte) {
@@ -401,9 +464,14 @@ func JWT(email, userId, tenantId string) string {
 	claims["email"] = email
 	claims["tenantId"] = tenantId
 
-	tokenString, err := token.SignedString([]byte(os.Getenv("SIGNINGKEY")))
+	if jwtKey == "" {
+		return ""
+	}
+
+	tokenString, err := token.SignedString([]byte(jwtKey))
 	if err != nil {
 		logger.ProcLog.Errorf("JWT err: %+v", err)
+		return ""
 	}
 
 	return tokenString
@@ -463,12 +531,18 @@ func Login(c *gin.Context) {
 	userId := userData["userId"].(string)
 	tenantId := userData["tenantId"].(string)
 
-	logger.ProcLog.Warnln("Login success", login.Username)
-	logger.ProcLog.Warnln("userid", userId)
-	logger.ProcLog.Warnln("tenantid", tenantId)
+	logger.ProcLog.Warnln("Login success {",
+		"username:", login.Username,
+		", userid:", userId,
+		", tenantid:", tenantId,
+		"}")
 
 	token := JWT(login.Username, userId, tenantId)
-	logger.ProcLog.Warnln("token", token)
+	if token == "" {
+		logger.ProcLog.Errorln("token is empty")
+	} else {
+		logger.ProcLog.Warnln("token", token)
+	}
 
 	oauth := OAuth{}
 	oauth.AccessToken = token
@@ -490,7 +564,7 @@ type AuthSub struct {
 // Parse JWT
 func ParseJWT(tokenStr string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("SIGNINGKEY")), nil
+		return []byte(jwtKey), nil
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "ParseJWT error")
@@ -504,7 +578,9 @@ func ParseJWT(tokenStr string) (jwt.MapClaims, error) {
 // Check of admin user. This should be done with proper JWT token.
 func CheckAuth(c *gin.Context) bool {
 	tokenStr := c.GetHeader("Token")
-	if tokenStr == "admin" {
+	claims, err := ParseJWT(tokenStr)
+
+	if err == nil && claims["email"] == "admin" {
 		return true
 	} else {
 		return false
@@ -514,7 +590,7 @@ func CheckAuth(c *gin.Context) bool {
 // Tenant ID
 func GetTenantId(c *gin.Context) (string, error) {
 	tokenStr := c.GetHeader("Token")
-	if tokenStr == "admin" {
+	if CheckAuth(c) {
 		return "", nil
 	}
 	claims, err := ParseJWT(tokenStr)
@@ -530,7 +606,7 @@ func GetTenants(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -554,7 +630,7 @@ func GetTenantByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -586,7 +662,7 @@ func PostTenant(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -596,6 +672,7 @@ func PostTenant(c *gin.Context) {
 		return
 	}
 
+	// fmt.Println("in Post Tenant")
 	if tenantData.TenantId == "" {
 		tenantData.TenantId = uuid.Must(uuid.NewRandom()).String()
 	}
@@ -615,7 +692,7 @@ func PutTenantByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -655,7 +732,7 @@ func DeleteTenantByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -697,7 +774,7 @@ func GetUsers(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -734,7 +811,7 @@ func GetUserByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -774,7 +851,7 @@ func PostUserByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -828,7 +905,7 @@ func PutUserByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -904,7 +981,7 @@ func DeleteUserByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -932,12 +1009,7 @@ func GetSubscribers(c *gin.Context) {
 	logger.ProcLog.Infoln("Get All Subscribers List")
 
 	tokenStr := c.GetHeader("Token")
-
-	var claims jwt.MapClaims = nil
-	var err error = nil
-	if tokenStr != "admin" {
-		claims, err = ParseJWT(tokenStr)
-	}
+	claims, err := ParseJWT(tokenStr)
 	if err != nil {
 		logger.ProcLog.Errorln(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -975,7 +1047,7 @@ func GetSubscribers(c *gin.Context) {
 			return
 		}
 
-		if tokenStr == "admin" || tenantId == claims["tenantId"].(string) {
+		if claims["email"] == "admin" || tenantId == claims["tenantId"].(string) {
 			tmp := SubsListIE{
 				PlmnID: servingPlmnId.(string),
 				UeId:   ueId.(string),
@@ -1156,13 +1228,8 @@ func PostSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Post One Subscriber Data")
 
-	var claims jwt.MapClaims = nil
-	var err error = nil
 	tokenStr := c.GetHeader("Token")
-
-	if tokenStr != "admin" {
-		claims, err = ParseJWT(tokenStr)
-	}
+	claims, err := ParseJWT(tokenStr)
 	if err != nil {
 		logger.ProcLog.Errorln(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -1571,7 +1638,6 @@ func GetRegisteredUEContext(c *gin.Context) {
 	webuiSelf.UpdateNfProfiles()
 
 	supi, supiExists := c.Params.Get("supi")
-
 	// TODO: support fetching data from multiple AMFs
 	if amfUris := webuiSelf.GetOamUris(models.NfType_AMF); amfUris != nil {
 		var requestUri string

@@ -9,7 +9,7 @@ class Nav extends Component {
     let {location} = this.props;
     let user = LocalStorageHelper.getUserInfo();
     let childView = "";
-    if (user.accessToken === "admin") {
+    if (user.username === "admin") {
       childView = (
           <li className={this.isPathActive('/tenants') ? 'active' : null}>
           <Link to="/tenants">

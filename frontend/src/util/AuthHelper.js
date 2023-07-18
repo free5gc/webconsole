@@ -14,24 +14,20 @@ export default class AuthHelper {
    * @return {Promise<(boolean|string)>} true for success, string for error message
    */
   static async login(username, password) {
-    if (username === config.USERNAME && password === config.PASSWORD) {
-      let user = new User(username, "System Administrator", "admin");
+    let response = await ApiHelper.login({username: username, password: password});
+
+    if (response !== undefined && response.status === 200) {
+      var user = null
+      if (username == "admin") {
+        user = new User(username, "System Administrator", response.data.access_token);
+      } else {
+        user = new User(username, "User", response.data.access_token);
+      }
       LocalStorageHelper.setUserInfo(user);
       store.dispatch(authActions.setUser(user));
       return true;
     } else {
-      let response = await ApiHelper.login({username: username, password: password});
-      if (response === undefined) {
-        return false;
-      }
-      if (response.status === 200) {
-        let user = new User(username, "User", response.data.access_token);
-        LocalStorageHelper.setUserInfo(user);
-        store.dispatch(authActions.setUser(user));
-        return true;
-      } else {
-        return false;
-      }
+      return false;
     }
   }
 
