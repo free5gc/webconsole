@@ -81,6 +81,10 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 
 	router := WebUI.NewRouter()
 	WebUI.SetAdmin()
+	if err := WebUI.InitJwtKey(); err != nil {
+		logger.InitLog.Errorln(err)
+		return
+	}
 
 	router.Use(cors.New(cors.Config{
 		AllowMethods: []string{"GET", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"},
