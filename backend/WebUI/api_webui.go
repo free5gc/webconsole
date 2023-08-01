@@ -490,8 +490,6 @@ func generateHash(password string) error {
 func Login(c *gin.Context) {
 	setCorsHeader(c)
 
-	EnsureAdminTenant()
-
 	login := LoginRequest{}
 	err := json.NewDecoder(c.Request.Body).Decode(&login)
 	if err != nil {
@@ -584,7 +582,7 @@ func CheckAuth(c *gin.Context) bool {
 	if err != nil {
 		return false
 	}
-	if claims["tenantId"].(string) == DEFAULT_ADMIN_TENANT {
+	if claims["email"].(string) == "admin" {
 		return true
 	} else {
 		return false
@@ -594,9 +592,6 @@ func CheckAuth(c *gin.Context) bool {
 // Tenant ID
 func GetTenantId(c *gin.Context) (string, error) {
 	tokenStr := c.GetHeader("Token")
-	if CheckAuth(c) {
-		return "", nil
-	}
 	claims, err := ParseJWT(tokenStr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{})
@@ -1021,6 +1016,8 @@ func GetSubscribers(c *gin.Context) {
 		return
 	}
 
+	isAdmin := CheckAuth(c)
+
 	var subsList []SubsListIE = make([]SubsListIE, 0)
 	amDataList, err := mongoapi.RestfulAPIGetMany(amDataColl, bson.M{})
 	if err != nil {
@@ -1050,7 +1047,7 @@ func GetSubscribers(c *gin.Context) {
 			return
 		}
 
-		if userTenantId == DEFAULT_ADMIN_TENANT || userTenantId == tenantId {
+		if isAdmin || userTenantId == tenantId {
 			tmp := SubsListIE{
 				PlmnID: servingPlmnId.(string),
 				UeId:   ueId.(string),
@@ -1673,6 +1670,8 @@ func GetRegisteredUEContext(c *gin.Context) {
 	webuiSelf := webui_context.GetSelf()
 	webuiSelf.UpdateNfProfiles()
 
+	isAdmin := CheckAuth(c)
+
 	supi, supiExists := c.Params.Get("supi")
 	// TODO: support fetching data from multiple AMFs
 	if amfUris := webuiSelf.GetOamUris(models.NfType_AMF); amfUris != nil {
@@ -1712,7 +1711,7 @@ func GetRegisteredUEContext(c *gin.Context) {
 			return
 		}
 
-		if tenantId == DEFAULT_ADMIN_TENANT {
+		if isAdmin {
 			sendResponseToClient(c, resp)
 		} else {
 			sendResponseToClientFilterTenant(c, resp, tenantId)
@@ -1809,31 +1808,6 @@ func ChangePasswordInfo(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, userData)
-}
-
-const DEFAULT_ADMIN_EMAIL = "admin"
-const DEFAULT_ADMIN_TENANT = "AdminTenant"
-const DEFAULT_ADMIN_USER_PASSWORD = "free5gc"
-
-// EnsureAdminTenant creates default admin user tenant when it does not exist.
-func EnsureAdminTenant() {
-	adminTenantOnly := bson.M{"tenantId": DEFAULT_ADMIN_TENANT}
-	userDataInterface, err := mongoapi.RestfulAPIGetOne(userDataColl, adminTenantOnly)
-	if err == nil && len(userDataInterface) != 0 {
-		// Admin user already created.
-		return
-	}
-
-	var userData User
-	userData.Email = DEFAULT_ADMIN_EMAIL
-	userData.TenantId = DEFAULT_ADMIN_TENANT
-	hash, _ := bcrypt.GenerateFromPassword([]byte(DEFAULT_ADMIN_USER_PASSWORD), 12)
-	userData.EncryptedPassword = string(hash)
-
-	userBsonM := toBsonM(userData)
-	if _, err := mongoapi.RestfulAPIPost(userDataColl, adminTenantOnly, userBsonM); err != nil {
-		logger.ProcLog.Errorf("PutUserByID err: %+v", err)
-	}
 }
 
 func OptionsSubscribers(c *gin.Context) {
