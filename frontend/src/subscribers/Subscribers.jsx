@@ -99,6 +99,7 @@ function Subscribers() {
                 <Table className="subscribers__table" striped bordered hover>
                   <thead>
                     <tr>
+                      <th>#</th>
                       <th>PLMN ID</th>
                       <th>SUPI</th>
                       <th>MSISDN</th>
@@ -106,9 +107,10 @@ function Subscribers() {
                     </tr>
                   </thead>
                   <tbody>
-                    {subscribers.map(subscriber => {
+                    {subscribers.map((subscriber, index) => {
                       return (
                         <tr key={subscriber.supi}>
+                          <td>{index+1}</td>
                           <td>{subscriber.plmnId}</td>
                           <td>{subscriber.supi}</td>
                           <td>{subscriber.msisdn === '' ? '-' : subscriber.msisdn}</td>
