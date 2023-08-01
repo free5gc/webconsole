@@ -9,8 +9,8 @@ import { store } from './_store';
 import { App } from './App';
 
 // setup fake backend (e.g., you can use it for testing new features)
-import { fakeBackend } from './_helpers';
-fakeBackend();
+//import { fakeBackend } from './_helpers';
+//fakeBackend();
 
 const container = document.getElementById('root');
 const root = createRoot(container);

@@ -21,7 +21,7 @@ export const authReducer = slice.reducer;
 function createInitialState() {
   return {
     // initialize state from local storage to enable user to stay logged in
-    user: JSON.parse(localStorage.getItem('user')),
+    token: localStorage.getItem('token'),
     error: null
   }
 }
@@ -33,8 +33,8 @@ function createReducers() {
   };
 
   function logout(state) {
-    state.user = null;
-    localStorage.removeItem('user');
+    state.token = null;
+    localStorage.removeItem('token');
     history.navigate('/login');
   }
 }
@@ -49,8 +49,7 @@ function createExtraActions() {
   function login() {
     return createAsyncThunk(
       `${name}/login`,
-      //TODO note: api call not working correctly in backend, fake-backend used for /login
-      async ({ username, password }) => await fetchWrapper.post(`${baseUrl}/login`, { username, password })
+      async ({ username, password }) => await fetchWrapper.post(`${baseUrl}/login`, { username: username, password: password })
     );
   }
 }
@@ -67,11 +66,14 @@ function createExtraReducers() {
           state.error = null;
         })
         .addCase(fulfilled, (state, action) => {
-          const user = action.payload;
+          const token = action.payload.access_token;
 
-          // store user details and jwt token in local storage to keep user logged in between page refreshes
-          localStorage.setItem('user', JSON.stringify(user));
-          state.user = user;
+          // store jwt token in local storage to keep user logged in between page refreshes
+          localStorage.setItem('token', token);
+          //state.token = JSON.stringify(token);
+          state.token = token;
+
+          console.log('token set to ', token);
 
           // get return url from location state or default to home page
           const { from } = history.location.state || { from: { pathname: '/' } };

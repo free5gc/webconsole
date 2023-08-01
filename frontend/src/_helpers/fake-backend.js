@@ -7,10 +7,10 @@ function fakeBackend() {
   window.fetch = function (url, opts) {
     return new Promise((resolve, reject) => {
       // wrap in timeout to simulate server api call
-      //setTimeout(handleRoute, 200);
-      handleRoute();
+      //setTimeout(replaceWithFakeCalls, 200);
+      replaceWithFakeCalls();
 
-      function handleRoute() {
+      function replaceWithFakeCalls() {
         switch (true) {
           case url.endsWith('/login') && opts.method === 'POST':
             return authenticate();

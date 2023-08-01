@@ -47,7 +47,7 @@ function SubscriberModal(props) {
     let newSupi = _.get(marshalledData, 'supi');
     let previousPlmnId = _.get(detailedSubscriber, 'plmnId');
     let newPlmnId = _.get(marshalledData, 'plmnId');
-    let previousMsisdn = _.get(detailedSubscriber, 'AccessAndMobilitySubscriptionData.gpsis')?.filter(gpsi => gpsi.includes('msisdn-'))[0];
+    //let previousMsisdn = _.get(detailedSubscriber, 'AccessAndMobilitySubscriptionData.gpsis')?.filter(gpsi => gpsi.includes('msisdn-'))[0];
     let newMsisdn = _.get(marshalledData, 'AccessAndMobilitySubscriptionData.gpsis')?.filter(gpsi => gpsi.includes('msisdn-'))[0];
 
     // A susbcriber cannot be created if it has the same SUPI and PLMN ID an as the duplicated one

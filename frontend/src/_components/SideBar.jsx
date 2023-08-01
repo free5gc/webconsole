@@ -9,12 +9,12 @@ export { SideBar };
 
 function SideBar() {
   const path = useLocation().pathname;
-  const authUser = useSelector(x => x.auth.user);
+  const token = useSelector(x => x.auth.token);
   const dispatch = useDispatch();
   const logout = () => dispatch(authActions.logout());
 
   // only show nav when logged in
-  if (!authUser) return null;
+  if (!token) return null;
 
   return (
     <div className="sidebar">

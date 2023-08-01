@@ -1,0 +1,18 @@
+{
+  "files": {
+    "main.css": "/static/css/main.edbf04e0.css",
+    "main.js": "/static/js/main.f5207cf9.js",
+    "static/media/Pe-icon-7-stroke.svg?d7yf1v": "/static/media/Pe-icon-7-stroke.09c6a96523589cb91799.svg",
+    "static/media/Pe-icon-7-stroke.eot": "/static/media/Pe-icon-7-stroke.1d449ea50ab8389ee078.eot",
+    "static/media/Pe-icon-7-stroke.woff?d7yf1v": "/static/media/Pe-icon-7-stroke.11f7c073b050d62afb33.woff",
+    "static/media/Pe-icon-7-stroke.ttf?d7yf1v": "/static/media/Pe-icon-7-stroke.7233a7aee250f9b77fba.ttf",
+    "static/media/free5gc_logo.png": "/static/media/free5gc_logo.f952c42285406741a847.png",
+    "index.html": "/index.html",
+    "main.edbf04e0.css.map": "/static/css/main.edbf04e0.css.map",
+    "main.f5207cf9.js.map": "/static/js/main.f5207cf9.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.edbf04e0.css",
+    "static/js/main.f5207cf9.js"
+  ]
+}
