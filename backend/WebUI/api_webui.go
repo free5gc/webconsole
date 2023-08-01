@@ -1258,6 +1258,16 @@ func PostSubscriberByID(c *gin.Context) {
 		}
 	}()
 
+	defer func() {
+		if err := recover(); err != nil {
+			logger.ProcLog.Errorf("PostSubscriberByID err: unexpected server error: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"cause": "Unexpected server error while creating subscriber",
+			})
+			return
+		}
+	}()
+
 	tokenStr := c.GetHeader("Token")
 	claims, err := ParseJWT(tokenStr)
 	if err != nil {
