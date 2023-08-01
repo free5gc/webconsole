@@ -42,7 +42,7 @@ func NewRouter() *gin.Engine {
 		MaxAge:           86400,
 	}))
 
-	router.SetTrustedProxies(nil)
+	_ = router.SetTrustedProxies(nil)
 
 	// Serve favicon
 	router.StaticFile("/favicon.ico", "./public/favicon.ico")

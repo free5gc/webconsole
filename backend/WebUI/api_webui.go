@@ -491,6 +491,9 @@ func Login(c *gin.Context) {
 	setCorsHeader(c)
 
 	login := LoginRequest{}
+
+	logger.ProcLog.Infof("Login attempt with username: %s and password: %s", login.Username, login.Password)
+
 	err := json.NewDecoder(c.Request.Body).Decode(&login)
 	if err != nil {
 		logger.ProcLog.Warnln("JSON decode error", err)
@@ -583,6 +586,7 @@ func CheckAuth(c *gin.Context) bool {
 	if err == nil && claims["email"] == "admin" {
 		return true
 	} else {
+		logger.ProcLog.Errorln("Unauthorized request: Illegal Token")
 		return false
 	}
 }
@@ -1006,6 +1010,11 @@ func DeleteUserByID(c *gin.Context) {
 func GetSubscribers(c *gin.Context) {
 	setCorsHeader(c)
 
+	if !CheckAuth(c) {
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
+		return
+	}
+
 	logger.ProcLog.Infoln("Get All Subscribers List")
 
 	defer func() {
@@ -1072,6 +1081,11 @@ func GetSubscribers(c *gin.Context) {
 // Get subscriber by IMSI(ueId) and PlmnID(servingPlmnId)
 func GetSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
+		return
+	}
 
 	logger.ProcLog.Infoln("Get One Subscriber Data")
 
@@ -1246,6 +1260,12 @@ func GetSubscriberByID(c *gin.Context) {
 // @Router  /subscriber/{ueId}/{servingPlmnId} [post]
 func PostSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
+		return
+	}
+
 	logger.ProcLog.Infoln("Post One Subscriber")
 
 	defer func() {
@@ -1378,6 +1398,12 @@ func PostSubscriberByID(c *gin.Context) {
 // @Router  /subscriber/{ueId}/{servingPlmnId}/{userNumber} [post]
 func PostMultipleSubscribersByID(c *gin.Context) {
 	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
+		return
+	}
+
 	logger.ProcLog.Infoln("Post Multiple Subscribers With Increasing IMSI")
 
 	defer func() {
@@ -1698,6 +1724,12 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 // Put subscriber by IMSI(ueId) and PlmnID(servingPlmnId)
 func PutSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
+		return
+	}
+
 	logger.ProcLog.Infoln("Put One Subscriber Data")
 
 	defer func() {
@@ -1741,6 +1773,12 @@ func PutSubscriberByID(c *gin.Context) {
 // Patch subscriber by IMSI(ueId) and PlmnID(servingPlmnId)
 func PatchSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
+		return
+	}
+
 	logger.ProcLog.Infoln("Patch One Subscriber Data")
 
 	defer func() {
@@ -1840,6 +1878,12 @@ func PatchSubscriberByID(c *gin.Context) {
 // Delete subscriber by IMSI(ueId) and PlmnID(servingPlmnId)
 func DeleteSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
+		return
+	}
+
 	logger.ProcLog.Infoln("Delete One Subscriber Data")
 
 	defer func() {
@@ -1870,6 +1914,11 @@ func DeleteSubscriberByID(c *gin.Context) {
 
 func GetAmfUeContexts(c *gin.Context) {
 	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
+		return
+	}
 
 	logger.ProcLog.Infoln("Get Registered UEs and Their Contexts From AMF")
 
@@ -1933,6 +1982,11 @@ func GetAmfUeContexts(c *gin.Context) {
 // not required, AMF currently returns all contexts at once
 //func GetAmfUeContextByID(c *gin.Context) {
 //	setCorsHeader(c)
+
+//	if !CheckAuth(c) {
+//		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
+//		return
+//	}
 //
 //	logger.ProcLog.Infoln("Get AMF UE Context By ID")
 //
@@ -1993,6 +2047,11 @@ func GetAmfUeContexts(c *gin.Context) {
 
 func GetUeSessionContextByID(c *gin.Context) {
 	setCorsHeader(c)
+
+	if !CheckAuth(c) {
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
+		return
+	}
 
 	logger.ProcLog.Infoln("Get UE Session Context (PDU Session Info) From SMF")
 
