@@ -13,7 +13,6 @@ function Login() {
 
   useEffect(() => {
     // redirect to home if already logged in
-    console.log(token);
     if (token) history.navigate('/');
 
   }, [ token ]);

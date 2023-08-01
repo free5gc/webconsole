@@ -73,8 +73,6 @@ function createExtraReducers() {
           //state.token = JSON.stringify(token);
           state.token = token;
 
-          console.log('token set to ', token);
-
           // get return url from location state or default to home page
           const { from } = history.location.state || { from: { pathname: '/' } };
           history.navigate(from);

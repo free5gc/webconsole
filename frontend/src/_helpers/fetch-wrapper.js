@@ -22,8 +22,6 @@ function request(method) {
       }
     };
 
-    console.log(method, url, body);
-
     makeAuthHeader(requestOptions.headers, url);
 
     if (body) {
@@ -40,7 +38,6 @@ function request(method) {
 function makeAuthHeader(headers, url) {
   // return auth header with jwt if user is logged in and request is to the api url
   const token = authToken();
-  console.log('auth header token string ', token);
   const isLoggedIn = !!token;
   //const isApiUrl = url.endsWith(process.env.REACT_APP_API_URL) ;
   if (isLoggedIn /*&& isApiUrl*/) {
