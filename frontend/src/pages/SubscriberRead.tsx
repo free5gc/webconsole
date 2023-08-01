@@ -9,6 +9,7 @@ import {
   AuthenticationSubscription,
   AccessAndMobilitySubscriptionData,
   DnnConfiguration,
+  QosFlows,
 } from "../api/api";
 
 import Dashboard from "../Dashboard";
@@ -113,6 +114,17 @@ export default function SubscriberRead() {
     return "";
   };
 
+  const qosFlow = (flowKey: string, dnn: string): QosFlows|undefined => {
+    if (data.QosFlows !== undefined) {
+      for (let i = 0; i < data.QosFlows?.length; i++) {
+        const qos = data.QosFlows![i];
+        if (qos.snssai === flowKey && qos.dnn === dnn) {
+          return qos;
+        }
+      }
+    }
+  }
+
   const flowRule = (dnn: string, snssai: Nssai) => {
     function toHex(v: number | undefined) {
       return ("00" + v?.toString(16).toUpperCase()).substr(-2);
@@ -122,6 +134,7 @@ export default function SubscriberRead() {
       for (let i = 0; i < data.FlowRules?.length; i++) {
         const flow = data.FlowRules![i];
         if (flow.snssai === flowKey && flow.dnn === dnn) {
+          const qos = qosFlow(flowKey, dnn);
           return (
             <div key={flow.snssai}>
               <Box sx={{ m: 2 }}>
@@ -136,32 +149,38 @@ export default function SubscriberRead() {
                     </TableBody>
                     <TableBody>
                       <TableRow>
+                        <TableCell style={{ width: "40%" }}>Precedence</TableCell>
+                        <TableCell>{flow.precedence}</TableCell>
+                      </TableRow>
+                    </TableBody>
+                    <TableBody>
+                      <TableRow>
                         <TableCell style={{ width: "40%" }}>5QI</TableCell>
-                        <TableCell>{flow["5qi"]}</TableCell>
+                        <TableCell>{flow.qfi}</TableCell>
                       </TableRow>
                     </TableBody>
                     <TableBody>
                       <TableRow>
                         <TableCell style={{ width: "40%" }}>Uplink GBR</TableCell>
-                        <TableCell>{flow.gbrUL}</TableCell>
+                        <TableCell>{qos!.gbrUL}</TableCell>
                       </TableRow>
                     </TableBody>
                     <TableBody>
                       <TableRow>
                         <TableCell style={{ width: "40%" }}>Downlink GBR</TableCell>
-                        <TableCell>{flow.gbrDL}</TableCell>
+                        <TableCell>{qos!.gbrDL}</TableCell>
                       </TableRow>
                     </TableBody>
                     <TableBody>
                       <TableRow>
                         <TableCell style={{ width: "40%" }}>Uplink MBR</TableCell>
-                        <TableCell>{flow.mbrUL}</TableCell>
+                        <TableCell>{qos!.mbrUL}</TableCell>
                       </TableRow>
                     </TableBody>
                     <TableBody>
                       <TableRow>
                         <TableCell style={{ width: "40%" }}>Downlink MBR</TableCell>
-                        <TableCell>{flow.mbrDL}</TableCell>
+                        <TableCell>{qos!.mbrDL}</TableCell>
                       </TableRow>
                     </TableBody>
                   </Table>
