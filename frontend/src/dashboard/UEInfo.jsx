@@ -19,7 +19,7 @@ function UeInfo() {
           <div className="card">
             {/*<p>Rerenders: {renderCounter.current = renderCounter.current + 1}</p>*/}
 
-            <InfoHeader headline="Connected UEs" refreshAction={() => uesActions.getRegisteredUesAndAmfContexts()} />
+            <InfoHeader headline="Registered UEs" refreshAction={() => uesActions.getRegisteredUesAndAmfContexts()} />
 
             <div className="content subscribers__content">
               <div>

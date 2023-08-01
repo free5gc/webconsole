@@ -583,6 +583,8 @@ func CheckAuth(c *gin.Context) bool {
 	tokenStr := c.GetHeader("Token")
 	claims, err := ParseJWT(tokenStr)
 
+	logger.ProcLog.Infof("Parsed token: %+v", tokenStr)
+
 	if err == nil && claims["email"] == "admin" {
 		return true
 	} else {

@@ -42,8 +42,8 @@ function makeAuthHeader(headers, url) {
   const token = authToken();
   console.log('auth header token string ', token);
   const isLoggedIn = !!token;
-  const isApiUrl = url.endsWith(process.env.REACT_APP_API_URL);
-  if (isLoggedIn && isApiUrl) {
+  //const isApiUrl = url.endsWith(process.env.REACT_APP_API_URL) ;
+  if (isLoggedIn /*&& isApiUrl*/) {
     headers['Token'] = `${token}`;
     return;
   } else {
@@ -64,7 +64,6 @@ function handleResponse(response) {
     const data = text && JSON.parse(text);
 
     if (!response.ok) {
-      console.log('response was not ok');
       if ([401, 403].includes(response.status) && authToken()) {
         // auto logout if 401 Unauthorized or 403 Forbidden response returned from api
         console.log('401 Unauthorized or 403 Forbidden response returned from api');

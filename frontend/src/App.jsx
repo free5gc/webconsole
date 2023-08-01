@@ -18,37 +18,41 @@ function App() {
   return (
     <div className="wrapper">
       <SideBar />
-      <div className="main-panel">
-        <Routes>
-          <Route
-            path="/"
-            element={
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <div className="main-panel">
               <PrivateRoute>
                 <Dashboard />
               </PrivateRoute>
-            }
-          />
-          <Route
-            path="/subscribers"
-            element={
+            </div>
+          }
+        />
+        <Route
+          path="/subscribers"
+          element={
+            <div className="main-panel">
               <PrivateRoute>
                 <Subscribers />
               </PrivateRoute>
-            }
-          />
-          <Route
-            path="/ues"
-            element={
+            </div>
+          }
+        />
+        <Route
+          path="/ues"
+          element={
+            <div className="main-panel">
               <PrivateRoute>
                 <RegisteredUes />
               </PrivateRoute>
-            }
-          />
+            </div>
+          }
+        />
 
-          <Route path="/login" element={<Login />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </div>
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
     </div>
   );
 }

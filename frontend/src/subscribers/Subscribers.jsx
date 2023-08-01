@@ -86,7 +86,7 @@ function Subscribers() {
 
             <InfoHeader headline="Subscribers" refreshAction={() => subscribersActions.getAllSubscribers()} />
 
-            { error && <div className="text-danger" style={{ marginLeft: '30px', paddingBottom: '30px' }}>Error in subscriber action: {error.message}</div> }
+            {error && <div className="text-danger" style={{ marginLeft: '30px', paddingBottom: '30px' }}>Error in subscriber action: {error.message}</div>}
 
             <Button variant="primary"
               style={{ marginLeft: '30px', width: '130px' }}
@@ -131,11 +131,14 @@ function Subscribers() {
                 <div className="text-danger">Error loading subscribers: {subscribers.error.message}</div>
               }
             </div>
-            <Button variant="primary"
-              style={{ marginLeft: '30px', width: '130px' }}
-              onClick={handleNew}>
-              New Subscriber
-            </Button>
+            {subscribers?.length > 10 &&
+            //second button for convenience if list is long (no scrolling to top)
+              <Button variant="primary"
+                style={{ marginLeft: '30px', width: '130px' }}
+                onClick={handleNew}>
+                New Subscriber
+              </Button>
+            }
           </div>
         </div>
       </div>
