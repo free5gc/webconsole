@@ -7,6 +7,7 @@ configuration:
     name: free5gc # name of the mongodb
     url: mongodb://localhost:27017 # a valid URL of the mongodb
   webserver: # the webserver configuration (used by backend only; go to /webconsole/frontend/.env for frontend settings)
+    scheme: http
     host: localhost
     port: 5000
 

@@ -51,8 +51,9 @@ type Logger struct {
 }
 
 type Webserver struct {
-	Host string `yaml:"host" valid:"required"`
-	Port string `yaml:"port" valid:"required"`
+	Scheme string `yaml:"scheme" valid:"required"`
+	Host   string `yaml:"host" valid:"required"`
+	Port   string `yaml:"port" valid:"required"`
 }
 
 type Mongodb struct {

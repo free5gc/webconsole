@@ -91,7 +91,7 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 	if webserver.Host == "localhost" {
 		url = ":" + webserver.Port
 	} else {
-		url = webserver.Host + ":" + webserver.Port
+		url = webserver.Scheme + "://" + webserver.Host + ":" + webserver.Port
 	}
 
 	logger.InitLog.Infoln(router.Run(url))
