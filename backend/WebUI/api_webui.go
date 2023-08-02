@@ -1778,7 +1778,7 @@ func ChangePasswordInfo(c *gin.Context) {
 	}
 
 	var newUserData User
-	if err := c.ShouldBindJSON(&newUserData); err != nil {
+	if err = c.ShouldBindJSON(&newUserData); err != nil {
 		logger.ProcLog.Errorln(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{})
 		return
@@ -1795,10 +1795,16 @@ func ChangePasswordInfo(c *gin.Context) {
 	}
 
 	var userData User
-	json.Unmarshal(mapToByte(userDataInterface), &userData)
+	err = json.Unmarshal(mapToByte(userDataInterface), &userData)
+	if err != nil {
+		logger.ProcLog.Errorf("JSON Unmarshal err: %+v", err)
+	}
 
 	if newUserData.EncryptedPassword != "" {
-		hash, _ := bcrypt.GenerateFromPassword([]byte(newUserData.EncryptedPassword), 12)
+		hash, err := bcrypt.GenerateFromPassword([]byte(newUserData.EncryptedPassword), 12)
+		if err != nil {
+			logger.ProcLog.Errorf("GenerateFromPassword err: %+v", err)
+		}
 		userData.EncryptedPassword = string(hash)
 	}
 
