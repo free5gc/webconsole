@@ -188,11 +188,29 @@ export default function SubscriberUpdate() {
     const flow: FlowRules = {
       dnn: dnn,
       snssai: flowKey,
+      filter: "permit out ip from 10.20.30.40 to 50.60.70.80",
+      precedence: 128,
+      qfi: 9,
+    };
+    const qos: QosFlows = {
+      dnn: dnn,
+      snssai: flowKey,
+      qfi: 9,
+      "5qi": 9,
+      gbrUL: "100 Mbps",
+      gbrDL: "200 Mbps",
+      mbrUL: "100 Mbps",
+      mbrDL: "200 Mbps",
     };
     if (data.FlowRules === undefined) {
       data.FlowRules = [flow];
     } else {
       data.FlowRules.push(flow);
+    }
+    if (data.QosFlows === undefined) {
+      data.QosFlows = [qos];
+    } else {
+      data.QosFlows.push(qos);
     }
     setData({ ...data });
   };
