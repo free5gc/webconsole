@@ -231,6 +231,12 @@ export interface FlowRules {
     'filter'?: string;
     /**
      * 
+     * @type {number}
+     * @memberof FlowRules
+     */
+    'precedence'?: number;
+    /**
+     * 
      * @type {string}
      * @memberof FlowRules
      */
@@ -246,31 +252,7 @@ export interface FlowRules {
      * @type {number}
      * @memberof FlowRules
      */
-    '5qi'?: number;
-    /**
-     * 
-     * @type {string}
-     * @memberof FlowRules
-     */
-    'mbrUL'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof FlowRules
-     */
-    'mbrDL'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof FlowRules
-     */
-    'gbrUL'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof FlowRules
-     */
-    'gbrDL'?: string;
+    'qfi'?: number;
 }
 /**
  * 
@@ -573,6 +555,61 @@ export interface PermanentKey {
 /**
  * 
  * @export
+ * @interface QosFlows
+ */
+export interface QosFlows {
+    /**
+     * 
+     * @type {string}
+     * @memberof QosFlows
+     */
+    'snssai'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof QosFlows
+     */
+    'dnn'?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof QosFlows
+     */
+    'qfi'?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof QosFlows
+     */
+    '5qi'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof QosFlows
+     */
+    'mbrUL'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof QosFlows
+     */
+    'mbrDL'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof QosFlows
+     */
+    'gbrUL'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof QosFlows
+     */
+    'gbrDL'?: string;
+}
+/**
+ * 
+ * @export
  * @interface SessionAmbr
  */
 export interface SessionAmbr {
@@ -796,6 +833,12 @@ export interface Subscription {
      * @memberof Subscription
      */
     'FlowRules'?: Array<FlowRules>;
+    /**
+     * 
+     * @type {Array<QosFlows>}
+     * @memberof Subscription
+     */
+    'QosFlows'?: Array<QosFlows>;
 }
 /**
  * 

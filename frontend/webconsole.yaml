@@ -417,10 +417,26 @@ components:
       properties:
         filter:
           type: string
+        precedence:
+          type: integer
+          format: int64
         snssai:
           type: string
         dnn:
           type: string
+        qfi:
+          type: integer
+          format: int64
+    QosFlows:
+      type: object
+      properties:
+        snssai:
+          type: string
+        dnn:
+          type: string
+        qfi:
+          type: integer
+          format: int64
         5qi:
           type: integer
           format: int64
@@ -458,3 +474,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/FlowRules"
+        QosFlows:
+          type: array
+          items:
+            $ref: "#/components/schemas/QosFlows"

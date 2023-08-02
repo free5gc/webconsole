@@ -9,6 +9,7 @@ import {
   DnnConfiguration,
   AccessAndMobilitySubscriptionData,
   FlowRules,
+  QosFlows,
 } from "../api/api";
 
 import Dashboard from "../Dashboard";
@@ -566,6 +567,25 @@ export default function SubscriberUpdate() {
     }
   };
 
+  const handleChangePrecedence = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    dnn: string,
+    flowKey: string,
+  ): void => {
+    if (data.FlowRules !== undefined) {
+      for (let i = 0; i < data.FlowRules!.length; i++) {
+        if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn) {
+          if (event.target.value == "") {
+            data.FlowRules![i].precedence = undefined;
+          } else {
+            data.FlowRules![i].precedence = Number(event.target.value);
+          }
+          setData({ ...data });
+        }
+      }
+    }
+  };
+
   const handleChange5QI = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     dnn: string,
@@ -575,9 +595,23 @@ export default function SubscriberUpdate() {
       for (let i = 0; i < data.FlowRules!.length; i++) {
         if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn) {
           if (event.target.value == "") {
-            data.FlowRules![i]["5qi"] = undefined;
+            data.FlowRules![i].qfi = undefined;
           } else {
-            data.FlowRules![i]["5qi"] = Number(event.target.value);
+            data.FlowRules![i].qfi = Number(event.target.value);
+          }
+          setData({ ...data });
+        }
+      }
+    }
+    if (data.QosFlows !== undefined) {
+      for (let i = 0; i < data.QosFlows!.length; i++) {
+        if (data.QosFlows![i].snssai === flowKey && data.QosFlows![i].dnn === dnn) {
+          if (event.target.value == "") {
+            data.QosFlows![i].qfi = undefined;
+            data.QosFlows![i]["5qi"] = undefined;
+          } else {
+            data.QosFlows![i].qfi = Number(event.target.value);
+            data.QosFlows![i]["5qi"] = Number(event.target.value);
           }
           setData({ ...data });
         }
@@ -590,10 +624,10 @@ export default function SubscriberUpdate() {
     dnn: string,
     flowKey: string,
   ): void => {
-    if (data.FlowRules !== undefined) {
-      for (let i = 0; i < data.FlowRules!.length; i++) {
-        if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn) {
-          data.FlowRules![i].gbrUL = event.target.value;
+    if (data.QosFlows !== undefined) {
+      for (let i = 0; i < data.QosFlows!.length; i++) {
+        if (data.QosFlows![i].snssai === flowKey && data.QosFlows![i].dnn === dnn) {
+          data.QosFlows![i].gbrUL = event.target.value;
           setData({ ...data });
         }
       }
@@ -605,10 +639,10 @@ export default function SubscriberUpdate() {
     dnn: string,
     flowKey: string,
   ): void => {
-    if (data.FlowRules !== undefined) {
-      for (let i = 0; i < data.FlowRules!.length; i++) {
-        if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn) {
-          data.FlowRules![i].gbrDL = event.target.value;
+    if (data.QosFlows !== undefined) {
+      for (let i = 0; i < data.QosFlows!.length; i++) {
+        if (data.QosFlows![i].snssai === flowKey && data.QosFlows![i].dnn === dnn) {
+          data.QosFlows![i].gbrDL = event.target.value;
           setData({ ...data });
         }
       }
@@ -620,10 +654,10 @@ export default function SubscriberUpdate() {
     dnn: string,
     flowKey: string,
   ): void => {
-    if (data.FlowRules !== undefined) {
-      for (let i = 0; i < data.FlowRules!.length; i++) {
-        if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn) {
-          data.FlowRules![i].mbrUL = event.target.value;
+    if (data.QosFlows !== undefined) {
+      for (let i = 0; i < data.QosFlows!.length; i++) {
+        if (data.QosFlows![i].snssai === flowKey && data.QosFlows![i].dnn === dnn) {
+          data.QosFlows![i].mbrUL = event.target.value;
           setData({ ...data });
         }
       }
@@ -635,10 +669,10 @@ export default function SubscriberUpdate() {
     dnn: string,
     flowKey: string,
   ): void => {
-    if (data.FlowRules !== undefined) {
-      for (let i = 0; i < data.FlowRules!.length; i++) {
-        if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn) {
-          data.FlowRules![i].mbrDL = event.target.value;
+    if (data.QosFlows !== undefined) {
+      for (let i = 0; i < data.QosFlows!.length; i++) {
+        if (data.QosFlows![i].snssai === flowKey && data.QosFlows![i].dnn === dnn) {
+          data.QosFlows![i].mbrDL = event.target.value;
           setData({ ...data });
         }
       }
@@ -665,6 +699,17 @@ export default function SubscriberUpdate() {
     setData({ ...data });
   };
 
+  const qosFlow = (flowKey: string, dnn: string): QosFlows|undefined => {
+    if (data.QosFlows !== undefined) {
+      for (let i = 0; i < data.QosFlows?.length; i++) {
+        const qos = data.QosFlows![i];
+        if (qos.snssai === flowKey && qos.dnn === dnn) {
+          return qos;
+        }
+      }
+    }
+  }
+
   const flowRule = (dnn: string, snssai: Nssai) => {
     function toHex(v: number | undefined) {
       return ("00" + v?.toString(16).toUpperCase()).substr(-2);
@@ -674,6 +719,7 @@ export default function SubscriberUpdate() {
       for (let i = 0; i < data.FlowRules?.length; i++) {
         const flow = data.FlowRules![i];
         if (flow.snssai === flowKey && flow.dnn === dnn) {
+          const qos = qosFlow(flowKey, dnn);
           return (
             <div key={flow.snssai}>
               <Box sx={{ m: 2 }}>
@@ -714,12 +760,27 @@ export default function SubscriberUpdate() {
                       <TableRow>
                         <TableCell>
                           <TextField
+                            label="Precedence"
+                            variant="outlined"
+                            required
+                            fullWidth
+                            type="number"
+                            value={flow.precedence}
+                            onChange={(ev) => handleChangePrecedence(ev, dnn, flowKey)}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell>
+                          <TextField
                             label="5QI"
                             variant="outlined"
                             required
                             fullWidth
                             type="number"
-                            value={flow["5qi"]}
+                            value={flow.qfi}
                             onChange={(ev) => handleChange5QI(ev, dnn, flowKey)}
                           />
                         </TableCell>
@@ -733,7 +794,7 @@ export default function SubscriberUpdate() {
                             variant="outlined"
                             required
                             fullWidth
-                            value={flow.gbrUL}
+                            value={qos!.gbrUL}
                             onChange={(ev) => handleChangeUplinkGBR(ev, dnn, flowKey)}
                           />
                         </TableCell>
@@ -747,7 +808,7 @@ export default function SubscriberUpdate() {
                             variant="outlined"
                             required
                             fullWidth
-                            value={flow.gbrDL}
+                            value={qos!.gbrDL}
                             onChange={(ev) => handleChangeDownlinkGBR(ev, dnn, flowKey)}
                           />
                         </TableCell>
@@ -761,7 +822,7 @@ export default function SubscriberUpdate() {
                             variant="outlined"
                             required
                             fullWidth
-                            value={flow.mbrUL}
+                            value={qos!.mbrUL}
                             onChange={(ev) => handleChangeUplinkMBR(ev, dnn, flowKey)}
                           />
                         </TableCell>
@@ -775,7 +836,7 @@ export default function SubscriberUpdate() {
                             variant="outlined"
                             required
                             fullWidth
-                            value={flow.mbrDL}
+                            value={qos!.mbrDL}
                             onChange={(ev) => handleChangeDownlinkMBR(ev, dnn, flowKey)}
                           />
                         </TableCell>
