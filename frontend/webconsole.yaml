@@ -452,6 +452,9 @@ components:
     Subscription:
       type: object
       properties:
+        userNumber:
+          type: integer
+          format: int64
         plmnID:
           type: string
         ueId:

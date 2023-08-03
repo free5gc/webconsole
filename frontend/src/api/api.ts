@@ -781,6 +781,12 @@ export interface Subscriber {
 export interface Subscription {
     /**
      * 
+     * @type {number}
+     * @memberof Subscription
+     */
+    'userNumber'?: number;
+    /**
+     * 
      * @type {string}
      * @memberof Subscription
      */

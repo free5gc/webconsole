@@ -35,6 +35,7 @@ export default function SubscriberCreate() {
   const navigation = useNavigate();
 
   const [data, setData] = useState<Subscription>({
+    userNumber: 1,
     plmnID: "20893",
     ueId: "imsi-208930000000999",
     AuthenticationSubscription: {
@@ -56,7 +57,7 @@ export default function SubscriberCreate() {
       },
     },
     AccessAndMobilitySubscriptionData: {
-      gpsis: ["msisdn-0900000000"],
+      gpsis: ["msisdn-"],
       subscribedUeAmbr: {
         uplink: "1 Gbps",
         downlink: "2 Gbps",
@@ -86,6 +87,16 @@ export default function SubscriberCreate() {
     }
     return toHex(nssai.sst) + nssai.sd;
   };
+
+  const supiIncrement = (supi: string): string => {
+    const imsi = supi.split("-", 2);
+    if (imsi.length !== 2) {
+      return supi;
+    }
+    let number = Number(imsi[1]);
+    number += 1;
+    return "imsi-" + number;
+  }
 
   const onCreate = () => {
     if (data.SessionManagementSubscriptionData === undefined) {
@@ -117,23 +128,30 @@ export default function SubscriberCreate() {
         };
       });
     }
-    axios
-      .post("/api/subscriber/" + data.ueId + "/" + data.plmnID, data)
-      .then((res) => {
-        console.log("post result:" + res);
-        navigation("/subscriber");
-      })
-      .catch((err) => {
-        if (err.response) {
-          if (err.response.data.cause) {
-            alert(err.response.data.cause);
+    // Iterate subscriber data number.
+    let supi = data.ueId!;
+    for (let i = 0; i < data.userNumber!; i++) {
+      data.ueId = supi;
+      axios
+	.post("/api/subscriber/" + data.ueId + "/" + data.plmnID, data)
+	.then((res) => {
+          console.log("post result:" + res);
+          navigation("/subscriber");
+	})
+	.catch((err) => {
+          if (err.response) {
+            if (err.response.data.cause) {
+              alert(err.response.data.cause);
+            } else {
+              alert(err.response.data);
+            }
           } else {
-            alert(err.response.data);
+            alert(err.message);
           }
-        } else {
-          alert(err.message);
-        }
-      });
+	  return;
+	});
+      supi = supiIncrement(supi);
+    }
   };
 
   const onSnssai = () => {
@@ -305,6 +323,19 @@ export default function SubscriberCreate() {
         return subData.gpsis[0].replace("msisdn-", "");
       } else {
         return "";
+      }
+    }
+  };
+
+  const handleChangeUserNumber = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ): void => {
+    if (event.target.value === undefined) {
+      setData({ ...data, userNumber: undefined });
+    } else {
+      const userNumber = Number(event.target.value);
+      if (userNumber >= 1) {
+	setData({ ...data, userNumber: Number(event.target.value) });
       }
     }
   };
@@ -1021,6 +1052,21 @@ export default function SubscriberCreate() {
     <Dashboard title="Subscription">
       <Card variant="outlined">
         <Table>
+          <TableBody>
+            <TableRow>
+              <TableCell>
+                <TextField
+                  label="Subscriber data number (auto-incresed with SUPI)"
+                  variant="outlined"
+                  required
+                  fullWidth
+                  value={data.userNumber}
+                  onChange={handleChangeUserNumber}
+                  type="number"
+                />
+              </TableCell>
+            </TableRow>
+          </TableBody>
           <TableBody>
             <TableRow>
               <TableCell>
