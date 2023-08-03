@@ -37,7 +37,7 @@ export default function SubscriberCreate() {
   const [data, setData] = useState<Subscription>({
     userNumber: 1,
     plmnID: "20893",
-    ueId: "imsi-208930000000999",
+    ueId: "imsi-208930000000001",
     AuthenticationSubscription: {
       authenticationMethod: "5G_AKA",
       sequenceNumber: "000000000023",
