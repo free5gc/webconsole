@@ -63,19 +63,176 @@ export default function SubscriberCreate() {
         downlink: "2 Gbps",
       },
       nssai: {
-        defaultSingleNssais: [],
+        defaultSingleNssais: [
+	  {
+            "sst": 1,
+            "sd": "010203"
+          }
+	],
         singleNssais: [],
       },
     },
+    "SessionManagementSubscriptionData": [
+      {
+	"singleNssai": {
+          "sst": 1,
+          "sd": "010203"
+	},
+	"dnnConfigurations": {
+          "internet": {
+            "pduSessionTypes": {
+              "defaultSessionType": "IPV4",
+              "allowedSessionTypes": [
+		"IPV4"
+              ]
+            },
+            "sscModes": {
+              "defaultSscMode": "SSC_MODE_1",
+              "allowedSscModes": [
+		"SSC_MODE_2",
+		"SSC_MODE_3"
+              ]
+            },
+            "5gQosProfile": {
+              "5qi": 9,
+              "arp": {
+		"priorityLevel": 8,
+		"preemptCap": "",
+		"preemptVuln": ""
+              },
+              "priorityLevel": 8
+            },
+            "sessionAmbr": {
+              "uplink": "1000 Mbps",
+              "downlink": "1000 Mbps"
+            }
+          }
+	}
+      },
+      {
+	"singleNssai": {
+          "sst": 1,
+          "sd": "112233"
+	},
+	"dnnConfigurations": {
+          "internet": {
+            "pduSessionTypes": {
+              "defaultSessionType": "IPV4",
+              "allowedSessionTypes": [
+		"IPV4"
+              ]
+            },
+            "sscModes": {
+              "defaultSscMode": "SSC_MODE_1",
+              "allowedSscModes": [
+		"SSC_MODE_2",
+		"SSC_MODE_3"
+              ]
+            },
+            "5gQosProfile": {
+              "5qi": 8,
+              "arp": {
+		"priorityLevel": 8,
+		"preemptCap": "",
+		"preemptVuln": ""
+              },
+              "priorityLevel": 8
+            },
+            "sessionAmbr": {
+              "uplink": "1000 Mbps",
+              "downlink": "1000 Mbps"
+            }
+          }
+	}
+      }
+    ],
     SmfSelectionSubscriptionData: {
-      subscribedSnssaiInfos: {},
+      "subscribedSnssaiInfos": {
+	"01010203": {
+          "dnnInfos": [
+            {
+              "dnn": "internet"
+            }
+          ]
+	},
+	"01112233": {
+          "dnnInfos": [
+            {
+              "dnn": "internet"
+            }
+          ]
+	}
+      }
     },
     AmPolicyData: {
-      subscCats: ["free5gc"],
+      subscCats: [
+	"free5gc"
+      ],
     },
     SmPolicyData: {
-      smPolicySnssaiData: {},
+      "smPolicySnssaiData": {
+	"01010203": {
+          "snssai": {
+            "sst": 1,
+            "sd": "010203"
+          },
+          "smPolicyDnnData": {
+            "internet": {
+              "dnn": "internet"
+            }
+          }
+	},
+	"01112233": {
+          "snssai": {
+            "sst": 1,
+            "sd": "112233"
+          },
+          "smPolicyDnnData": {
+            "internet": {
+              "dnn": "internet"
+            }
+          }
+	}
+      }
     },
+    "FlowRules": [
+      {
+	"filter": "permit out ip from any to 10.60.0.0/16",
+	"precedence": 128,
+	"snssai": "01010203",
+	"dnn": "internet",
+	"qfi": 8
+      },
+      {
+	"filter": "permit out ip from any to 10.60.0.0/16",
+	"precedence": 127,
+	"snssai": "01112233",
+	"dnn": "internet",
+	"qfi": 7
+      }
+    ],
+    "QosFlows": [
+      {
+	"snssai": "01010203",
+	"dnn": "internet",
+	"qfi": 8,
+	"5qi": 8,
+	"mbrUL": "200 Mbps",
+	"mbrDL": "200 Mbps",
+	"gbrUL": "100 Mbps",
+	"gbrDL": "100 Mbps"
+      },
+      {
+	"snssai": "01112233",
+	"dnn": "internet",
+	"qfi": 7,
+	"5qi": 7,
+	"mbrUL": "400 Mbps",
+	"mbrDL": "400 Mbps",
+	"gbrUL": "200 Mbps",
+	"gbrDL": "200 Mbps"
+      }
+    ]
   });
   const [opcType, setOpcType] = useState<string>("OPc");
   const [opcValue, setOpcValue] = useState<string>("8e27b6af0e692e750f32667a3b14605d");
@@ -229,7 +386,7 @@ export default function SubscriberCreate() {
     const flow: FlowRules = {
       dnn: dnn,
       snssai: flowKey,
-      filter: "permit out ip from 10.20.30.40 to 50.60.70.80",
+      filter: "permit out ip from any to 10.60.0.0/16",
       precedence: 128,
       qfi: 9,
     };
@@ -239,8 +396,8 @@ export default function SubscriberCreate() {
       qfi: 9,
       "5qi": 9,
       gbrUL: "100 Mbps",
-      gbrDL: "200 Mbps",
-      mbrUL: "100 Mbps",
+      gbrDL: "100 Mbps",
+      mbrUL: "200 Mbps",
       mbrDL: "200 Mbps",
     };
     if (data.FlowRules === undefined) {
