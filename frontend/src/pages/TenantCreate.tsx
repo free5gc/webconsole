@@ -38,7 +38,7 @@ export default function TenantCreate() {
           <TableRow>
             <TableCell>
               <TextField
-                label="Tenant ID"
+                label="Tenant Name"
                 variant="outlined"
                 required
                 fullWidth
