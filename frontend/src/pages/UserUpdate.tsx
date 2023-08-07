@@ -21,6 +21,11 @@ import {
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
+export interface Password {
+  password?: string;
+  passwordConfirm?: string;
+}
+
 export default function UserUpdate() {
   const { id, uid } = useParams<{
     id: string;
@@ -29,9 +34,15 @@ export default function UserUpdate() {
   const navigation = useNavigate();
   const [user, setUser] = useState<User>({});
 
+  const [password, setPassword] = useState<Password>({});
+
   const [showPassword, setShowPassword] = useState(false);
   const handleClickShowPassword = () => setShowPassword(!showPassword);
   const handleMouseDownPassword = () => setShowPassword(!showPassword);
+
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
+  const handleClickShowPasswordConfirm = () => setShowPasswordConfirm(!showPasswordConfirm);
+  const handleMouseDownPasswordConfirm = () => setShowPasswordConfirm(!showPasswordConfirm);
 
   useEffect(() => {
     axios.get("/api/tenant/" + id + "/user/" + uid).then((res) => {
@@ -40,6 +51,19 @@ export default function UserUpdate() {
   }, [id]);
 
   const onUpdate = () => {
+    if (password.password === undefined || password.password === "") {
+      alert("Password can't be empty");
+      return;
+    }
+    if (password.passwordConfirm === undefined || password.passwordConfirm === "") {
+      alert("Password can't be empty");
+      return;
+    }
+    if (password.password !== password.passwordConfirm) {
+      alert("Password mismatch");
+      return;
+    }
+    user.encryptedPassword = password.password;
     axios.put("/api/tenant/" + id + "/user/" + uid, user).then((res) => {
       console.log("put result:" + res);
       navigation("/tenant/" + id + "/user");
@@ -55,7 +79,13 @@ export default function UserUpdate() {
   const handleChangePassword = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ): void => {
-    setUser({ ...user, encryptedPassword: event.target.value });
+    setPassword({ ...password, password: event.target.value });
+  };
+
+  const handleChangePasswordConfirm = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ): void => {
+    setPassword({ ...password, passwordConfirm: event.target.value });
   };
 
   return (
@@ -98,7 +128,6 @@ export default function UserUpdate() {
                 variant="outlined"
                 required
                 fullWidth
-                value={user.encryptedPassword}
                 type={showPassword ? "text" : "password"}
                 onChange={handleChangePassword}
                 InputProps={{
@@ -109,7 +138,34 @@ export default function UserUpdate() {
                         onClick={handleClickShowPassword}
                         onMouseDown={handleMouseDownPassword}
                       >
-                        {showPassword ? <Visibility /> : <VisibilityOff />}
+				    {showPassword ? <Visibility /> : <VisibilityOff />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </TableCell>
+          </TableRow>
+        </TableBody>
+        <TableBody>
+          <TableRow>
+            <TableCell>
+              <TextField
+                label="Confirm Password"
+                variant="outlined"
+                required
+                fullWidth
+                type={showPasswordConfirm ? "text" : "password"}
+                onChange={handleChangePasswordConfirm}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={handleClickShowPasswordConfirm}
+                        onMouseDown={handleMouseDownPasswordConfirm}
+                      >
+				    {showPasswordConfirm ? <Visibility /> : <VisibilityOff />}
                       </IconButton>
                     </InputAdornment>
                   ),
