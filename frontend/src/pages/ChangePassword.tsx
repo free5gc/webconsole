@@ -25,7 +25,7 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
 export interface Password {
   password?: string;
-  passwordAgain?: string;
+  passwordConfirm?: string;
 }
 
 export default function ChangePassword() {
@@ -39,20 +39,20 @@ export default function ChangePassword() {
   const handleClickShowPassword = () => setShowPassword(!showPassword);
   const handleMouseDownPassword = () => setShowPassword(!showPassword);
 
-  const [showPasswordAgain, setShowPasswordAgain] = useState(false);
-  const handleClickShowPasswordAgain = () => setShowPasswordAgain(!showPasswordAgain);
-  const handleMouseDownPasswordAgain = () => setShowPasswordAgain(!showPasswordAgain);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
+  const handleClickShowPasswordConfirm = () => setShowPasswordConfirm(!showPasswordConfirm);
+  const handleMouseDownPasswordConfirm = () => setShowPasswordConfirm(!showPasswordConfirm);
 
   const onUpdate = () => {
     if (password.password === undefined || password.password === "") {
       alert("Password can't be empty");
       return;
     }
-    if (password.passwordAgain === undefined || password.passwordAgain === "") {
+    if (password.passwordConfirm === undefined || password.passwordConfirm === "") {
       alert("Password can't be empty");
       return;
     }
-    if (password.password !== password.passwordAgain) {
+    if (password.password !== password.passwordConfirm) {
       alert("Password mismatch");
       return;
     }
@@ -72,10 +72,10 @@ export default function ChangePassword() {
     setPassword({ ...password, password: event.target.value });
   };
 
-  const handleChangePasswordAgain = (
+  const handleChangePasswordConfirm = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ): void => {
-    setPassword({ ...password, passwordAgain: event.target.value });
+    setPassword({ ...password, passwordConfirm: event.target.value });
   };
 
   return (
@@ -112,21 +112,21 @@ export default function ChangePassword() {
           <TableRow>
             <TableCell>
               <TextField
-                label="Password Again"
+                label="Confirm Password"
                 variant="outlined"
                 required
                 fullWidth
-                type={showPasswordAgain ? "text" : "password"}
-                onChange={handleChangePasswordAgain}
+                type={showPasswordConfirm ? "text" : "password"}
+                onChange={handleChangePasswordConfirm}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
                         aria-label="toggle password visibility"
-                        onClick={handleClickShowPasswordAgain}
-                        onMouseDown={handleMouseDownPasswordAgain}
+                        onClick={handleClickShowPasswordConfirm}
+                        onMouseDown={handleMouseDownPasswordConfirm}
                       >
-                        {showPasswordAgain ? <Visibility /> : <VisibilityOff />}
+                        {showPasswordConfirm ? <Visibility /> : <VisibilityOff />}
                       </IconButton>
                     </InputAdornment>
                   ),
