@@ -1358,39 +1358,6 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 	filterUeIdOnly := bson.M{"ueId": ueId}
 	filter := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId}
 
-	// Set Sd value to lower case
-	if subsData != nil {
-		if subsData.AccessAndMobilitySubscriptionData.Nssai != nil {
-			defaultSingleNssais := subsData.AccessAndMobilitySubscriptionData.Nssai.DefaultSingleNssais
-			for i := range defaultSingleNssais {
-				defaultSingleNssais[i].Sd = strings.ToLower(defaultSingleNssais[i].Sd)
-			}
-
-			singleNssais := subsData.AccessAndMobilitySubscriptionData.Nssai.SingleNssais
-			for i := range singleNssais {
-				singleNssais[i].Sd = strings.ToLower(singleNssais[i].Sd)
-			}
-		}
-
-		subscriptionDatas := subsData.SessionManagementSubscriptionData
-		for i := range subscriptionDatas {
-			subscriptionDatas[i].SingleNssai.Sd = strings.ToLower(subscriptionDatas[i].SingleNssai.Sd)
-		}
-
-		subscribedSnssaiInfos := subsData.SmfSelectionSubscriptionData.SubscribedSnssaiInfos
-		for sd, subscribedSnssaiInfo := range subscribedSnssaiInfos {
-			newSd := strings.ToLower(sd)
-			if newSd != sd {
-				delete(subsData.SmfSelectionSubscriptionData.SubscribedSnssaiInfos, sd)
-				subsData.SmfSelectionSubscriptionData.SubscribedSnssaiInfos[newSd] = subscribedSnssaiInfo
-			}
-		}
-
-		smPolicySnssaiDatas := subsData.SmPolicyData.SmPolicySnssaiData
-		for i := range smPolicySnssaiDatas {
-			smPolicySnssaiDatas[i].Snssai.Sd = strings.ToLower(smPolicySnssaiDatas[i].Snssai.Sd)
-		}
-	}
 	// Replace all data with new one
 	if method == "put" {
 		if err := mongoapi.RestfulAPIDeleteMany(flowRuleDataColl, filter); err != nil {
