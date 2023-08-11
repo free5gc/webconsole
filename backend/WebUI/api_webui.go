@@ -154,7 +154,7 @@ func setCorsHeader(c *gin.Context) {
 	c.Writer.Header().Set(
 		"Access-Control-Allow-Headers",
 		"Content-Type, Content-Length, Accept-Encoding, "+
-			"X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With",
+			"X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, Token",
 	)
 	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, PATCH, DELETE")
 }
@@ -579,8 +579,10 @@ func ParseJWT(tokenStr string) (jwt.MapClaims, error) {
 func CheckAuth(c *gin.Context) bool {
 	tokenStr := c.GetHeader("Token")
 	claims, err := ParseJWT(tokenStr)
-
-	if err == nil && claims["email"] == "admin" {
+	if err != nil {
+		return false
+	}
+	if claims["email"].(string) == "admin" {
 		return true
 	} else {
 		return false
@@ -590,9 +592,6 @@ func CheckAuth(c *gin.Context) bool {
 // Tenant ID
 func GetTenantId(c *gin.Context) (string, error) {
 	tokenStr := c.GetHeader("Token")
-	if CheckAuth(c) {
-		return "", nil
-	}
 	claims, err := ParseJWT(tokenStr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{})
@@ -1008,8 +1007,7 @@ func GetSubscribers(c *gin.Context) {
 
 	logger.ProcLog.Infoln("Get All Subscribers List")
 
-	tokenStr := c.GetHeader("Token")
-	claims, err := ParseJWT(tokenStr)
+	userTenantId, err := GetTenantId(c)
 	if err != nil {
 		logger.ProcLog.Errorln(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -1017,6 +1015,8 @@ func GetSubscribers(c *gin.Context) {
 		})
 		return
 	}
+
+	isAdmin := CheckAuth(c)
 
 	var subsList []SubsListIE = make([]SubsListIE, 0)
 	amDataList, err := mongoapi.RestfulAPIGetMany(amDataColl, bson.M{})
@@ -1047,7 +1047,7 @@ func GetSubscribers(c *gin.Context) {
 			return
 		}
 
-		if claims["email"] == "admin" || tenantId == claims["tenantId"].(string) {
+		if isAdmin || userTenantId == tenantId {
 			tmp := SubsListIE{
 				PlmnID: servingPlmnId.(string),
 				UeId:   ueId.(string),
@@ -1670,6 +1670,8 @@ func GetRegisteredUEContext(c *gin.Context) {
 	webuiSelf := webui_context.GetSelf()
 	webuiSelf.UpdateNfProfiles()
 
+	isAdmin := CheckAuth(c)
+
 	supi, supiExists := c.Params.Get("supi")
 	// TODO: support fetching data from multiple AMFs
 	if amfUris := webuiSelf.GetOamUris(models.NfType_AMF); amfUris != nil {
@@ -1709,7 +1711,7 @@ func GetRegisteredUEContext(c *gin.Context) {
 			return
 		}
 
-		if tenantId == "" {
+		if isAdmin {
 			sendResponseToClient(c, resp)
 		} else {
 			sendResponseToClientFilterTenant(c, resp, tenantId)
@@ -1762,4 +1764,60 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 			"cause": "No SMF Found",
 		})
 	}
+}
+
+func ChangePasswordInfo(c *gin.Context) {
+	setCorsHeader(c)
+
+	// Need to get tenantId.
+	tenantId, err := GetTenantId(c)
+	if err != nil {
+		logger.ProcLog.Errorln(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{})
+		return
+	}
+
+	var newUserData User
+	if err = c.ShouldBindJSON(&newUserData); err != nil {
+		logger.ProcLog.Errorln(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{})
+		return
+	}
+
+	filterEmailOnly := bson.M{"tenantId": tenantId, "email": newUserData.Email}
+	userDataInterface, err := mongoapi.RestfulAPIGetOne(userDataColl, filterEmailOnly)
+	if err != nil {
+		logger.ProcLog.Errorf("ChangePassword err: %+v", err)
+	}
+	if len(userDataInterface) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	var userData User
+	err = json.Unmarshal(mapToByte(userDataInterface), &userData)
+	if err != nil {
+		logger.ProcLog.Errorf("JSON Unmarshal err: %+v", err)
+	}
+
+	if newUserData.EncryptedPassword != "" {
+		hash, err := bcrypt.GenerateFromPassword([]byte(newUserData.EncryptedPassword), 12)
+		if err != nil {
+			logger.ProcLog.Errorf("GenerateFromPassword err: %+v", err)
+		}
+		userData.EncryptedPassword = string(hash)
+	}
+
+	userBsonM := toBsonM(userData)
+	if _, err := mongoapi.RestfulAPIPost(userDataColl, filterEmailOnly, userBsonM); err != nil {
+		logger.ProcLog.Errorf("PutUserByID err: %+v", err)
+	}
+
+	c.JSON(http.StatusOK, userData)
+}
+
+func OptionsSubscribers(c *gin.Context) {
+	setCorsHeader(c)
+
+	c.JSON(http.StatusNoContent, gin.H{})
 }

@@ -31,3 +31,6 @@ cscope.*
 # Debug
 *.log
 *.pcap
+
+# Binary
+webconsole
