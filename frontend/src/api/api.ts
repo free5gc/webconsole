@@ -888,37 +888,37 @@ export interface Tenant {
      * @type {string}
      * @memberof Tenant
      */
-     'Snssai'?: string;
+     'snssai'?: string;
      /**
       * 
       * @type {string}
       * @memberof ChargingData
       */
-     'Dnn'?: string;
+     'dnn'?: string;
      /**
      * 
      * @type {string}
      * @memberof ChargingData
      */
-    'Filter'?: string;
+    'filter'?: string;
     /**
      * 
      * @type {string}
      * @memberof ChargingData
      */
-    'ChargingMethod'?: string;
+    'chargingMethod'?: string;
     /**
      * 
      * @type {string}
      * @memberof ChargingData
      */
-     'Quota'?: string;
+     'quota'?: string;
     /**
      * 
      * @type {string}
      * @memberof ChargingData
      */
-    'UnitCost'?: string;
+    'unitCost'?: string;
 }
 /**
  * 

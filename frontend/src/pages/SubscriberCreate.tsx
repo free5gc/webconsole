@@ -203,8 +203,10 @@ export default function SubscriberCreate() {
         "dnn": "internet",
         "qfi": 8,
         "chargingData": {
-          "ChargingMethod": "Offline",
-          "UnitCost": "1000",
+          "chargingMethod": "Offline",
+          "quota": "1000",
+          "unitCost": "1",
+          "filter": "10.10.60.1",
         }
       },
       {
@@ -214,8 +216,10 @@ export default function SubscriberCreate() {
         "dnn": "internet",
         "qfi": 7,
         "chargingData": {
-          "ChargingMethod": "Online",
-          "UnitCost": "2000",
+          "chargingMethod": "Online",
+          "quota": "2000",
+          "unitCost": "2",
+          "filter": "10.10.60.2",
         }
       }
     ],
@@ -243,20 +247,20 @@ export default function SubscriberCreate() {
     ],
     "ChargingDatas": [
       {
-        "Snssai": "01010203",
-        "Dnn": "internet",
-        "Filter": "",
-        "ChargingMethod": "Offline",
-        "Quota": "1000",
-        "UnitCost": "1",
+        "snssai": "01010203",
+        "dnn": "internet",
+        "filter": "10.10.60.1",
+        "chargingMethod": "Offline",
+        "quota": "1000",
+        "unitCost": "1",
       },
       {
-        "Snssai": "01112233",
-        "Dnn": "internet",
-        "Filter": "",
-        "ChargingMethod": "Online",
-        "Quota": "2000",
-        "UnitCost": "2",
+        "snssai": "01112233",
+        "dnn": "internet",
+        "filter": "10.10.60.2",
+        "chargingMethod": "Online",
+        "quota": "2000",
+        "unitCost": "2",
       },
     ]
   });
@@ -290,7 +294,6 @@ export default function SubscriberCreate() {
     for (let i = 0; i < data.SessionManagementSubscriptionData!.length; i++) {
       const nssai = data.SessionManagementSubscriptionData![i];
       const key = nssai2KeyString(nssai.singleNssai!);
-      console.log(key);
       Object.keys(nssai.dnnConfigurations!).map((dnn) => {
         if (data.SmfSelectionSubscriptionData!.subscribedSnssaiInfos![key] === undefined) {
           data.SmfSelectionSubscriptionData!.subscribedSnssaiInfos![key] = {
@@ -319,7 +322,6 @@ export default function SubscriberCreate() {
       axios
         .post("/api/subscriber/" + data.ueId + "/" + data.plmnID, data)
         .then((res) => {
-          console.log("post result:" + res);
           navigation("/subscriber");
         })
         .catch((err) => {
@@ -947,32 +949,53 @@ export default function SubscriberCreate() {
     dnn: string,
     flowKey: string,
   ): void => {
-    if (data.FlowRules !== undefined) {
-      for (let i = 0; i < data.FlowRules!.length; i++) {
-        if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn) {
-          console.log("handleChangeChargingMethod")
-          data.FlowRules![i]!.chargingData!.ChargingMethod = event.target.value;
-          setData({ ...data });
-        }
+    for (let i = 0; i < data.FlowRules!.length; i++) {
+      if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn) {
+        data.FlowRules![i]!.chargingData!.chargingMethod = event.target.value;
+        setData({ ...data });
       }
     }
   };
 
-  const handleChangeUnitCost = (
+  const handleChangeChargingFilter = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     dnn: string,
     flowKey: string,
   ): void => {
-    if (data.FlowRules !== undefined) {
       for (let i = 0; i < data.FlowRules!.length; i++) {
         if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn) {
-          data.FlowRules![i]!.chargingData!.UnitCost = event.target.value;
-          console.log("handleChangeUnitCost")
+          data.FlowRules![i]!.chargingData!.filter = event.target.value;
           setData({ ...data });
         }
       }
-    }
   };
+
+  const handleChangeChargingQuota = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    dnn: string,
+    flowKey: string,
+  ): void => {
+      for (let i = 0; i < data.FlowRules!.length; i++) {
+        if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn) {
+          data.FlowRules![i]!.chargingData!.quota = event.target.value;
+          setData({ ...data });
+        }
+      }
+  };
+
+  const handleChangeChargingUnitCost = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    dnn: string,
+    flowKey: string,
+  ): void => {
+      for (let i = 0; i < data.FlowRules!.length; i++) {
+        if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn) {
+          data.FlowRules![i]!.chargingData!.unitCost = event.target.value;
+          setData({ ...data });
+        }
+      }
+  };
+
   const handleChangeUpIntegrity = (
     event: SelectChangeEvent<string>,
     dnn: DnnConfiguration,
@@ -1026,7 +1049,7 @@ export default function SubscriberCreate() {
                         variant="outlined"
                         required
                         fullWidth
-                        value={flow.chargingData.ChargingMethod}
+                        value={flow.chargingData.chargingMethod}
                         onChange={(ev) => handleChangeChargingMethod(ev, dnn, flowKey)}
                       >
                         <MenuItem value="Offline">Offline</MenuItem>
@@ -1038,12 +1061,37 @@ export default function SubscriberCreate() {
                 <TableBody>
                   <TableCell>
                     <TextField
+                      label="Filter"
+                      variant="outlined"
+                      required
+                      fullWidth
+                      value={flow.chargingData.filter}
+                      onChange={(ev) => handleChangeChargingFilter(ev, dnn, flowKey)}
+                    />
+                  </TableCell>
+                </TableBody>
+                <TableBody></TableBody>
+                <TableBody>
+                  <TableCell>
+                    <TextField
+                      label="Quota (monetary)"
+                      variant="outlined"
+                      required
+                      fullWidth
+                      value={flow.chargingData.quota}
+                      onChange={(ev) => handleChangeChargingQuota(ev, dnn, flowKey)}
+                    />
+                  </TableCell>
+                </TableBody>
+                <TableBody>
+                  <TableCell>
+                    <TextField
                       label="Unit Cost (money per byte)"
                       variant="outlined"
                       required
                       fullWidth
-                      value={flow.chargingData.UnitCost}
-                      onChange={(ev) => handleChangeUnitCost(ev, dnn, flowKey)}
+                      value={flow.chargingData.unitCost}
+                      onChange={(ev) => handleChangeChargingUnitCost(ev, dnn, flowKey)}
                     />
                   </TableCell>
                 </TableBody>
