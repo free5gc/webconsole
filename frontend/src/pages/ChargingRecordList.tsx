@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { config } from "../constants/config";
 
 import axios from "../axios";
-import { UeChargingRecord } from "../api/api";
+import { ChargingRecord } from "../api/api";
 
 import Dashboard from "../Dashboard";
 
@@ -19,9 +19,9 @@ import {
 } from "@mui/material";
 
 
-export default function UeChargingRecordList() {
+export default function ChargingRecordList() {
   const navigation = useNavigate();
-  const [data, setData] = useState<UeChargingRecord[]>([]);
+  const [data, setData] = useState<ChargingRecord[]>([]);
   const [limit, setLimit] = useState(50);
   const [page, setPage] = useState(0);
   const [refresh, setRefresh] = useState<boolean>(false);

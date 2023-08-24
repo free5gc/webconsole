@@ -15,7 +15,7 @@ import UserCreate from "./pages/UserCreate";
 import UserUpdate from "./pages/UserUpdate";
 import Login from "./pages/Login";
 import ChangePassword from "./pages/ChangePassword";
-import UeChargingRecordList from "./pages/UeChargingRecordList";
+import ChargingRecordList from "./pages/ChargingRecordList";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { LoginContext, User } from "./LoginContext";
 
@@ -151,7 +151,7 @@ export default function App() {
             path="/charging-record"
             element={
               <ProtectedRoute>
-                <UeChargingRecordList />
+                <ChargingRecordList />
               </ProtectedRoute>
             }
           />

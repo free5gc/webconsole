@@ -64,41 +64,41 @@ export default function SubscriberCreate() {
       },
       nssai: {
         defaultSingleNssais: [
-	  {
+          {
             "sst": 1,
             "sd": "010203"
           }
-	],
+        ],
         singleNssais: [],
       },
     },
     "SessionManagementSubscriptionData": [
       {
-	"singleNssai": {
+        "singleNssai": {
           "sst": 1,
           "sd": "010203"
-	},
-	"dnnConfigurations": {
+        },
+        "dnnConfigurations": {
           "internet": {
             "pduSessionTypes": {
               "defaultSessionType": "IPV4",
               "allowedSessionTypes": [
-		"IPV4"
+                "IPV4"
               ]
             },
             "sscModes": {
               "defaultSscMode": "SSC_MODE_1",
               "allowedSscModes": [
-		"SSC_MODE_2",
-		"SSC_MODE_3"
+                "SSC_MODE_2",
+                "SSC_MODE_3"
               ]
             },
             "5gQosProfile": {
               "5qi": 9,
               "arp": {
-		"priorityLevel": 8,
-		"preemptCap": "",
-		"preemptVuln": ""
+                "priorityLevel": 8,
+                "preemptCap": "",
+                "preemptVuln": ""
               },
               "priorityLevel": 8
             },
@@ -107,34 +107,34 @@ export default function SubscriberCreate() {
               "downlink": "1000 Mbps"
             }
           }
-	}
+        }
       },
       {
-	"singleNssai": {
+        "singleNssai": {
           "sst": 1,
           "sd": "112233"
-	},
-	"dnnConfigurations": {
+        },
+        "dnnConfigurations": {
           "internet": {
             "pduSessionTypes": {
               "defaultSessionType": "IPV4",
               "allowedSessionTypes": [
-		"IPV4"
+                "IPV4"
               ]
             },
             "sscModes": {
               "defaultSscMode": "SSC_MODE_1",
               "allowedSscModes": [
-		"SSC_MODE_2",
-		"SSC_MODE_3"
+                "SSC_MODE_2",
+                "SSC_MODE_3"
               ]
             },
             "5gQosProfile": {
               "5qi": 8,
               "arp": {
-		"priorityLevel": 8,
-		"preemptCap": "",
-		"preemptVuln": ""
+                "priorityLevel": 8,
+                "preemptCap": "",
+                "preemptVuln": ""
               },
               "priorityLevel": 8
             },
@@ -143,35 +143,35 @@ export default function SubscriberCreate() {
               "downlink": "1000 Mbps"
             }
           }
-	}
+        }
       }
     ],
     SmfSelectionSubscriptionData: {
       "subscribedSnssaiInfos": {
-	"01010203": {
+        "01010203": {
           "dnnInfos": [
             {
               "dnn": "internet"
             }
           ]
-	},
-	"01112233": {
+        },
+        "01112233": {
           "dnnInfos": [
             {
               "dnn": "internet"
             }
           ]
-	}
+        }
       }
     },
     AmPolicyData: {
       subscCats: [
-	"free5gc"
+        "free5gc"
       ],
     },
     SmPolicyData: {
       "smPolicySnssaiData": {
-	"01010203": {
+        "01010203": {
           "snssai": {
             "sst": 1,
             "sd": "010203"
@@ -181,8 +181,8 @@ export default function SubscriberCreate() {
               "dnn": "internet"
             }
           }
-	},
-	"01112233": {
+        },
+        "01112233": {
           "snssai": {
             "sst": 1,
             "sd": "112233"
@@ -192,56 +192,83 @@ export default function SubscriberCreate() {
               "dnn": "internet"
             }
           }
-	}
+        }
       }
     },
     "FlowRules": [
       {
-	"filter": "permit out ip from any to 10.60.0.0/16",
-	"precedence": 128,
-	"snssai": "01010203",
-	"dnn": "internet",
-	"qfi": 8
+        "filter": "permit out ip from any to 10.60.0.0/16",
+        "precedence": 128,
+        "snssai": "01010203",
+        "dnn": "internet",
+        "qfi": 8,
+        "chargingData": {
+          "ChargingMethod": "Offline",
+          "UnitCost": "1000",
+        }
       },
       {
-	"filter": "permit out ip from any to 10.60.0.0/16",
-	"precedence": 127,
-	"snssai": "01112233",
-	"dnn": "internet",
-	"qfi": 7
+        "filter": "permit out ip from any to 10.60.0.0/16",
+        "precedence": 127,
+        "snssai": "01112233",
+        "dnn": "internet",
+        "qfi": 7,
+        "chargingData": {
+          "ChargingMethod": "Online",
+          "UnitCost": "2000",
+        }
       }
     ],
     "QosFlows": [
       {
-	"snssai": "01010203",
-	"dnn": "internet",
-	"qfi": 8,
-	"5qi": 8,
-	"mbrUL": "200 Mbps",
-	"mbrDL": "200 Mbps",
-	"gbrUL": "100 Mbps",
-	"gbrDL": "100 Mbps"
+        "snssai": "01010203",
+        "dnn": "internet",
+        "qfi": 8,
+        "5qi": 8,
+        "mbrUL": "200 Mbps",
+        "mbrDL": "200 Mbps",
+        "gbrUL": "100 Mbps",
+        "gbrDL": "100 Mbps"
       },
       {
-	"snssai": "01112233",
-	"dnn": "internet",
-	"qfi": 7,
-	"5qi": 7,
-	"mbrUL": "400 Mbps",
-	"mbrDL": "400 Mbps",
-	"gbrUL": "200 Mbps",
-	"gbrDL": "200 Mbps"
+        "snssai": "01112233",
+        "dnn": "internet",
+        "qfi": 7,
+        "5qi": 7,
+        "mbrUL": "400 Mbps",
+        "mbrDL": "400 Mbps",
+        "gbrUL": "200 Mbps",
+        "gbrDL": "200 Mbps"
       }
+    ],
+    "ChargingDatas": [
+      {
+        "Snssai": "01010203",
+        "Dnn": "internet",
+        "Filter": "",
+        "ChargingMethod": "Offline",
+        "Quota": "1000",
+        "UnitCost": "1",
+      },
+      {
+        "Snssai": "01112233",
+        "Dnn": "internet",
+        "Filter": "",
+        "ChargingMethod": "Online",
+        "Quota": "2000",
+        "UnitCost": "2",
+      },
     ]
   });
   const [opcType, setOpcType] = useState<string>("OPc");
   const [opcValue, setOpcValue] = useState<string>("8e27b6af0e692e750f32667a3b14605d");
   const [dnnName, setDnnName] = useState<string[]>([]);
 
+  function toHex(v: number | undefined): string {
+    return ("00" + v?.toString(16).toUpperCase()).substr(-2);
+  };
+
   const nssai2KeyString = (nssai: Nssai) => {
-    function toHex(v: number | undefined) {
-      return ("00" + v?.toString(16).toUpperCase()).substr(-2);
-    }
     return toHex(nssai.sst) + nssai.sd;
   };
 
@@ -290,12 +317,12 @@ export default function SubscriberCreate() {
     for (let i = 0; i < data.userNumber!; i++) {
       data.ueId = supi;
       axios
-	.post("/api/subscriber/" + data.ueId + "/" + data.plmnID, data)
-	.then((res) => {
+        .post("/api/subscriber/" + data.ueId + "/" + data.plmnID, data)
+        .then((res) => {
           console.log("post result:" + res);
           navigation("/subscriber");
-	})
-	.catch((err) => {
+        })
+        .catch((err) => {
           if (err.response) {
             if (err.response.data.cause) {
               alert(err.response.data.cause);
@@ -305,8 +332,8 @@ export default function SubscriberCreate() {
           } else {
             alert(err.message);
           }
-	  return;
-	});
+          return;
+        });
       supi = supiIncrement(supi);
     }
   };
@@ -492,7 +519,7 @@ export default function SubscriberCreate() {
     } else {
       const userNumber = Number(event.target.value);
       if (userNumber >= 1) {
-	setData({ ...data, userNumber: Number(event.target.value) });
+        setData({ ...data, userNumber: Number(event.target.value) });
       }
     }
   };
@@ -915,7 +942,37 @@ export default function SubscriberCreate() {
       }
     }
   };
+  const handleChangeChargingMethod = (
+    event: SelectChangeEvent<string>,
+    dnn: string,
+    flowKey: string,
+  ): void => {
+    if (data.FlowRules !== undefined) {
+      for (let i = 0; i < data.FlowRules!.length; i++) {
+        if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn) {
+          console.log("handleChangeChargingMethod")
+          data.FlowRules![i]!.chargingData!.ChargingMethod = event.target.value;
+          setData({ ...data });
+        }
+      }
+    }
+  };
 
+  const handleChangeUnitCost = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    dnn: string,
+    flowKey: string,
+  ): void => {
+    if (data.FlowRules !== undefined) {
+      for (let i = 0; i < data.FlowRules!.length; i++) {
+        if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn) {
+          data.FlowRules![i]!.chargingData!.UnitCost = event.target.value;
+          console.log("handleChangeUnitCost")
+          setData({ ...data });
+        }
+      }
+    }
+  };
   const handleChangeUpIntegrity = (
     event: SelectChangeEvent<string>,
     dnn: DnnConfiguration,
@@ -936,7 +993,7 @@ export default function SubscriberCreate() {
     setData({ ...data });
   };
 
-  const qosFlow = (flowKey: string, dnn: string): QosFlows|undefined => {
+  const qosFlow = (flowKey: string, dnn: string): QosFlows | undefined => {
     if (data.QosFlows !== undefined) {
       for (let i = 0; i < data.QosFlows?.length; i++) {
         const qos = data.QosFlows![i];
@@ -947,10 +1004,58 @@ export default function SubscriberCreate() {
     }
   }
 
-  const flowRule = (dnn: string, snssai: Nssai) => {
-    function toHex(v: number | undefined) {
-      return ("00" + v?.toString(16).toUpperCase()).substr(-2);
+  const chargingConfig = (flow: any, dnn: string, snssai: Nssai) => {
+    const flowKey = toHex(snssai.sst) + snssai.sd;
+    if (data.FlowRules !== undefined) {
+      for (let i = 0; i < data.FlowRules?.length; i++) {
+        if (flow.snssai === flowKey && flow.dnn === dnn) {
+          return (
+            <Box sx={{ m: 2 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <h4>Charging Config</h4>
+                </Grid>
+              </Grid>
+              <Table>
+                <TableBody>
+                  <TableCell>
+                    <FormControl variant="outlined" fullWidth>
+                      <InputLabel>Charging Method</InputLabel>
+                      <Select
+                        label="Charging Method"
+                        variant="outlined"
+                        required
+                        fullWidth
+                        value={flow.chargingData.ChargingMethod}
+                        onChange={(ev) => handleChangeChargingMethod(ev, dnn, flowKey)}
+                      >
+                        <MenuItem value="Offline">Offline</MenuItem>
+                        <MenuItem value="Online">Online</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </TableCell>
+                </TableBody>
+                <TableBody>
+                  <TableCell>
+                    <TextField
+                      label="Unit Cost (money per byte)"
+                      variant="outlined"
+                      required
+                      fullWidth
+                      value={flow.chargingData.UnitCost}
+                      onChange={(ev) => handleChangeUnitCost(ev, dnn, flowKey)}
+                    />
+                  </TableCell>
+                </TableBody>
+              </Table>
+            </Box>
+          )
+        }
+      }
     }
+  };
+
+  const flowRule = (dnn: string, snssai: Nssai) => {
     const flowKey = toHex(snssai.sst) + snssai.sd;
     if (data.FlowRules !== undefined) {
       for (let i = 0; i < data.FlowRules?.length; i++) {
@@ -1078,6 +1183,9 @@ export default function SubscriberCreate() {
                           />
                         </TableCell>
                       </TableRow>
+                    </TableBody>
+                    <TableBody>
+                      {chargingConfig(flow, dnn, snssai)}
                     </TableBody>
                   </Table>
                 </Card>

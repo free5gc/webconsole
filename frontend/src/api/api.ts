@@ -253,6 +253,12 @@ export interface FlowRules {
      * @memberof FlowRules
      */
     'qfi'?: number;
+    /**
+     * 
+     * @type {ChargingData}
+     * @memberof FlowRules
+     */
+     'chargingData'?: ChargingData;
 }
 /**
  * 
@@ -845,6 +851,12 @@ export interface Subscription {
      * @memberof Subscription
      */
     'QosFlows'?: Array<QosFlows>;
+    /**
+     * 
+     * @type {Array<ChargingData>}
+     * @memberof Subscription
+     */
+     'ChargingDatas'?: Array<ChargingData>;
 }
 /**
  * 
@@ -868,9 +880,52 @@ export interface Tenant {
 /**
  * 
  * @export
- * @interface ChargingRecord
+ * @interface ChargingData
  */
- export interface UeChargingRecord {
+ export interface ChargingData {
+    /**
+     * 
+     * @type {string}
+     * @memberof Tenant
+     */
+     'Snssai'?: string;
+     /**
+      * 
+      * @type {string}
+      * @memberof ChargingData
+      */
+     'Dnn'?: string;
+     /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'Filter'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'ChargingMethod'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+     'Quota'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'UnitCost'?: string;
+}
+/**
+ * 
+ * @export
+ * @interface ChargingData
+ */
+ export interface ChargingRecord {
     /**
      * 
      * @type {string}
@@ -880,33 +935,27 @@ export interface Tenant {
      /**
       * 
       * @type {string}
-      * @memberof Tenant
+      * @memberof ChargingRecord
       */
      'Status'?: string;
      /**
      * 
      * @type {string}
-     * @memberof Tenant
+     * @memberof ChargingRecord
      */
-    'Quota Left'?: string;
+    'Quota'?: string;
     /**
      * 
      * @type {string}
-     * @memberof Tenant
+     * @memberof ChargingRecord
      */
     'Data Total Volume'?: string;
     /**
      * 
      * @type {string}
-     * @memberof Tenant
+     * @memberof ChargingRecord
      */
      'Data Volume Downlink'?: string;
-     /**
-      * 
-      * @type {string}
-      * @memberof Tenant
-      */
-     'tenantName'?: string;
 }
 /**
  * 
