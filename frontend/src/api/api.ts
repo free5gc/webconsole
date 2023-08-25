@@ -253,12 +253,6 @@ export interface FlowRules {
      * @memberof FlowRules
      */
     'qfi'?: number;
-    /**
-     * 
-     * @type {ChargingData}
-     * @memberof FlowRules
-     */
-     'chargingData'?: ChargingData;
 }
 /**
  * 

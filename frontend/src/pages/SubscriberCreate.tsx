@@ -201,26 +201,14 @@ export default function SubscriberCreate() {
         "precedence": 128,
         "snssai": "01010203",
         "dnn": "internet",
-        "qfi": 8,
-        "chargingData": {
-          "chargingMethod": "Offline",
-          "quota": "1000",
-          "unitCost": "1",
-          "filter": "10.10.60.1",
-        }
+        "qfi": 8
       },
       {
         "filter": "permit out ip from any to 10.60.0.0/16",
         "precedence": 127,
         "snssai": "01112233",
         "dnn": "internet",
-        "qfi": 7,
-        "chargingData": {
-          "chargingMethod": "Online",
-          "quota": "2000",
-          "unitCost": "2",
-          "filter": "10.10.60.2",
-        }
+        "qfi": 7
       }
     ],
     "QosFlows": [
@@ -251,7 +239,7 @@ export default function SubscriberCreate() {
         "dnn": "internet",
         "filter": "10.10.60.1",
         "chargingMethod": "Offline",
-        "quota": "1000",
+        "quota": "0",
         "unitCost": "1",
       },
       {
@@ -319,6 +307,7 @@ export default function SubscriberCreate() {
     let supi = data.ueId!;
     for (let i = 0; i < data.userNumber!; i++) {
       data.ueId = supi;
+      console.log(data)
       axios
         .post("/api/subscriber/" + data.ueId + "/" + data.plmnID, data)
         .then((res) => {
@@ -949,9 +938,9 @@ export default function SubscriberCreate() {
     dnn: string,
     flowKey: string,
   ): void => {
-    for (let i = 0; i < data.FlowRules!.length; i++) {
-      if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn) {
-        data.FlowRules![i]!.chargingData!.chargingMethod = event.target.value;
+    for (let i = 0; i < data.ChargingDatas!.length; i++) {
+      if (data.ChargingDatas![i].snssai === flowKey && data.ChargingDatas![i].dnn === dnn) {
+        data.ChargingDatas![i]!.chargingMethod = event.target.value;
         setData({ ...data });
       }
     }
@@ -963,8 +952,8 @@ export default function SubscriberCreate() {
     flowKey: string,
   ): void => {
       for (let i = 0; i < data.FlowRules!.length; i++) {
-        if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn) {
-          data.FlowRules![i]!.chargingData!.filter = event.target.value;
+        if (data.ChargingDatas![i].snssai === flowKey && data.ChargingDatas![i].dnn === dnn) {
+          data.ChargingDatas![i]!.filter = event.target.value;
           setData({ ...data });
         }
       }
@@ -975,9 +964,9 @@ export default function SubscriberCreate() {
     dnn: string,
     flowKey: string,
   ): void => {
-      for (let i = 0; i < data.FlowRules!.length; i++) {
-        if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn) {
-          data.FlowRules![i]!.chargingData!.quota = event.target.value;
+      for (let i = 0; i < data.ChargingDatas!.length; i++) {
+        if (data.ChargingDatas![i].snssai === flowKey && data.ChargingDatas![i].dnn === dnn) {
+          data.ChargingDatas![i]!.quota = event.target.value;
           setData({ ...data });
         }
       }
@@ -988,9 +977,9 @@ export default function SubscriberCreate() {
     dnn: string,
     flowKey: string,
   ): void => {
-      for (let i = 0; i < data.FlowRules!.length; i++) {
-        if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn) {
-          data.FlowRules![i]!.chargingData!.unitCost = event.target.value;
+      for (let i = 0; i < data.ChargingDatas!.length; i++) {
+        if (data.ChargingDatas![i].snssai === flowKey && data.ChargingDatas![i].dnn === dnn) {
+          data.ChargingDatas![i]!.unitCost = event.target.value;
           setData({ ...data });
         }
       }
@@ -1029,9 +1018,10 @@ export default function SubscriberCreate() {
 
   const chargingConfig = (flow: any, dnn: string, snssai: Nssai) => {
     const flowKey = toHex(snssai.sst) + snssai.sd;
-    if (data.FlowRules !== undefined) {
-      for (let i = 0; i < data.FlowRules?.length; i++) {
-        if (flow.snssai === flowKey && flow.dnn === dnn) {
+    if (data.ChargingDatas !== undefined) {
+      for (let i = 0; i < data.ChargingDatas!.length; i++) {
+        const chargingData = data.ChargingDatas![i]
+        if (chargingData.snssai === flowKey && chargingData.dnn === dnn) {
           return (
             <Box sx={{ m: 2 }}>
               <Grid container spacing={2}>
@@ -1049,7 +1039,7 @@ export default function SubscriberCreate() {
                         variant="outlined"
                         required
                         fullWidth
-                        value={flow.chargingData.chargingMethod}
+                        value={chargingData.chargingMethod}
                         onChange={(ev) => handleChangeChargingMethod(ev, dnn, flowKey)}
                       >
                         <MenuItem value="Offline">Offline</MenuItem>
@@ -1065,7 +1055,7 @@ export default function SubscriberCreate() {
                       variant="outlined"
                       required
                       fullWidth
-                      value={flow.chargingData.filter}
+                      value={chargingData.filter}
                       onChange={(ev) => handleChangeChargingFilter(ev, dnn, flowKey)}
                     />
                   </TableCell>
@@ -1078,7 +1068,7 @@ export default function SubscriberCreate() {
                       variant="outlined"
                       required
                       fullWidth
-                      value={flow.chargingData.quota}
+                      value={chargingData.quota}
                       onChange={(ev) => handleChangeChargingQuota(ev, dnn, flowKey)}
                     />
                   </TableCell>
@@ -1090,7 +1080,7 @@ export default function SubscriberCreate() {
                       variant="outlined"
                       required
                       fullWidth
-                      value={flow.chargingData.unitCost}
+                      value={chargingData.unitCost}
                       onChange={(ev) => handleChangeChargingUnitCost(ev, dnn, flowKey)}
                     />
                   </TableCell>

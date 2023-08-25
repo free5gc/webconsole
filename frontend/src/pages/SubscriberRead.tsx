@@ -35,6 +35,10 @@ export default function SubscriberRead() {
   const [data, setData] = useState<Subscription>({});
   // const [update, setUpdate] = useState<boolean>(false);
 
+  function toHex(v: number | undefined): string {
+    return ("00" + v?.toString(16).toUpperCase()).substr(-2);
+  };
+
   useEffect(() => {
     axios.get("/api/subscriber/" + id + "/" + plmn).then((res) => {
       setData(res.data);
@@ -114,7 +118,7 @@ export default function SubscriberRead() {
     return "";
   };
 
-  const qosFlow = (flowKey: string, dnn: string): QosFlows|undefined => {
+  const qosFlow = (flowKey: string, dnn: string): QosFlows | undefined => {
     if (data.QosFlows !== undefined) {
       for (let i = 0; i < data.QosFlows?.length; i++) {
         const qos = data.QosFlows![i];
@@ -125,10 +129,45 @@ export default function SubscriberRead() {
     }
   }
 
-  const flowRule = (dnn: string, snssai: Nssai) => {
-    function toHex(v: number | undefined) {
-      return ("00" + v?.toString(16).toUpperCase()).substr(-2);
+  const chargingConfig = (flow: any, dnn: string, snssai: Nssai) => {
+    const flowKey = toHex(snssai.sst) + snssai.sd;
+    if (data.ChargingDatas !== undefined) {
+      for (let i = 0; i < data.ChargingDatas!.length; i++) {
+        const chargingData = data.ChargingDatas![i]
+        if (chargingData.snssai === flowKey && chargingData.dnn === dnn) {
+          return (
+            <Box sx={{ m: 2 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <h4>Charging Config</h4>
+                </Grid>
+              </Grid>
+              <Table>
+                <TableBody>
+                  <TableCell style={{ width: "40%" }}> Charging Method </TableCell>
+                  <TableCell>{chargingData.chargingMethod}</TableCell>
+                </TableBody>
+                <TableBody>
+                  <TableCell style={{ width: "40%" }}> Filter </TableCell>
+                  <TableCell>{chargingData.filter}</TableCell>
+                </TableBody>
+                <TableBody>
+                  <TableCell style={{ width: "40%" }}> Quota </TableCell>
+                  <TableCell>{chargingData.quota}</TableCell>
+                </TableBody>
+                <TableBody>
+                  <TableCell style={{ width: "40%" }}> Unit Cost </TableCell>
+                  <TableCell>{chargingData.unitCost}</TableCell>
+                </TableBody>
+              </Table>
+            </Box>
+          )
+        }
+      }
     }
+  };
+
+  const flowRule = (dnn: string, snssai: Nssai) => {
     const flowKey = toHex(snssai.sst) + snssai.sd;
     if (data.FlowRules !== undefined) {
       for (let i = 0; i < data.FlowRules?.length; i++) {
@@ -182,6 +221,9 @@ export default function SubscriberRead() {
                         <TableCell style={{ width: "40%" }}>Downlink MBR</TableCell>
                         <TableCell>{qos!.mbrDL}</TableCell>
                       </TableRow>
+                    </TableBody>
+                    <TableBody>
+                      <TableCell>{chargingConfig(flow, dnn, snssai)}</TableCell>
                     </TableBody>
                   </Table>
                 </Card>
