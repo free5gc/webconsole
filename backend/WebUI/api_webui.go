@@ -1967,14 +1967,9 @@ func parseCDR(supi string) map[int64]RatingGroupDataUsage {
 func GetChargingRecord(c *gin.Context) {
 	setCorsHeader(c)
 
-	if tokenStr := c.GetHeader("Token"); tokenStr != "admin" {
-		if _, err := ParseJWT(tokenStr); err != nil {
-			logger.ProcLog.Errorln(err.Error())
-			c.JSON(http.StatusBadRequest, gin.H{
-				"cause": "Illegal Token",
-			})
-			return
-		}
+	if !CheckAuth(c) {
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
+		return
 	}
 
 	webuiSelf := webui_context.GetSelf()
