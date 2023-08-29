@@ -917,13 +917,13 @@ export interface Tenant {
 /**
  * 
  * @export
- * @interface ChargingData
+ * @interface ChargingRecord
  */
  export interface ChargingRecord {
     /**
      * 
      * @type {string}
-     * @memberof Tenant
+     * @memberof ChargingRecord
      */
      'SUPI'?: string;
      /**

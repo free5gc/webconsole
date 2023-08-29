@@ -1441,6 +1441,9 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 		if err := mongoapi.RestfulAPIDeleteMany(qosFlowDataColl, filter); err != nil {
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
 		}
+		if err := mongoapi.RestfulAPIDeleteMany(chargingDataColl, filter); err != nil {
+			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
+		}
 	} else if method == "delete" {
 		if err := mongoapi.RestfulAPIDeleteOne(authSubsDataColl, filterUeIdOnly); err != nil {
 			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
