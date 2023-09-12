@@ -70,6 +70,7 @@ func (a *WebuiApp) SetReportCaller(reportCaller bool) {
 func (a *WebuiApp) Start(tlsKeyLogPath string) {
 	// get config file info from WebUIConfig
 	mongodb := factory.WebuiConfig.Configuration.Mongodb
+	webServer := factory.WebuiConfig.Configuration.WebServer
 
 	// Connect to MongoDB
 	if err := mongoapi.SetMongoDB(mongodb.Name, mongodb.Url); err != nil {
@@ -103,5 +104,9 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 
 	router.NoRoute(ReturnPublic())
 
-	logger.InitLog.Infoln(router.Run(":5000"))
+	if webServer != nil {
+		logger.InitLog.Infoln(router.Run(webServer.IP + ":" + webServer.PORT))
+	} else {
+		logger.InitLog.Infoln(router.Run(":5000"))
+	}
 }
