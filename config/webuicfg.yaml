@@ -16,8 +16,8 @@ configuration:
     listenPort: 2122
     port: 2121
     tls:
-      pem: config/TLS/chf.pem
-      key: config/TLS/chf.key
+      pem: cert/chf.pem
+      key: cert/chf.key
 
 logger: # log output setting
   enable: true # true or false
