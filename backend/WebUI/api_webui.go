@@ -497,16 +497,6 @@ func JWT(email, userId, tenantId string) string {
 	return tokenString
 }
 
-func generateHash(password string) error {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
-	if err != nil {
-		logger.ProcLog.Errorf("generateHash err: %+v", err)
-		return err
-	}
-	logger.ProcLog.Warnln("Password hash:", hash)
-	return err
-}
-
 func Login(c *gin.Context) {
 	setCorsHeader(c)
 
@@ -514,13 +504,6 @@ func Login(c *gin.Context) {
 	err := json.NewDecoder(c.Request.Body).Decode(&login)
 	if err != nil {
 		logger.ProcLog.Warnln("JSON decode error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{})
-		return
-	}
-
-	err = generateHash(login.Password)
-	if err != nil {
-		logger.ProcLog.Errorf("Login err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
@@ -551,7 +534,7 @@ func Login(c *gin.Context) {
 	userId := userData["userId"].(string)
 	tenantId := userData["tenantId"].(string)
 
-	logger.ProcLog.Warnln("Login success {",
+	logger.ProcLog.Infoln("Login success {",
 		"username:", login.Username,
 		", userid:", userId,
 		", tenantid:", tenantId,
@@ -560,8 +543,6 @@ func Login(c *gin.Context) {
 	token := JWT(login.Username, userId, tenantId)
 	if token == "" {
 		logger.ProcLog.Errorln("token is empty")
-	} else {
-		logger.ProcLog.Warnln("token", token)
 	}
 
 	oauth := OAuth{}
