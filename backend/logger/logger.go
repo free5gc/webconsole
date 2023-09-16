@@ -3,8 +3,9 @@ package logger
 import (
 	golog "github.com/fclairamb/go-log"
 	adapter "github.com/fclairamb/go-log/logrus"
-	logger_util "github.com/free5gc/util/logger"
 	"github.com/sirupsen/logrus"
+
+	logger_util "github.com/free5gc/util/logger"
 )
 
 var (

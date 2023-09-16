@@ -5,9 +5,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jlaffaye/ftp"
+
 	"github.com/free5gc/webconsole/backend/factory"
 	"github.com/free5gc/webconsole/backend/logger"
-	"github.com/jlaffaye/ftp"
 )
 
 // The ftp client is for CDR Pull method, that is the billing domain actively query CDR file from CHF
@@ -39,7 +40,11 @@ func PullCDRFile(c *ftp.ServerConn, fileName string) ([]byte, error) {
 		return nil, err
 	}
 
-	defer r.Close()
+	defer func() {
+		if err := r.Close(); err != nil {
+			logger.BillingLog.Error(err)
+		}
+	}()
 
 	logger.BillingLog.Info("Pull CDR file success")
 

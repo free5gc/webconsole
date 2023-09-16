@@ -12,6 +12,7 @@ import (
 	"github.com/fclairamb/ftpserver/config"
 	"github.com/fclairamb/ftpserver/server"
 	ftpserver "github.com/fclairamb/ftpserverlib"
+
 	"github.com/free5gc/webconsole/backend/factory"
 	"github.com/free5gc/webconsole/backend/logger"
 )
@@ -41,7 +42,9 @@ func OpenServer(wg *sync.WaitGroup) *BillingDomain {
 
 	b := &BillingDomain{}
 	if _, err := os.Stat("/tmp/webconsole"); err != nil {
-		os.Mkdir("/tmp/webconsole", os.ModePerm)
+		if err := os.Mkdir("/tmp/webconsole", os.ModePerm); err != nil {
+			logger.BillingLog.Error(err)
+		}
 	}
 
 	billingConfig := factory.WebuiConfig.Configuration.BillingServer
@@ -76,7 +79,7 @@ func OpenServer(wg *sync.WaitGroup) *BillingDomain {
 		return nil
 	}
 
-	if err := ioutil.WriteFile(confFile, file, 0600); err != nil { //nolint: gomnd
+	if err := ioutil.WriteFile(confFile, file, 0o600); err != nil { //nolint: gomnd
 		logger.BillingLog.Errorf("Couldn't create conf file %v", confFile)
 		return nil
 	}

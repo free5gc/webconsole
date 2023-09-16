@@ -12,13 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/free5gc/chf/cdr/asn"
-	"github.com/free5gc/chf/cdr/cdrFile"
-	"github.com/free5gc/chf/cdr/cdrType"
-	"github.com/free5gc/openapi/models"
-	"github.com/free5gc/util/mongoapi"
-	"github.com/free5gc/webconsole/backend/logger"
-	"github.com/free5gc/webconsole/backend/webui_context"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
@@ -26,6 +19,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/free5gc/chf/cdr/asn"
+	"github.com/free5gc/chf/cdr/cdrFile"
+	"github.com/free5gc/chf/cdr/cdrType"
+	"github.com/free5gc/openapi/models"
+	"github.com/free5gc/util/mongoapi"
+	"github.com/free5gc/webconsole/backend/logger"
+	"github.com/free5gc/webconsole/backend/webui_context"
 )
 
 const (
@@ -1401,15 +1402,23 @@ func sendRechargeNotification(ueId string, rg int32) {
 	webuiSelf.UpdateNfProfiles()
 
 	requestUri := fmt.Sprintf("%s/nchf-convergedcharging/v3/recharging/%s_%d", "http://127.0.0.113:8000", ueId, rg)
-	req, err := http.NewRequest(http.MethodPut, requestUri, nil)
+
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPut, requestUri, nil)
 	if err != nil {
 		logger.ProcLog.Error(err)
 	}
+
 	req.Header.Add("Content-Type", "application/json")
 
-	if _, err = http.DefaultClient.Do(req); err != nil {
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
 		logger.ProcLog.Errorf("Send Charging Notification err: %+v", err)
 	}
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			logger.ProcLog.Error(closeErr)
+		}
+	}()
 }
 
 func sendRechargeNotification(ueId string, rg int32) {
@@ -1565,11 +1574,15 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 				}
 
 				if chargingData.Dnn != "" && chargingData.Filter != "" {
-					chargingFilter = bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId,
-						"snssai": chargingData.Snssai, "dnn": chargingData.Dnn, "filter": chargingData.Filter}
+					chargingFilter = bson.M{
+						"ueId": ueId, "servingPlmnId": servingPlmnId,
+						"snssai": chargingData.Snssai, "dnn": chargingData.Dnn, "filter": chargingData.Filter,
+					}
 				} else {
-					chargingFilter = bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId,
-						"snssai": chargingData.Snssai, "dnn": "", "filter": ""}
+					chargingFilter = bson.M{
+						"ueId": ueId, "servingPlmnId": servingPlmnId,
+						"snssai": chargingData.Snssai, "dnn": "", "filter": "",
+					}
 					chargingDataBsonM["dnn"] = ""
 					chargingDataBsonM["filter"] = ""
 				}
@@ -1578,8 +1591,10 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 				if err != nil {
 					logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err)
 				}
-				json.Unmarshal(mapToByte(previousChargingDataInterface), &previousChargingData)
-
+				err = json.Unmarshal(mapToByte(previousChargingDataInterface), &previousChargingData)
+				if err != nil {
+					logger.ProcLog.Error(err)
+				}
 				ratingGroup := previousChargingDataInterface["ratingGroup"]
 				if ratingGroup != nil {
 					rg := ratingGroup.(int32)
@@ -1943,8 +1958,10 @@ func parseCDR(supi string) map[int64]RatingGroupDataUsage {
 	for _, cdr := range newCdrFile.CdrList {
 		recvByte := cdr.CdrByte
 		val := reflect.New(reflect.TypeOf(&cdrType.ChargingRecord{}).Elem()).Interface()
-		asn.UnmarshalWithParams(recvByte, val, "")
-
+		err := asn.UnmarshalWithParams(recvByte, val, "")
+		if err != nil {
+			logger.BillingLog.Error(err)
+		}
 		chargingRecord := *(val.(*cdrType.ChargingRecord))
 
 		for _, multipleUnitUsage := range chargingRecord.ListOfMultipleUnitUsage {
@@ -1980,14 +1997,23 @@ func GetChargingRecord(c *gin.Context) {
 	if amfUris := webuiSelf.GetOamUris(models.NfType_AMF); amfUris != nil {
 		requestUri := fmt.Sprintf("%s/namf-oam/v1/registered-ue-context", amfUris[0])
 
-		resp, err := httpsClient.Get(requestUri)
+		resp, err := http.NewRequestWithContext(context.Background(), http.MethodGet, requestUri, nil)
 		if err != nil {
 			logger.ProcLog.Error(err)
 			c.JSON(http.StatusInternalServerError, gin.H{})
 			return
 		}
 
-		json.NewDecoder(resp.Body).Decode(&uesJsonData)
+		defer func() {
+			if closeErr := resp.Body.Close(); closeErr != nil {
+				logger.ProcLog.Error(closeErr)
+			}
+		}()
+
+		err = json.NewDecoder(resp.Body).Decode(&uesJsonData)
+		if err != nil {
+			logger.BillingLog.Error(err)
+		}
 	}
 
 	// build charging records
@@ -2012,8 +2038,15 @@ func GetChargingRecord(c *gin.Context) {
 				logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err)
 			}
 
-			json.Unmarshal(mapToByte(chargingDataInterface), &chargingData)
-			quota, _ := strconv.ParseInt(chargingData.Quota, 10, 64)
+			err = json.Unmarshal(mapToByte(chargingDataInterface), &chargingData)
+			if err != nil {
+				logger.BillingLog.Error(err)
+			}
+
+			quota, err := strconv.ParseInt(chargingData.Quota, 10, 64)
+			if err != nil {
+				logger.BillingLog.Error(err)
+			}
 
 			if chargingData.Filter != "" && chargingData.Dnn != "" {
 				flowInfos = append(flowInfos, FlowInfo{
