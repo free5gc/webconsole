@@ -8,8 +8,8 @@ configuration:
     url: mongodb://localhost:27017 # a valid URL of the mongodb
   nrfUri: http://127.0.0.10:8000 # a valid URI of NRF
   webServer:
-    scheme: "/namf-oam/v1/"
-    ipv4Address:
+    scheme: http
+    ipv4Address: 0.0.0.0
     port: 5000
   billingServer:
     hostIPv4: 127.0.0.1
