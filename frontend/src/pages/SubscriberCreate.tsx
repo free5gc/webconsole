@@ -30,6 +30,7 @@ import {
   TableRow,
   TextField,
 } from "@mui/material";
+import { integer } from "aws-sdk/clients/cloudfront";
 
 export default function SubscriberCreate() {
   const navigation = useNavigate();
@@ -205,6 +206,13 @@ export default function SubscriberCreate() {
       },
       {
         "filter": "permit out ip from any to 10.60.0.0/16",
+        "precedence": 138,
+        "snssai": "01010203",
+        "dnn": "internet",
+        "qfi": 9
+      },
+      {
+        "filter": "permit out ip from any to 10.60.0.0/16",
         "precedence": 127,
         "snssai": "01112233",
         "dnn": "internet",
@@ -217,20 +225,30 @@ export default function SubscriberCreate() {
         "dnn": "internet",
         "qfi": 8,
         "5qi": 8,
-        "mbrUL": "200 Mbps",
-        "mbrDL": "200 Mbps",
-        "gbrUL": "100 Mbps",
-        "gbrDL": "100 Mbps"
+        "mbrUL": "208 Mbps",
+        "mbrDL": "208 Mbps",
+        "gbrUL": "108 Mbps",
+        "gbrDL": "108 Mbps"
+      },
+      {
+        "snssai": "01010203",
+        "dnn": "internet",
+        "qfi": 9,
+        "5qi": 9,
+        "mbrUL": "409 Mbps",
+        "mbrDL": "409 Mbps",
+        "gbrUL": "209 Mbps",
+        "gbrDL": "209 Mbps"
       },
       {
         "snssai": "01112233",
         "dnn": "internet",
         "qfi": 7,
         "5qi": 7,
-        "mbrUL": "400 Mbps",
-        "mbrDL": "400 Mbps",
-        "gbrUL": "200 Mbps",
-        "gbrDL": "200 Mbps"
+        "mbrUL": "407 Mbps",
+        "mbrDL": "407 Mbps",
+        "gbrUL": "207 Mbps",
+        "gbrDL": "207 Mbps"
       }
     ],
     "ChargingDatas": [
@@ -400,59 +418,52 @@ export default function SubscriberCreate() {
     }
   };
 
-  const onFlowRules = (dnn: string, flowKey: string) => {
-    const flow: FlowRules = {
-      dnn: dnn,
-      snssai: flowKey,
-      filter: "permit out ip from any to 10.60.0.0/16",
-      precedence: 128,
-      qfi: 9,
-    };
-    const qos: QosFlows = {
-      dnn: dnn,
-      snssai: flowKey,
-      qfi: 9,
-      "5qi": 9,
-      gbrUL: "100 Mbps",
-      gbrDL: "100 Mbps",
-      mbrUL: "200 Mbps",
-      mbrDL: "200 Mbps",
-    };
-    if (data.FlowRules === undefined) {
-      data.FlowRules = [flow];
-    } else {
-      data.FlowRules.push(flow);
-    }
-    if (data.QosFlows === undefined) {
-      data.QosFlows = [qos]
-    } else {
-      data.QosFlows.push(qos);
-    }
-    setData({ ...data });
-  };
-
-  const onFlowRulesDelete = (dnn: string, flowKey: string) => {
+  const onFlowRulesDelete = (dnn: string, flowKey: string, qfi: number | undefined) => {
     if (data.FlowRules !== undefined) {
       for (let i = 0; i < data.FlowRules!.length; i++) {
-        if (data.FlowRules![i].dnn === dnn && data.FlowRules![i].snssai === flowKey) {
+        if (data.FlowRules![i].dnn === dnn && data.FlowRules![i].snssai === flowKey && data.FlowRules![i].qfi === qfi) {
           data.FlowRules!.splice(i, 1);
-          setData({ ...data });
+          i--;
         }
       }
     }
     if (data.QosFlows !== undefined) {
       for (let i = 0; i < data.QosFlows!.length; i++) {
-        if (data.QosFlows![i].dnn === dnn && data.QosFlows![i].snssai === flowKey) {
+        if (data.QosFlows![i].dnn === dnn && data.QosFlows![i].snssai === flowKey && data.QosFlows![i].qfi === qfi) {
           data.QosFlows!.splice(i, 1);
-          setData({ ...data });
+          i--;
         }
       }
     }
+    setData({ ...data });
   };
 
   const onUpSecurity = (dnn: DnnConfiguration | undefined) => {
     if (dnn !== undefined) {
       dnn.upSecurity = {};
+    }
+    setData({ ...data });
+  };
+
+  const onFlowRuleAdd = (dnn: string, snssai: Nssai) => {
+    if (dnn !== undefined) {
+      data.FlowRules!.push({
+        "filter": "permit out ip from any to 10.60.0.0/16",
+        "precedence": 127,
+        "snssai": toHex(snssai.sst) + snssai.sd!,
+        "dnn": dnn,
+        "qfi": 8
+      })
+      data.QosFlows!.push({
+        "snssai": toHex(snssai.sst) + snssai.sd!,
+        "dnn": dnn,
+        "qfi": 8,
+        "5qi": 8,
+        "mbrUL": "200 Mbps",
+        "mbrDL": "200 Mbps",
+        "gbrUL": "100 Mbps",
+        "gbrDL": "100 Mbps"
+    })
     }
     setData({ ...data });
   };
@@ -1005,11 +1016,11 @@ export default function SubscriberCreate() {
     setData({ ...data });
   };
 
-  const qosFlow = (flowKey: string, dnn: string): QosFlows | undefined => {
+  const qosFlow = (flowKey: string, dnn: string, qfi: number | undefined): QosFlows | undefined => {
     if (data.QosFlows !== undefined) {
       for (let i = 0; i < data.QosFlows?.length; i++) {
         const qos = data.QosFlows![i];
-        if (qos.snssai === flowKey && qos.dnn === dnn) {
+        if (qos.snssai === flowKey && qos.dnn === dnn && qos.qfi == qfi) {
           return qos;
         }
       }
@@ -1096,163 +1107,141 @@ export default function SubscriberCreate() {
   const flowRule = (dnn: string, snssai: Nssai) => {
     const flowKey = toHex(snssai.sst) + snssai.sd;
     if (data.FlowRules !== undefined) {
-      for (let i = 0; i < data.FlowRules?.length; i++) {
-        const flow = data.FlowRules![i];
-        if (flow.snssai === flowKey && flow.dnn === dnn) {
-          const qos = qosFlow(flowKey, dnn);
-          return (
-            <div key={flow.snssai}>
-              <Box sx={{ m: 2 }}>
-                <Grid container spacing={2}>
-                  <Grid item xs={10}>
-                    <h4>Flow Rules</h4>
-                  </Grid>
-                  <Grid item xs={2}>
-                    <Box display="flex" justifyContent="flex-end">
-                      <Button
-                        color="secondary"
-                        variant="contained"
-                        onClick={() => onFlowRulesDelete(dnn, flowKey)}
-                        sx={{ m: 2, backgroundColor: "red", "&:hover": { backgroundColor: "red" } }}
-                      >
-                        DELETE
-                      </Button>
-                    </Box>
-                  </Grid>
+      return (
+        data.FlowRules
+        .filter((flow) => flow.dnn === dnn && flow.snssai === flowKey)
+        .map((flow) => (
+          <div key={flow.snssai}>
+            <Box sx={{ m: 2 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={10}>
+                  <h4>Flow Rules</h4>
                 </Grid>
-                <Card variant="outlined">
-                  <Table>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>
-                          <TextField
-                            label="IP Filter"
-                            variant="outlined"
-                            required
-                            fullWidth
-                            value={flow.filter}
-                            onChange={(ev) => handleChangeFilter(ev, dnn, flowKey)}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>
-                          <TextField
-                            label="Precedence"
-                            variant="outlined"
-                            required
-                            fullWidth
-                            type="number"
-                            value={flow.precedence}
-                            onChange={(ev) => handleChangePrecedence(ev, dnn, flowKey)}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>
-                          <TextField
-                            label="5QI"
-                            variant="outlined"
-                            required
-                            fullWidth
-                            type="number"
-                            value={flow.qfi}
-                            onChange={(ev) => handleChange5QI(ev, dnn, flowKey)}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>
-                          <TextField
-                            label="Uplink GBR"
-                            variant="outlined"
-                            required
-                            fullWidth
-                            value={qos!.gbrUL}
-                            onChange={(ev) => handleChangeUplinkGBR(ev, dnn, flowKey)}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>
-                          <TextField
-                            label="Downlink GBR"
-                            variant="outlined"
-                            required
-                            fullWidth
-                            value={qos!.gbrDL}
-                            onChange={(ev) => handleChangeDownlinkGBR(ev, dnn, flowKey)}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>
-                          <TextField
-                            label="Uplink MBR"
-                            variant="outlined"
-                            required
-                            fullWidth
-                            value={qos!.mbrUL}
-                            onChange={(ev) => handleChangeUplinkMBR(ev, dnn, flowKey)}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>
-                          <TextField
-                            label="Downlink MBR"
-                            variant="outlined"
-                            required
-                            fullWidth
-                            value={qos!.mbrDL}
-                            onChange={(ev) => handleChangeDownlinkMBR(ev, dnn, flowKey)}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      {chargingConfig(flow, dnn, snssai)}
-                    </TableBody>
-                  </Table>
-                </Card>
-              </Box>
-            </div>
-          );
-        }
-      }
+                <Grid item xs={2}>
+                  <Box display="flex" justifyContent="flex-end">
+                    <Button
+                      color="secondary"
+                      variant="contained"
+                      onClick={() => onFlowRulesDelete(dnn, flowKey, flow.qfi)}
+                      sx={{ m: 2, backgroundColor: "red", "&:hover": { backgroundColor: "red" } }}
+                    >
+                      DELETE
+                    </Button>
+                  </Box>
+                </Grid>
+              </Grid>
+              <Card variant="outlined">
+                <Table>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>
+                        <TextField
+                          label="IP Filter"
+                          variant="outlined"
+                          required
+                          fullWidth
+                          value={flow.filter}
+                          onChange={(ev) => handleChangeFilter(ev, dnn, flowKey)}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>
+                        <TextField
+                          label="Precedence"
+                          variant="outlined"
+                          required
+                          fullWidth
+                          type="number"
+                          value={flow.precedence}
+                          onChange={(ev) => handleChangePrecedence(ev, dnn, flowKey)}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>
+                        <TextField
+                          label="5QI"
+                          variant="outlined"
+                          required
+                          fullWidth
+                          type="number"
+                          value={flow.qfi}
+                          onChange={(ev) => handleChange5QI(ev, dnn, flowKey)}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>
+                        <TextField
+                          label="Uplink GBR"
+                          variant="outlined"
+                          required
+                          fullWidth
+                          value={qosFlow(flowKey, dnn, flow.qfi)?.gbrUL}
+                          onChange={(ev) => handleChangeUplinkGBR(ev, dnn, flowKey)}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>
+                        <TextField
+                          label="Downlink GBR"
+                          variant="outlined"
+                          required
+                          fullWidth
+                          value={qosFlow(flowKey, dnn, flow.qfi)?.gbrDL}
+                          onChange={(ev) => handleChangeDownlinkGBR(ev, dnn, flowKey)}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>
+                        <TextField
+                          label="Uplink MBR"
+                          variant="outlined"
+                          required
+                          fullWidth
+                          value={qosFlow(flowKey, dnn, flow.qfi)?.mbrUL}
+                          onChange={(ev) => handleChangeUplinkMBR(ev, dnn, flowKey)}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>
+                        <TextField
+                          label="Downlink MBR"
+                          variant="outlined"
+                          required
+                          fullWidth
+                          value={qosFlow(flowKey, dnn, flow.qfi)?.mbrDL}
+                          onChange={(ev) => handleChangeDownlinkMBR(ev, dnn, flowKey)}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    {chargingConfig(flow, dnn, snssai)}
+                  </TableBody>
+                </Table>
+              </Card>
+            </Box>
+          </div>
+        ))
+      )
     }
-    return (
-      <div>
-        <Table>
-          <TableBody>
-            <TableRow>
-              <TableCell>
-                <Button
-                  color="secondary"
-                  variant="contained"
-                  onClick={() => onFlowRules(dnn, flowKey)}
-                  sx={{ m: 0 }}
-                >
-                  +FLOW RULE
-                </Button>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </div>
-    );
   };
 
   const upSecurity = (dnn: DnnConfiguration | undefined) => {
@@ -1684,6 +1673,14 @@ export default function SubscriberCreate() {
                         </TableBody>
                       </Table>
                       {flowRule(dnn, row.singleNssai!)}
+                      <Button
+                        color="secondary"
+                        variant="contained"
+                        onClick={() => onFlowRuleAdd(dnn, row.singleNssai!)}
+                        sx={{ m: 0 }}
+                      >
+                        +FLOWRULE
+                      </Button>
                       {upSecurity(row.dnnConfigurations![dnn])}
                     </Card>
                   </Box>
