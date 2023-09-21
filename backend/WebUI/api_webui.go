@@ -1559,14 +1559,14 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 						"ueId": ueId, "servingPlmnId": servingPlmnId,
 						"snssai": chargingData.Snssai,
 						"dnn":    chargingData.Dnn,
-						"qfi":    chargingData.QFI,
+						"qosRef": chargingData.QosRef,
 						"filter": chargingData.Filter,
 					}
 				} else {
 					chargingFilter = bson.M{
 						"ueId": ueId, "servingPlmnId": servingPlmnId,
 						"snssai": chargingData.Snssai,
-						"qfi":    chargingData.QFI,
+						"qosRef": chargingData.QosRef,
 						"dnn":    "",
 						"filter": "",
 					}

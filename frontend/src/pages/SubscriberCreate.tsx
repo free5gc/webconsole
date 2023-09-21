@@ -40,6 +40,8 @@ export default function SubscriberCreate() {
   }>();
   if (id === "0" || id === undefined && plmn === "0" || plmn === undefined) {
     isNewSubscriber = true
+  } else {
+    isNewSubscriber = false
   }
   const navigation = useNavigate();
 
@@ -210,21 +212,21 @@ export default function SubscriberCreate() {
         "precedence": 128,
         "snssai": "01010203",
         "dnn": "internet",
-        "qfi": 8
+        "qosRef": 1
       },
       {
         "filter": "permit out ip from any to 10.60.0.0/16",
         "precedence": 127,
         "snssai": "01112233",
         "dnn": "internet",
-        "qfi": 7
+        "qosRef": 2
       }
     ],
     "QosFlows": [
       {
         "snssai": "01010203",
         "dnn": "internet",
-        "qfi": 8,
+        "qosRef": 1,
         "5qi": 8,
         "mbrUL": "208 Mbps",
         "mbrDL": "208 Mbps",
@@ -234,7 +236,7 @@ export default function SubscriberCreate() {
       {
         "snssai": "01112233",
         "dnn": "internet",
-        "qfi": 7,
+        "qosRef": 2,
         "5qi": 7,
         "mbrUL": "407 Mbps",
         "mbrDL": "407 Mbps",
@@ -246,8 +248,8 @@ export default function SubscriberCreate() {
       {
         "snssai": "01010203",
         "dnn": "internet",
-        "qfi": 8,
-        "filter": "permit out ip from any to 10.60.0.0/16",
+        "qosRef": 1,
+        "filter": "permit out ip from any to 10.60.0.1",
         "chargingMethod": "Offline",
         "quota": "0",
         "unitCost": "1",
@@ -255,8 +257,8 @@ export default function SubscriberCreate() {
       {
         "snssai": "01112233",
         "dnn": "internet",
-        "qfi": 7,
-        "filter": "permit out ip from any to 10.60.0.0/16",
+        "qosRef": 2,
+        "filter": "permit out ip from any to 10.60.0.2",
         "chargingMethod": "Online",
         "quota": "2000",
         "unitCost": "2",
@@ -469,10 +471,10 @@ export default function SubscriberCreate() {
     }
   };
 
-  const onFlowRulesDelete = (dnn: string, flowKey: string, qfi: number | undefined) => {
+  const onFlowRulesDelete = (dnn: string, flowKey: string, qosRef: number | undefined) => {
     if (data.FlowRules !== undefined) {
       for (let i = 0; i < data.FlowRules!.length; i++) {
-        if (data.FlowRules![i].dnn === dnn && data.FlowRules![i].snssai === flowKey && data.FlowRules![i].qfi === qfi) {
+        if (data.FlowRules![i].dnn === dnn && data.FlowRules![i].snssai === flowKey && data.FlowRules![i].qosRef === qosRef) {
           data.FlowRules!.splice(i, 1);
           i--;
         }
@@ -480,7 +482,7 @@ export default function SubscriberCreate() {
     }
     if (data.QosFlows !== undefined) {
       for (let i = 0; i < data.QosFlows!.length; i++) {
-        if (data.QosFlows![i].dnn === dnn && data.QosFlows![i].snssai === flowKey && data.QosFlows![i].qfi === qfi) {
+        if (data.QosFlows![i].dnn === dnn && data.QosFlows![i].snssai === flowKey && data.QosFlows![i].qosRef === qosRef) {
           data.QosFlows!.splice(i, 1);
           i--;
         }
@@ -496,24 +498,18 @@ export default function SubscriberCreate() {
     setData({ ...data });
   };
 
-  function selectQfi (dnn: string, snssai: Nssai, _5qi: number): number {
-    const sstsd = toHex(snssai.sst) + snssai.sd!
-    const filteredFlowRules = data.FlowRules!.filter((flow) => flow.dnn === dnn && flow.snssai === sstsd)
-    const UsedQfi = []
-    for (let i = 0; i < filteredFlowRules.length; i++) {
-        UsedQfi.push(filteredFlowRules[i].qfi)
+  function selectQosRef (): number {
+    const UsedQosRef = []
+    for (let i = 0; i < data.QosFlows!.length; i++) {
+      UsedQosRef.push(data.QosFlows![i]!.qosRef)
     }
-    UsedQfi.sort((a,b) =>  a! - b!)
-    if (!UsedQfi.includes(_5qi)) {
-      return _5qi
-    } else {
-      for (let i = 1; i < 256; i++){
-        if (!UsedQfi.includes(i)) {
-          return i
-        }
+    for (let i = 1; i < 256; i++){
+      if (!UsedQosRef.includes(i)) {
+        return i
       }
     }
-    window.alert("Cannot select qfi in 1~128.")
+    
+    window.alert("Cannot select qosRef in 1~128.")
     return -1
   };
 
@@ -536,19 +532,19 @@ export default function SubscriberCreate() {
       const sstSd = toHex(snssai.sst) + snssai.sd!
       const filter = "permit out ip from any to 10.60.0.0/16"
       const selected5Qi = select5Qi(dnn, snssai)
-      const selectedQfi = selectQfi(dnn, snssai, selected5Qi)
+      const selectedQosRef = selectQosRef()
       data.FlowRules!.push({
         "filter": filter,
         "precedence": 127,
         "snssai": sstSd,
         "dnn": dnn,
-        "qfi": selectedQfi // incremented qfi
+        "qosRef": selectedQosRef
       })
       data.QosFlows!.push({
         "snssai": sstSd,
         "dnn": dnn,
-        "qfi": selectedQfi, // incremented qfi
-        "5qi": selected5Qi, // incremented qfi
+        "qosRef": selectedQosRef,
+        "5qi": selected5Qi, 
         "mbrUL": "200 Mbps",
         "mbrDL": "200 Mbps",
         "gbrUL": "100 Mbps",
@@ -557,7 +553,7 @@ export default function SubscriberCreate() {
     data.ChargingDatas!.push({
         "snssai": sstSd,
         "dnn": dnn,
-        "qfi": selectedQfi,
+        "qosRef": selectedQosRef,
         "filter": filter,
         "chargingMethod": "Offline",
         "quota": "0",
@@ -921,11 +917,11 @@ export default function SubscriberCreate() {
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     dnn: string,
     flowKey: string,
-    qfi: number
+    qosRef: number
   ): void => {
     if (data.FlowRules !== undefined) {
       for (let i = 0; i < data.FlowRules!.length; i++) {
-        if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn && data.QosFlows![i].qfi === qfi) {
+        if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn && data.QosFlows![i].qosRef === qosRef) {
           data.FlowRules![i].filter = event.target.value;
           setData({ ...data });
         }
@@ -933,7 +929,7 @@ export default function SubscriberCreate() {
     }
     if (data.ChargingDatas !== undefined) {
       for (let i = 0; i < data.ChargingDatas!.length; i++) {
-        if (data.ChargingDatas![i].snssai === flowKey && data.ChargingDatas![i].dnn === dnn && data.ChargingDatas![i].qfi === qfi) {
+        if (data.ChargingDatas![i].snssai === flowKey && data.ChargingDatas![i].dnn === dnn && data.ChargingDatas![i].qosRef === qosRef) {
           data.ChargingDatas![i].filter = event.target.value;
           setData({ ...data });
         }
@@ -945,11 +941,11 @@ export default function SubscriberCreate() {
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     dnn: string,
     flowKey: string,
-    qfi: number
+    qosRef: number
   ): void => {
     if (data.FlowRules !== undefined) {
       for (let i = 0; i < data.FlowRules!.length; i++) {
-        if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn  && data.QosFlows![i].qfi === qfi) {
+        if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn  && data.QosFlows![i].qosRef === qosRef) {
           if (event.target.value == "") {
             data.FlowRules![i].precedence = undefined;
           } else {
@@ -965,28 +961,14 @@ export default function SubscriberCreate() {
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     dnn: string,
     flowKey: string,
-    qfi: number
+    qosRef: number
   ): void => {
-    if (data.FlowRules !== undefined) {
-      for (let i = 0; i < data.FlowRules!.length; i++) {
-        if (data.FlowRules![i].snssai === flowKey && data.FlowRules![i].dnn === dnn && data.QosFlows![i].qfi === qfi) {
-          if (event.target.value == "") {
-            data.FlowRules![i].qfi = undefined;
-          } else {
-            data.FlowRules![i].qfi = Number(event.target.value);
-          }
-          setData({ ...data });
-        }
-      }
-    }
     if (data.QosFlows !== undefined) {
       for (let i = 0; i < data.QosFlows!.length; i++) {
-        if (data.QosFlows![i].snssai === flowKey && data.QosFlows![i].dnn === dnn && data.QosFlows![i].qfi === qfi) {
+        if (data.QosFlows![i].snssai === flowKey && data.QosFlows![i].dnn === dnn && data.QosFlows![i].qosRef === qosRef) {
           if (event.target.value == "") {
-            data.QosFlows![i].qfi = undefined;
             data.QosFlows![i]["5qi"] = undefined;
           } else {
-            data.QosFlows![i].qfi = Number(event.target.value);
             data.QosFlows![i]["5qi"] = Number(event.target.value);
           }
           setData({ ...data });
@@ -999,11 +981,11 @@ export default function SubscriberCreate() {
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     dnn: string,
     flowKey: string,
-    qfi: number
+    qosRef: number
   ): void => {
     if (data.QosFlows !== undefined) {
       for (let i = 0; i < data.QosFlows!.length; i++) {
-        if (data.QosFlows![i].snssai === flowKey && data.QosFlows![i].dnn === dnn && data.QosFlows![i].qfi === qfi) {
+        if (data.QosFlows![i].snssai === flowKey && data.QosFlows![i].dnn === dnn && data.QosFlows![i].qosRef === qosRef) {
           data.QosFlows![i].gbrUL = event.target.value;
           setData({ ...data });
         }
@@ -1015,11 +997,11 @@ export default function SubscriberCreate() {
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     dnn: string,
     flowKey: string,
-    qfi: number
+    qosRef: number
   ): void => {
     if (data.QosFlows !== undefined) {
       for (let i = 0; i < data.QosFlows!.length; i++) {
-        if (data.QosFlows![i].snssai === flowKey && data.QosFlows![i].dnn === dnn  && data.QosFlows![i].qfi === qfi) {
+        if (data.QosFlows![i].snssai === flowKey && data.QosFlows![i].dnn === dnn  && data.QosFlows![i].qosRef === qosRef) {
           data.QosFlows![i].gbrDL = event.target.value;
           setData({ ...data });
         }
@@ -1031,11 +1013,11 @@ export default function SubscriberCreate() {
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     dnn: string,
     flowKey: string,
-    qfi: number
+    qosRef: number
   ): void => {
     if (data.QosFlows !== undefined) {
       for (let i = 0; i < data.QosFlows!.length; i++) {
-        if (data.QosFlows![i].snssai === flowKey && data.QosFlows![i].dnn === dnn && data.QosFlows![i].qfi === qfi) {
+        if (data.QosFlows![i].snssai === flowKey && data.QosFlows![i].dnn === dnn && data.QosFlows![i].qosRef === qosRef) {
           data.QosFlows![i].mbrUL = event.target.value;
           setData({ ...data });
         }
@@ -1047,11 +1029,11 @@ export default function SubscriberCreate() {
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     dnn: string,
     flowKey: string,
-    qfi: number
+    qosRef: number
   ): void => {
     if (data.QosFlows !== undefined) {
       for (let i = 0; i < data.QosFlows!.length; i++) {
-        if (data.QosFlows![i].snssai === flowKey && data.QosFlows![i].dnn === dnn && data.QosFlows![i].qfi === qfi) {
+        if (data.QosFlows![i].snssai === flowKey && data.QosFlows![i].dnn === dnn && data.QosFlows![i].qosRef === qosRef) {
           data.QosFlows![i].mbrDL = event.target.value;
           setData({ ...data });
         }
@@ -1063,38 +1045,24 @@ export default function SubscriberCreate() {
     event: SelectChangeEvent<string>,
     dnn: string,
     flowKey: string,
-    qfi: number
+    qosRef: number
   ): void => {
     for (let i = 0; i < data.ChargingDatas!.length; i++) {
-      if (data.ChargingDatas![i].snssai === flowKey && data.ChargingDatas![i].dnn === dnn  && data.QosFlows![i].qfi === qfi) {
+      if (data.ChargingDatas![i].snssai === flowKey && data.ChargingDatas![i].dnn === dnn  && data.QosFlows![i].qosRef === qosRef) {
         data.ChargingDatas![i]!.chargingMethod = event.target.value;
         setData({ ...data });
       }
     }
   };
 
-  const handleChangeChargingFilter = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    dnn: string,
-    flowKey: string,
-    qfi: number
-  ): void => {
-      for (let i = 0; i < data.FlowRules!.length; i++) {
-        if (data.ChargingDatas![i].snssai === flowKey && data.ChargingDatas![i].dnn === dnn && data.QosFlows![i].qfi === qfi) {
-          data.ChargingDatas![i]!.filter = event.target.value;
-          setData({ ...data });
-        }
-      }
-  };
-
   const handleChangeChargingQuota = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     dnn: string,
     flowKey: string,
-    qfi: number
+    qosRef: number
   ): void => {
       for (let i = 0; i < data.ChargingDatas!.length; i++) {
-        if (data.ChargingDatas![i].snssai === flowKey && data.ChargingDatas![i].dnn === dnn  && data.QosFlows![i].qfi === qfi) {
+        if (data.ChargingDatas![i].snssai === flowKey && data.ChargingDatas![i].dnn === dnn  && data.QosFlows![i].qosRef === qosRef) {
           data.ChargingDatas![i]!.quota = event.target.value;
           setData({ ...data });
         }
@@ -1105,10 +1073,10 @@ export default function SubscriberCreate() {
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     dnn: string,
     flowKey: string,
-    qfi: number
+    qosRef: number
   ): void => {
       for (let i = 0; i < data.ChargingDatas!.length; i++) {
-        if (data.ChargingDatas![i].snssai === flowKey && data.ChargingDatas![i].dnn === dnn && data.QosFlows![i].qfi === qfi) {
+        if (data.ChargingDatas![i].snssai === flowKey && data.ChargingDatas![i].dnn === dnn && data.QosFlows![i].qosRef === qosRef) {
           data.ChargingDatas![i]!.unitCost = event.target.value;
           setData({ ...data });
         }
@@ -1135,11 +1103,11 @@ export default function SubscriberCreate() {
     setData({ ...data });
   };
 
-  const qosFlow = (sstSd: string, dnn: string, qfi: number | undefined): QosFlows | undefined => {
+  const qosFlow = (sstSd: string, dnn: string, qosRef: number | undefined): QosFlows | undefined => {
     if (data.QosFlows !== undefined) {
       for (let i = 0; i < data.QosFlows?.length; i++) {
         const qos = data.QosFlows![i];
-        if (qos.snssai === sstSd && qos.dnn === dnn && qos.qfi == qfi) {
+        if (qos.snssai === sstSd && qos.dnn === dnn && qos.qosRef == qosRef) {
           return qos;
         }
       }
@@ -1150,7 +1118,7 @@ export default function SubscriberCreate() {
     const flowKey = toHex(snssai.sst) + snssai.sd;
     for (let i = 0; i < data.ChargingDatas!.length; i++) {
       const chargingData = data.ChargingDatas![i]
-      if (chargingData.snssai === flowKey && chargingData.dnn === dnn && chargingData.qfi === flow.qfi) {
+      if (chargingData.snssai === flowKey && chargingData.dnn === dnn && chargingData.qosRef === flow.qosRef) {
         return (
           <Box sx={{ m: 2 }}>
             <Grid container spacing={2}>
@@ -1159,7 +1127,7 @@ export default function SubscriberCreate() {
               </Grid>
             </Grid>
             <Table>
-              <TableBody id="Charging Method">
+              <TableBody id={flowKey + dnn + chargingData.qosRef + "Charging Method"}>
                 <TableCell>
                   <FormControl variant="outlined" fullWidth>
                     <InputLabel>Charging Method</InputLabel>
@@ -1169,7 +1137,7 @@ export default function SubscriberCreate() {
                       required
                       fullWidth
                       value={chargingData.chargingMethod}
-                      onChange={(ev) => handleChangeChargingMethod(ev, dnn, flowKey, flow.qfi!)}
+                      onChange={(ev) => handleChangeChargingMethod(ev, dnn, flowKey, flow.qosRef!)}
                     >
                       <MenuItem value="Offline">Offline</MenuItem>
                       <MenuItem value="Online">Online</MenuItem>
@@ -1186,7 +1154,7 @@ export default function SubscriberCreate() {
                     required
                     fullWidth
                     value={chargingData.filter}
-                    onChange={(ev) => handleChangeChargingFilter(ev, dnn, flowKey, flow.qfi!)}
+                    onChange={(ev) => handleChangeChargingFilter(ev, dnn, flowKey, flow.qosRef!)}
                   />
                 </TableCell>
               </TableBody>
@@ -1199,7 +1167,7 @@ export default function SubscriberCreate() {
                     required
                     fullWidth
                     value={chargingData.quota}
-                    onChange={(ev) => handleChangeChargingQuota(ev, dnn, flowKey, flow.qfi!)}
+                    onChange={(ev) => handleChangeChargingQuota(ev, dnn, flowKey, flow.qosRef!)}
                   />
                 </TableCell>
               </TableBody>
@@ -1211,7 +1179,7 @@ export default function SubscriberCreate() {
                     required
                     fullWidth
                     value={chargingData.unitCost}
-                    onChange={(ev) => handleChangeChargingUnitCost(ev, dnn, flowKey, flow.qfi!)}
+                    onChange={(ev) => handleChangeChargingUnitCost(ev, dnn, flowKey, flow.qosRef!)}
                   />
                 </TableCell>
               </TableBody>
@@ -1230,17 +1198,17 @@ export default function SubscriberCreate() {
         .filter((flow) => flow.dnn === dnn && flow.snssai === flowKey)
         .map((flow) => (
           <div key={flow.snssai}>
-            <Box sx={{ m: 2 }} id={dnn+flowKey+flow.qfi}>
+            <Box sx={{ m: 2 }} id={dnn+flowKey+flow.qosRef}>
               <Grid container spacing={2}>
                 <Grid item xs={10}>
-                  <h4>Flow Rules (QFI: {flow.qfi})</h4>
+                  <h4>Flow Rules {flow.qosRef}</h4>
                 </Grid>
                 <Grid item xs={2}>
                   <Box display="flex" justifyContent="flex-end">
                     <Button
                       color="secondary"
                       variant="contained"
-                      onClick={() => onFlowRulesDelete(dnn, flowKey, flow.qfi)}
+                      onClick={() => onFlowRulesDelete(dnn, flowKey, flow.qosRef)}
                       sx={{ m: 2, backgroundColor: "red", "&:hover": { backgroundColor: "red" } }}
                     >
                       DELETE
@@ -1259,7 +1227,7 @@ export default function SubscriberCreate() {
                           required
                           fullWidth
                           value={flow.filter}
-                          onChange={(ev) => handleChangeFilter(ev, dnn, flowKey, flow.qfi!)}
+                          onChange={(ev) => handleChangeFilter(ev, dnn, flowKey, flow.qosRef!)}
                         />
                       </TableCell>
                     </TableRow>
@@ -1274,7 +1242,7 @@ export default function SubscriberCreate() {
                           fullWidth
                           type="number"
                           value={flow.precedence}
-                          onChange={(ev) => handleChangePrecedence(ev, dnn, flowKey, flow.qfi!)}
+                          onChange={(ev) => handleChangePrecedence(ev, dnn, flowKey, flow.qosRef!)}
                         />
                       </TableCell>
                     </TableRow>
@@ -1288,8 +1256,8 @@ export default function SubscriberCreate() {
                           required
                           fullWidth
                           type="number"
-                          value={flow.qfi}
-                          onChange={(ev) => handleChange5QI(ev, dnn, flowKey, flow.qfi!)}
+                          value={qosFlow(flowKey, dnn, flow.qosRef)?.["5qi"]}
+                          onChange={(ev) => handleChange5QI(ev, dnn, flowKey, flow.qosRef!)}
                         />
                       </TableCell>
                     </TableRow>
@@ -1302,8 +1270,8 @@ export default function SubscriberCreate() {
                           variant="outlined"
                           required
                           fullWidth
-                          value={qosFlow(flowKey, dnn, flow.qfi)?.gbrUL}
-                          onChange={(ev) => handleChangeUplinkGBR(ev, dnn, flowKey, flow.qfi!)}
+                          value={qosFlow(flowKey, dnn, flow.qosRef)?.gbrUL}
+                          onChange={(ev) => handleChangeUplinkGBR(ev, dnn, flowKey, flow.qosRef!)}
                         />
                       </TableCell>
                     </TableRow>
@@ -1316,8 +1284,8 @@ export default function SubscriberCreate() {
                           variant="outlined"
                           required
                           fullWidth
-                          value={qosFlow(flowKey, dnn, flow.qfi)?.gbrDL}
-                          onChange={(ev) => handleChangeDownlinkGBR(ev, dnn, flowKey, flow.qfi!)}
+                          value={qosFlow(flowKey, dnn, flow.qosRef)?.gbrDL}
+                          onChange={(ev) => handleChangeDownlinkGBR(ev, dnn, flowKey, flow.qosRef!)}
                         />
                       </TableCell>
                     </TableRow>
@@ -1330,8 +1298,8 @@ export default function SubscriberCreate() {
                           variant="outlined"
                           required
                           fullWidth
-                          value={qosFlow(flowKey, dnn, flow.qfi)?.mbrUL}
-                          onChange={(ev) => handleChangeUplinkMBR(ev, dnn, flowKey, flow.qfi!)}
+                          value={qosFlow(flowKey, dnn, flow.qosRef)?.mbrUL}
+                          onChange={(ev) => handleChangeUplinkMBR(ev, dnn, flowKey, flow.qosRef!)}
                         />
                       </TableCell>
                     </TableRow>
@@ -1344,8 +1312,8 @@ export default function SubscriberCreate() {
                           variant="outlined"
                           required
                           fullWidth
-                          value={qosFlow(flowKey, dnn, flow.qfi)?.mbrDL}
-                          onChange={(ev) => handleChangeDownlinkMBR(ev, dnn, flowKey, flow.qfi!)}
+                          value={qosFlow(flowKey, dnn, flow.qosRef)?.mbrDL}
+                          onChange={(ev) => handleChangeDownlinkMBR(ev, dnn, flowKey, flow.qosRef!)}
                         />
                       </TableCell>
                     </TableRow>
@@ -1651,7 +1619,7 @@ export default function SubscriberCreate() {
         </Table>
       </Card>
       {data.SessionManagementSubscriptionData?.map((row, index) => (
-        <div key={index}>
+        <div key={index} id={toHex(row.singleNssai!.sst)+row.singleNssai!.sd!}>
           <Grid container spacing={2}>
             <Grid item xs={10}>
               <h3>S-NSSAI Configuragtion</h3>

@@ -118,11 +118,11 @@ export default function SubscriberRead() {
     return "";
   };
 
-  const qosFlow = (sstSd: string, dnn: string, qfi: number | undefined): QosFlows | undefined => {
+  const qosFlow = (sstSd: string, dnn: string, qosRef: number | undefined): QosFlows | undefined => {
     if (data.QosFlows !== undefined) {
       for (let i = 0; i < data.QosFlows?.length; i++) {
         const qos = data.QosFlows![i];
-        if (qos.snssai === sstSd && qos.dnn === dnn && qos.qfi === qfi) {
+        if (qos.snssai === sstSd && qos.dnn === dnn && qos.qosRef === qosRef) {
           return qos;
         }
       }
@@ -134,8 +134,7 @@ export default function SubscriberRead() {
     for (let i = 0; i < data.ChargingDatas!.length; i++) {
       const chargingData = data.ChargingDatas![i]
       console.log("data: ", data)
-      console.log("chargingData.qfi: ", chargingData.qfi)
-      if (chargingData.snssai === flowKey && chargingData.dnn === dnn && chargingData.qfi === flow.qfi) {
+      if (chargingData.snssai === flowKey && chargingData.dnn === dnn && chargingData.qosRef === flow.qosRef) {
         return (
           <Box sx={{ m: 2 }}>
             <Grid container spacing={2}>
@@ -199,31 +198,31 @@ export default function SubscriberRead() {
                   <TableBody>
                     <TableRow>
                       <TableCell style={{ width: "40%" }}>5QI</TableCell>
-                      <TableCell>{flow.qfi}</TableCell>
+                      <TableCell>{qosFlow(flowKey, dnn, flow.qosRef)?.["5qi"]}</TableCell>
                     </TableRow>
                   </TableBody>
                   <TableBody>
                     <TableRow>
                       <TableCell style={{ width: "40%" }}>Uplink GBR</TableCell>
-                      <TableCell>{qosFlow(flowKey, dnn, flow.qfi!)?.gbrUL}</TableCell>
+                      <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.gbrUL}</TableCell>
                     </TableRow>
                   </TableBody>
                   <TableBody>
                     <TableRow>
                       <TableCell style={{ width: "40%" }}>Downlink GBR</TableCell>
-                      <TableCell>{qosFlow(flowKey, dnn, flow.qfi!)?.gbrDL}</TableCell>
+                      <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.gbrDL}</TableCell>
                     </TableRow>
                   </TableBody>
                   <TableBody>
                     <TableRow>
                       <TableCell style={{ width: "40%" }}>Uplink MBR</TableCell>
-                      <TableCell>{qosFlow(flowKey, dnn, flow.qfi!)?.mbrUL}</TableCell>
+                      <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.mbrUL}</TableCell>
                     </TableRow>
                   </TableBody>
                   <TableBody>
                     <TableRow>
                       <TableCell style={{ width: "40%" }}>Downlink MBR</TableCell>
-                      <TableCell>{qosFlow(flowKey, dnn, flow.qfi!)?.mbrDL}</TableCell>
+                      <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.mbrDL}</TableCell>
                     </TableRow>
                   </TableBody>
                   <TableBody>

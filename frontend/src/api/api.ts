@@ -252,7 +252,7 @@ export interface FlowRules {
      * @type {number}
      * @memberof FlowRules
      */
-    'qfi'?: number;
+    'qosRef'?: number;
 }
 /**
  * 
@@ -575,7 +575,7 @@ export interface QosFlows {
      * @type {number}
      * @memberof QosFlows
      */
-    'qfi'?: number;
+    'qosRef'?: number;
     /**
      * 
      * @type {number}
@@ -894,7 +894,7 @@ export interface Tenant {
       * @type {number}
       * @memberof ChargingData
       */
-     'qfi'?: number;
+     'qosRef'?: number;
      /**
      * 
      * @type {string}
