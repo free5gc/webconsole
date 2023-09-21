@@ -46,7 +46,7 @@ export default function SubscriberRead() {
   }, [id]);
 
   const handleEdit = () => {
-    navigation("/subscriber/update/" + id + "/" + plmn);
+    navigation("/subscriber/create/" + id + "/" + plmn);
   };
 
   const isDefaultNssai = (nssai: Nssai | undefined) => {
@@ -118,11 +118,11 @@ export default function SubscriberRead() {
     return "";
   };
 
-  const qosFlow = (flowKey: string, dnn: string): QosFlows | undefined => {
+  const qosFlow = (sstSd: string, dnn: string, qfi: number | undefined): QosFlows | undefined => {
     if (data.QosFlows !== undefined) {
       for (let i = 0; i < data.QosFlows?.length; i++) {
         const qos = data.QosFlows![i];
-        if (qos.snssai === flowKey && qos.dnn === dnn) {
+        if (qos.snssai === sstSd && qos.dnn === dnn && qos.qfi === qfi) {
           return qos;
         }
       }
@@ -131,107 +131,110 @@ export default function SubscriberRead() {
 
   const chargingConfig = (flow: any, dnn: string, snssai: Nssai) => {
     const flowKey = toHex(snssai.sst) + snssai.sd;
-    if (data.ChargingDatas !== undefined) {
-      for (let i = 0; i < data.ChargingDatas!.length; i++) {
-        const chargingData = data.ChargingDatas![i]
-        if (chargingData.snssai === flowKey && chargingData.dnn === dnn) {
-          return (
-            <Box sx={{ m: 2 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <h4>Charging Config</h4>
-                </Grid>
+    for (let i = 0; i < data.ChargingDatas!.length; i++) {
+      const chargingData = data.ChargingDatas![i]
+      console.log("data: ", data)
+      console.log("chargingData.qfi: ", chargingData.qfi)
+      if (chargingData.snssai === flowKey && chargingData.dnn === dnn && chargingData.qfi === flow.qfi) {
+        return (
+          <Box sx={{ m: 2 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <h4>Charging Config</h4>
               </Grid>
-              <Table>
-                <TableBody>
-                  <TableCell style={{ width: "40%" }}> Charging Method </TableCell>
-                  <TableCell>{chargingData.chargingMethod}</TableCell>
-                </TableBody>
-                <TableBody>
-                  <TableCell style={{ width: "40%" }}> Filter </TableCell>
-                  <TableCell>{chargingData.filter}</TableCell>
-                </TableBody>
-                <TableBody>
-                  <TableCell style={{ width: "40%" }}> Quota </TableCell>
-                  <TableCell>{chargingData.quota}</TableCell>
-                </TableBody>
-                <TableBody>
-                  <TableCell style={{ width: "40%" }}> Unit Cost </TableCell>
-                  <TableCell>{chargingData.unitCost}</TableCell>
-                </TableBody>
-              </Table>
-            </Box>
-          )
-        }
+            </Grid>
+            <Table>
+              <TableBody>
+                <TableCell style={{ width: "40%" }}> Charging Method </TableCell>
+                <TableCell>{chargingData.chargingMethod}</TableCell>
+              </TableBody>
+              {/*
+              <TableBody>
+                <TableCell style={{ width: "40%" }}> Filter </TableCell>
+                <TableCell>{chargingData.filter}</TableCell>
+              </TableBody>
+              */}
+              <TableBody>
+                <TableCell style={{ width: "40%" }}> Quota </TableCell>
+                <TableCell>{chargingData.quota}</TableCell>
+              </TableBody>
+              <TableBody>
+                <TableCell style={{ width: "40%" }}> Unit Cost </TableCell>
+                <TableCell>{chargingData.unitCost}</TableCell>
+              </TableBody>
+            </Table>
+          </Box>
+        )
       }
     }
+    
   };
 
   const flowRule = (dnn: string, snssai: Nssai) => {
+    console.log("in flowRule")
+    console.log(data.FlowRules)
     const flowKey = toHex(snssai.sst) + snssai.sd;
     if (data.FlowRules !== undefined) {
-      for (let i = 0; i < data.FlowRules?.length; i++) {
-        const flow = data.FlowRules![i];
-        if (flow.snssai === flowKey && flow.dnn === dnn) {
-          const qos = qosFlow(flowKey, dnn);
-          return (
-            <div key={flow.snssai}>
-              <Box sx={{ m: 2 }}>
-                <h4>Flow Rules</h4>
-                <Card variant="outlined">
-                  <Table>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell style={{ width: "40%" }}>IP Filter</TableCell>
-                        <TableCell>{flow.filter}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell style={{ width: "40%" }}>Precedence</TableCell>
-                        <TableCell>{flow.precedence}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell style={{ width: "40%" }}>5QI</TableCell>
-                        <TableCell>{flow.qfi}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell style={{ width: "40%" }}>Uplink GBR</TableCell>
-                        <TableCell>{qos!.gbrUL}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell style={{ width: "40%" }}>Downlink GBR</TableCell>
-                        <TableCell>{qos!.gbrDL}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell style={{ width: "40%" }}>Uplink MBR</TableCell>
-                        <TableCell>{qos!.mbrUL}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell style={{ width: "40%" }}>Downlink MBR</TableCell>
-                        <TableCell>{qos!.mbrDL}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableCell>{chargingConfig(flow, dnn, snssai)}</TableCell>
-                    </TableBody>
-                  </Table>
-                </Card>
-              </Box>
-            </div>
-          );
-        }
-      }
+      return (
+        data.FlowRules
+        .filter((flow) => flow.dnn === dnn && flow.snssai === flowKey)
+        .map((flow) => 
+          <div key={flow.snssai}>
+            <Box sx={{ m: 2 }}>
+              <h4>Flow Rules</h4>
+              <Card variant="outlined">
+                <Table>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell style={{ width: "40%" }}>IP Filter</TableCell>
+                      <TableCell>{flow.filter}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell style={{ width: "40%" }}>Precedence</TableCell>
+                      <TableCell>{flow.precedence}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell style={{ width: "40%" }}>5QI</TableCell>
+                      <TableCell>{flow.qfi}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell style={{ width: "40%" }}>Uplink GBR</TableCell>
+                      <TableCell>{qosFlow(flowKey, dnn, flow.qfi!)?.gbrUL}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell style={{ width: "40%" }}>Downlink GBR</TableCell>
+                      <TableCell>{qosFlow(flowKey, dnn, flow.qfi!)?.gbrDL}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell style={{ width: "40%" }}>Uplink MBR</TableCell>
+                      <TableCell>{qosFlow(flowKey, dnn, flow.qfi!)?.mbrUL}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell style={{ width: "40%" }}>Downlink MBR</TableCell>
+                      <TableCell>{qosFlow(flowKey, dnn, flow.qfi!)?.mbrDL}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableCell>{chargingConfig(flow, dnn, snssai!)}</TableCell>
+                  </TableBody>
+                </Table>
+              </Card>
+            </Box>
+          </div>
+        )
+      )
     }
     return <div></div>;
   };

@@ -890,6 +890,12 @@ export interface Tenant {
       */
      'dnn'?: string;
      /**
+      * 
+      * @type {number}
+      * @memberof ChargingData
+      */
+     'qfi'?: number;
+     /**
      * 
      * @type {string}
      * @memberof ChargingData

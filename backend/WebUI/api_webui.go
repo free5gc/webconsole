@@ -1557,12 +1557,18 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 				if chargingData.Dnn != "" && chargingData.Filter != "" {
 					chargingFilter = bson.M{
 						"ueId": ueId, "servingPlmnId": servingPlmnId,
-						"snssai": chargingData.Snssai, "dnn": chargingData.Dnn, "filter": chargingData.Filter,
+						"snssai": chargingData.Snssai,
+						"dnn":    chargingData.Dnn,
+						"qfi":    chargingData.QFI,
+						"filter": chargingData.Filter,
 					}
 				} else {
 					chargingFilter = bson.M{
 						"ueId": ueId, "servingPlmnId": servingPlmnId,
-						"snssai": chargingData.Snssai, "dnn": "", "filter": "",
+						"snssai": chargingData.Snssai,
+						"qfi":    chargingData.QFI,
+						"dnn":    "",
+						"filter": "",
 					}
 					chargingDataBsonM["dnn"] = ""
 					chargingDataBsonM["filter"] = ""

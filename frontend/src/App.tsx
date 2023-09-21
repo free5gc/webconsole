@@ -4,7 +4,6 @@ import StatusList from "./pages/StatusList";
 import StatusRead from "./pages/StatusRead";
 import SubscriberList from "./pages/SubscriberList";
 import SubscriberCreate from "./pages/SubscriberCreate";
-import SubscriberUpdate from "./pages/SubscriberUpdate";
 import SubscriberRead from "./pages/SubscriberRead";
 import AnalysisList from "./pages/AnalysisList";
 import TenantList from "./pages/TenantList";
@@ -60,10 +59,10 @@ export default function App() {
             }
           />
           <Route
-            path="/subscriber/update/:id/:plmn"
+            path="/subscriber/create/:id/:plmn"
             element={
               <ProtectedRoute>
-                <SubscriberUpdate />
+                <SubscriberCreate />
               </ProtectedRoute>
             }
           />
