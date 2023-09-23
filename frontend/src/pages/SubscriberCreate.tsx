@@ -1118,6 +1118,7 @@ export default function SubscriberCreate() {
     const flowKey = toHex(snssai.sst) + snssai.sd;
     for (let i = 0; i < data.ChargingDatas!.length; i++) {
       const chargingData = data.ChargingDatas![i]
+      const idPrefix = snssai + "-" + dnn + "-" + chargingData.qosRef + "-"
       if (chargingData.snssai === flowKey && chargingData.dnn === dnn && chargingData.qosRef === flow.qosRef) {
         return (
           <Box sx={{ m: 2 }}>
@@ -1127,7 +1128,7 @@ export default function SubscriberCreate() {
               </Grid>
             </Grid>
             <Table>
-              <TableBody id={flowKey + dnn + chargingData.qosRef + "Charging Method"}>
+              <TableBody id={idPrefix + "ChargingMethod"}>
                 <TableCell>
                   <FormControl variant="outlined" fullWidth>
                     <InputLabel>Charging Method</InputLabel>
@@ -1159,7 +1160,7 @@ export default function SubscriberCreate() {
                 </TableCell>
               </TableBody>
               */}
-              <TableBody id="Quota">
+              <TableBody id={idPrefix + "Quota"}>
                 <TableCell>
                   <TextField
                     label="Quota (monetary)"
@@ -1171,7 +1172,7 @@ export default function SubscriberCreate() {
                   />
                 </TableCell>
               </TableBody>
-              <TableBody id="Unit Cost">
+              <TableBody id={idPrefix + "UnitCost"}>
                 <TableCell>
                   <TextField
                     label="Unit Cost (money per byte)"
@@ -1192,13 +1193,14 @@ export default function SubscriberCreate() {
 
   const flowRule = (dnn: string, snssai: Nssai) => {
     const flowKey = toHex(snssai.sst) + snssai.sd;
+    const idPrefix = flowKey + "-" + dnn + "-" 
     if (data.FlowRules !== undefined) {
       return (
         data.FlowRules
         .filter((flow) => flow.dnn === dnn && flow.snssai === flowKey)
         .map((flow) => (
           <div key={flow.snssai}>
-            <Box sx={{ m: 2 }} id={dnn+flowKey+flow.qosRef}>
+            <Box sx={{ m: 2 }} id={idPrefix + flow.qosRef}>
               <Grid container spacing={2}>
                 <Grid item xs={10}>
                   <h4>Flow Rules {flow.qosRef}</h4>
@@ -1218,7 +1220,7 @@ export default function SubscriberCreate() {
               </Grid>
               <Card variant="outlined">
                 <Table>
-                  <TableBody id="IP Filter">
+                  <TableBody id={idPrefix + flow.qosRef + "-IpFilter"}>
                     <TableRow>
                       <TableCell>
                         <TextField
@@ -1232,7 +1234,7 @@ export default function SubscriberCreate() {
                       </TableCell>
                     </TableRow>
                   </TableBody>
-                  <TableBody id="Precedence">
+                  <TableBody id={idPrefix + flow.qosRef + "-Precedence"}>
                     <TableRow>
                       <TableCell>
                         <TextField
@@ -1247,7 +1249,7 @@ export default function SubscriberCreate() {
                       </TableCell>
                     </TableRow>
                   </TableBody>
-                  <TableBody id="5QI">
+                  <TableBody id={idPrefix + flow.qosRef +"-5QI"}>
                     <TableRow>
                       <TableCell>
                         <TextField
@@ -1262,7 +1264,7 @@ export default function SubscriberCreate() {
                       </TableCell>
                     </TableRow>
                   </TableBody>
-                  <TableBody id="Uplink GBR">
+                  <TableBody id={idPrefix + flow.qosRef +"-UlGBR"}>
                     <TableRow>
                       <TableCell>
                         <TextField
@@ -1276,7 +1278,7 @@ export default function SubscriberCreate() {
                       </TableCell>
                     </TableRow>
                   </TableBody>
-                  <TableBody id="Downlink GBR">
+                  <TableBody id={idPrefix + flow.qosRef + "-DlGBR"}>
                     <TableRow>
                       <TableCell>
                         <TextField
@@ -1290,7 +1292,7 @@ export default function SubscriberCreate() {
                       </TableCell>
                     </TableRow>
                   </TableBody>
-                  <TableBody id="Uplink MBR">
+                  <TableBody id={idPrefix + flow.qosRef + "-UlMBR"}>
                     <TableRow>
                       <TableCell>
                         <TextField
@@ -1304,7 +1306,7 @@ export default function SubscriberCreate() {
                       </TableCell>
                     </TableRow>
                   </TableBody>
-                  <TableBody id="Downlink MBR">
+                  <TableBody id={idPrefix + flow.qosRef + "-DlMBR"}>
                     <TableRow>
                       <TableCell>
                         <TextField
@@ -1639,7 +1641,7 @@ export default function SubscriberCreate() {
           </Grid>
           <Card variant="outlined">
             <Table>
-              <TableBody id="SST">
+              <TableBody id={toHex(row.singleNssai!.sst)+row.singleNssai!.sd! + "-SST"}>
                 <TableRow>
                   <TableCell>
                     <TextField
@@ -1648,13 +1650,13 @@ export default function SubscriberCreate() {
                       required
                       fullWidth
                       type="number"
-                      value={row.singleNssai?.sst}
+                      value={row.singleNssai!.sst!}
                       onChange={(ev) => handleChangeSST(ev, index)}
                     />
                   </TableCell>
                 </TableRow>
               </TableBody>
-              <TableBody id="SD">
+              <TableBody id={toHex(row.singleNssai!.sst)+row.singleNssai!.sd! + "-SD"}>
                 <TableRow>
                   <TableCell>
                     <TextField
@@ -1668,7 +1670,7 @@ export default function SubscriberCreate() {
                   </TableCell>
                 </TableRow>
               </TableBody>
-              <TableBody id="Default S-NSSAI">
+              <TableBody id={toHex(row.singleNssai!.sst)+row.singleNssai!.sd! + "-Default S-NSSAI"}>
                 <TableRow>
                   <TableCell style={{ width: "83%" }}>Default S-NSSAI</TableCell>
                   <TableCell align="right">
@@ -1682,7 +1684,7 @@ export default function SubscriberCreate() {
             </Table>
             {row.dnnConfigurations &&
               Object.keys(row.dnnConfigurations!).map((dnn) => (
-                <div key={dnn}>
+                <div key={dnn} id={toHex(row.singleNssai!.sst!) + row.singleNssai!.sd! + '-' + dnn!}>
                   <Box sx={{ m: 2 }}>
                     <Grid container spacing={2}>
                       <Grid item xs={10}>
@@ -1705,7 +1707,7 @@ export default function SubscriberCreate() {
                         </Box>
                       </Grid>
                     </Grid>
-                    <Card variant="outlined">
+                    <Card variant="outlined" id={toHex(row.singleNssai!.sst!) + row.singleNssai!.sd! + '-' + dnn! + "-AddFlowRuleArea"}>
                       <Table>
                         <TableBody>
                           <TableRow>
@@ -1714,7 +1716,7 @@ export default function SubscriberCreate() {
                             </TableCell>
                           </TableRow>
                         </TableBody>
-                        <TableBody id="Uplink AMBR">
+                        <TableBody id={toHex(row.singleNssai!.sst!) + row.singleNssai!.sd! + '-' + dnn! + "-UlAMBR"}>
                           <TableRow>
                             <TableCell>
                               <TextField
@@ -1728,7 +1730,7 @@ export default function SubscriberCreate() {
                             </TableCell>
                           </TableRow>
                         </TableBody>
-                        <TableBody id="Downlink AMBR">
+                        <TableBody id={toHex(row.singleNssai!.sst!) + row.singleNssai!.sd! + '-' + dnn! + "-DlAMBR"}>
                           <TableRow>
                             <TableCell>
                               <TextField
@@ -1742,7 +1744,7 @@ export default function SubscriberCreate() {
                             </TableCell>
                           </TableRow>
                         </TableBody>
-                        <TableBody id="Default 5QI">
+                        <TableBody id={toHex(row.singleNssai!.sst!) + row.singleNssai!.sd! + '-' + dnn! + "-Default5QI"}>
                           <TableRow>
                             <TableCell>
                               <TextField
@@ -1773,7 +1775,7 @@ export default function SubscriberCreate() {
                 </div>
               ))}
             <Grid container spacing={2}>
-              <Grid item xs={10}>
+              <Grid item xs={10} id={toHex(row.singleNssai!.sst) + row.singleNssai!.sd! + '-AddDNNInputArea'}>
                 <Box sx={{ m: 2 }}>
                   <TextField
                     label="Data Network Name"
@@ -1785,7 +1787,7 @@ export default function SubscriberCreate() {
                   />
                 </Box>
               </Grid>
-              <Grid item xs={2}>
+              <Grid item xs={2} id={toHex(row.singleNssai!.sst) + row.singleNssai!.sd! + '-AddDNNButtonArea'}>
                 <Box display="flex" justifyContent="flex-end">
                   <Button
                     color="secondary"
