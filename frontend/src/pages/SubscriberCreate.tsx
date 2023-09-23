@@ -1146,30 +1146,27 @@ export default function SubscriberCreate() {
                   </FormControl>
                 </TableCell>
               </TableBody>
-              {/*
-              <TableBody>
-                <TableCell>
-                  <TextField
-                    label="Filter"
-                    variant="outlined"
-                    required
-                    fullWidth
-                    value={chargingData.filter}
-                    onChange={(ev) => handleChangeChargingFilter(ev, dnn, flowKey, flow.qosRef!)}
-                  />
-                </TableCell>
-              </TableBody>
-              */}
               <TableBody id={idPrefix + "Quota"}>
                 <TableCell>
-                  <TextField
-                    label="Quota (monetary)"
-                    variant="outlined"
-                    required
-                    fullWidth
-                    value={chargingData.quota}
-                    onChange={(ev) => handleChangeChargingQuota(ev, dnn, flowKey, flow.qosRef!)}
-                  />
+                  {data.ChargingDatas![i].chargingMethod === 'Online' ? 
+                    <TextField
+                      label="Quota (monetary)"
+                      variant="outlined"
+                      required
+                      fullWidth
+                      value={chargingData.quota}
+                      onChange={(ev) => handleChangeChargingQuota(ev, dnn, flowKey, flow.qosRef!)}
+                    />
+                  : 
+                    <TextField
+                      label="Quota (monetary)"
+                      variant="outlined"
+                      disabled
+                      fullWidth
+                      value={chargingData.quota}
+                      onChange={(ev) => handleChangeChargingQuota(ev, dnn, flowKey, flow.qosRef!)}
+                    />
+                  }
                 </TableCell>
               </TableBody>
               <TableBody id={idPrefix + "UnitCost"}>
