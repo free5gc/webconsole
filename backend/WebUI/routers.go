@@ -46,6 +46,8 @@ func AddService(engine *gin.Engine) *gin.RouterGroup {
 			group.DELETE(route.Pattern, route.HandlerFunc)
 		case http.MethodPatch:
 			group.PATCH(route.Pattern, route.HandlerFunc)
+		case http.MethodOptions:
+			group.OPTIONS(route.Pattern, route.HandlerFunc)
 		}
 	}
 
@@ -152,6 +154,13 @@ var routes = Routes{
 	},
 
 	{
+		"OptionsSubscribers",
+		http.MethodOptions,
+		"/subscriber",
+		OptionsSubscribers,
+	},
+
+	{
 		"GetSubscriberByID",
 		http.MethodGet,
 		"/subscriber/:ueId/:servingPlmnId",
@@ -212,5 +221,12 @@ var routes = Routes{
 		http.MethodGet,
 		"/ue-pdu-session-info/:smContextRef",
 		GetUEPDUSessionInfo,
+	},
+
+	{
+		"Change Password",
+		http.MethodPost,
+		"/change-password",
+		ChangePasswordInfo,
 	},
 }

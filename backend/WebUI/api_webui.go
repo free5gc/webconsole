@@ -2,11 +2,11 @@ package WebUI
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -39,6 +39,8 @@ const (
 	msisdnSupiMapColl = "subscriptionData.msisdnSupiMap"
 )
 
+var jwtKey = "" // for generating JWT
+
 var httpsClient *http.Client
 
 func init() {
@@ -47,6 +49,67 @@ func init() {
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 	}
+}
+
+// Create Admin's Tenant & Account
+func SetAdmin() {
+	err := mongoapi.RestfulAPIDeleteOne("tenantData", bson.M{"tenantName": "admin"})
+	if err != nil {
+		logger.InitLog.Errorf("RestfulAPIDeleteOne err: %+v", err)
+	}
+	err = mongoapi.RestfulAPIDeleteOne("userData", bson.M{"email": "admin"})
+	if err != nil {
+		logger.InitLog.Errorf("RestfulAPIDeleteOne err: %+v", err)
+	}
+
+	// Create Admin tenant
+	logger.InitLog.Infoln("Create tenant: admin")
+
+	adminTenantData := bson.M{
+		"tenantId":   uuid.Must(uuid.NewRandom()).String(),
+		"tenantName": "admin",
+	}
+
+	_, err = mongoapi.RestfulAPIPutOne("tenantData", bson.M{"tenantName": "admin"}, adminTenantData)
+	if err != nil {
+		logger.InitLog.Errorf("RestfulAPIPutOne err: %+v", err)
+	}
+
+	AmdinTenant, err := mongoapi.RestfulAPIGetOne("tenantData", bson.M{"tenantName": "admin"})
+	if err != nil {
+		logger.InitLog.Errorf("RestfulAPIGetOne err: %+v", err)
+	}
+
+	// Create Admin user
+	logger.InitLog.Infoln("Create user: admin")
+
+	hash, err := bcrypt.GenerateFromPassword([]byte("free5gc"), 12)
+	if err != nil {
+		logger.InitLog.Errorf("GenerateFromPassword err: %+v", err)
+	}
+
+	adminUserData := bson.M{
+		"userId":            uuid.Must(uuid.NewRandom()).String(),
+		"tenantId":          AmdinTenant["tenantId"],
+		"email":             "admin",
+		"encryptedPassword": string(hash),
+	}
+
+	_, err = mongoapi.RestfulAPIPutOne("userData", bson.M{"email": "admin"}, adminUserData)
+	if err != nil {
+		logger.InitLog.Errorf("RestfulAPIPutOne err: %+v", err)
+	}
+}
+
+func InitJwtKey() error {
+	randomBytes := make([]byte, 256)
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return errors.Wrap(err, "Init JWT key error")
+	} else {
+		jwtKey = string(randomBytes)
+	}
+	return nil
 }
 
 func mapToByte(data map[string]interface{}) (ret []byte) {
@@ -91,7 +154,7 @@ func setCorsHeader(c *gin.Context) {
 	c.Writer.Header().Set(
 		"Access-Control-Allow-Headers",
 		"Content-Type, Content-Length, Accept-Encoding, "+
-			"X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With",
+			"X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With, Token",
 	)
 	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, PATCH, DELETE")
 }
@@ -401,9 +464,14 @@ func JWT(email, userId, tenantId string) string {
 	claims["email"] = email
 	claims["tenantId"] = tenantId
 
-	tokenString, err := token.SignedString([]byte(os.Getenv("SIGNINGKEY")))
+	if jwtKey == "" {
+		return ""
+	}
+
+	tokenString, err := token.SignedString([]byte(jwtKey))
 	if err != nil {
 		logger.ProcLog.Errorf("JWT err: %+v", err)
+		return ""
 	}
 
 	return tokenString
@@ -463,12 +531,18 @@ func Login(c *gin.Context) {
 	userId := userData["userId"].(string)
 	tenantId := userData["tenantId"].(string)
 
-	logger.ProcLog.Warnln("Login success", login.Username)
-	logger.ProcLog.Warnln("userid", userId)
-	logger.ProcLog.Warnln("tenantid", tenantId)
+	logger.ProcLog.Warnln("Login success {",
+		"username:", login.Username,
+		", userid:", userId,
+		", tenantid:", tenantId,
+		"}")
 
 	token := JWT(login.Username, userId, tenantId)
-	logger.ProcLog.Warnln("token", token)
+	if token == "" {
+		logger.ProcLog.Errorln("token is empty")
+	} else {
+		logger.ProcLog.Warnln("token", token)
+	}
 
 	oauth := OAuth{}
 	oauth.AccessToken = token
@@ -490,7 +564,7 @@ type AuthSub struct {
 // Parse JWT
 func ParseJWT(tokenStr string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("SIGNINGKEY")), nil
+		return []byte(jwtKey), nil
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "ParseJWT error")
@@ -504,7 +578,11 @@ func ParseJWT(tokenStr string) (jwt.MapClaims, error) {
 // Check of admin user. This should be done with proper JWT token.
 func CheckAuth(c *gin.Context) bool {
 	tokenStr := c.GetHeader("Token")
-	if tokenStr == "admin" {
+	claims, err := ParseJWT(tokenStr)
+	if err != nil {
+		return false
+	}
+	if claims["email"].(string) == "admin" {
 		return true
 	} else {
 		return false
@@ -514,9 +592,6 @@ func CheckAuth(c *gin.Context) bool {
 // Tenant ID
 func GetTenantId(c *gin.Context) (string, error) {
 	tokenStr := c.GetHeader("Token")
-	if tokenStr == "admin" {
-		return "", nil
-	}
 	claims, err := ParseJWT(tokenStr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{})
@@ -530,7 +605,7 @@ func GetTenants(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -554,7 +629,7 @@ func GetTenantByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -586,7 +661,7 @@ func PostTenant(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -596,6 +671,7 @@ func PostTenant(c *gin.Context) {
 		return
 	}
 
+	// fmt.Println("in Post Tenant")
 	if tenantData.TenantId == "" {
 		tenantData.TenantId = uuid.Must(uuid.NewRandom()).String()
 	}
@@ -615,7 +691,7 @@ func PutTenantByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -655,7 +731,7 @@ func DeleteTenantByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -697,7 +773,7 @@ func GetUsers(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -734,7 +810,7 @@ func GetUserByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -774,7 +850,7 @@ func PostUserByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -828,7 +904,7 @@ func PutUserByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -904,7 +980,7 @@ func DeleteUserByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
-		c.JSON(http.StatusNotFound, bson.M{})
+		c.JSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -931,13 +1007,7 @@ func GetSubscribers(c *gin.Context) {
 
 	logger.ProcLog.Infoln("Get All Subscribers List")
 
-	tokenStr := c.GetHeader("Token")
-
-	var claims jwt.MapClaims = nil
-	var err error = nil
-	if tokenStr != "admin" {
-		claims, err = ParseJWT(tokenStr)
-	}
+	userTenantId, err := GetTenantId(c)
 	if err != nil {
 		logger.ProcLog.Errorln(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -945,6 +1015,8 @@ func GetSubscribers(c *gin.Context) {
 		})
 		return
 	}
+
+	isAdmin := CheckAuth(c)
 
 	var subsList []SubsListIE = make([]SubsListIE, 0)
 	amDataList, err := mongoapi.RestfulAPIGetMany(amDataColl, bson.M{})
@@ -975,7 +1047,7 @@ func GetSubscribers(c *gin.Context) {
 			return
 		}
 
-		if tokenStr == "admin" || tenantId == claims["tenantId"].(string) {
+		if isAdmin || userTenantId == tenantId {
 			tmp := SubsListIE{
 				PlmnID: servingPlmnId.(string),
 				UeId:   ueId.(string),
@@ -1156,13 +1228,8 @@ func PostSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Post One Subscriber Data")
 
-	var claims jwt.MapClaims = nil
-	var err error = nil
 	tokenStr := c.GetHeader("Token")
-
-	if tokenStr != "admin" {
-		claims, err = ParseJWT(tokenStr)
-	}
+	claims, err := ParseJWT(tokenStr)
 	if err != nil {
 		logger.ProcLog.Errorln(err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -1570,8 +1637,9 @@ func GetRegisteredUEContext(c *gin.Context) {
 	webuiSelf := webui_context.GetSelf()
 	webuiSelf.UpdateNfProfiles()
 
-	supi, supiExists := c.Params.Get("supi")
+	isAdmin := CheckAuth(c)
 
+	supi, supiExists := c.Params.Get("supi")
 	// TODO: support fetching data from multiple AMFs
 	if amfUris := webuiSelf.GetOamUris(models.NfType_AMF); amfUris != nil {
 		var requestUri string
@@ -1610,7 +1678,7 @@ func GetRegisteredUEContext(c *gin.Context) {
 			return
 		}
 
-		if tenantId == "" {
+		if isAdmin {
 			sendResponseToClient(c, resp)
 		} else {
 			sendResponseToClientFilterTenant(c, resp, tenantId)
@@ -1663,4 +1731,60 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 			"cause": "No SMF Found",
 		})
 	}
+}
+
+func ChangePasswordInfo(c *gin.Context) {
+	setCorsHeader(c)
+
+	// Need to get tenantId.
+	tenantId, err := GetTenantId(c)
+	if err != nil {
+		logger.ProcLog.Errorln(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{})
+		return
+	}
+
+	var newUserData User
+	if err = c.ShouldBindJSON(&newUserData); err != nil {
+		logger.ProcLog.Errorln(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{})
+		return
+	}
+
+	filterEmailOnly := bson.M{"tenantId": tenantId, "email": newUserData.Email}
+	userDataInterface, err := mongoapi.RestfulAPIGetOne(userDataColl, filterEmailOnly)
+	if err != nil {
+		logger.ProcLog.Errorf("ChangePassword err: %+v", err)
+	}
+	if len(userDataInterface) == 0 {
+		c.JSON(http.StatusNotFound, bson.M{})
+		return
+	}
+
+	var userData User
+	err = json.Unmarshal(mapToByte(userDataInterface), &userData)
+	if err != nil {
+		logger.ProcLog.Errorf("JSON Unmarshal err: %+v", err)
+	}
+
+	if newUserData.EncryptedPassword != "" {
+		hash, err := bcrypt.GenerateFromPassword([]byte(newUserData.EncryptedPassword), 12)
+		if err != nil {
+			logger.ProcLog.Errorf("GenerateFromPassword err: %+v", err)
+		}
+		userData.EncryptedPassword = string(hash)
+	}
+
+	userBsonM := toBsonM(userData)
+	if _, err := mongoapi.RestfulAPIPost(userDataColl, filterEmailOnly, userBsonM); err != nil {
+		logger.ProcLog.Errorf("PutUserByID err: %+v", err)
+	}
+
+	c.JSON(http.StatusOK, userData)
+}
+
+func OptionsSubscribers(c *gin.Context) {
+	setCorsHeader(c)
+
+	c.JSON(http.StatusNoContent, gin.H{})
 }
