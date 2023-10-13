@@ -1162,7 +1162,7 @@ export default function SubscriberCreate() {
                             variant="outlined"
                             disabled
                             fullWidth
-                            value={chargingData.quota}
+                            value={"0"}
                             onChange={(ev) => handleChangeChargingQuota(ev, dnn, flowKey, flow.qosRef!)}
                           />
                         }
@@ -1699,14 +1699,24 @@ export default function SubscriberCreate() {
                         </TableBody>
                       </Table>
                       {flowRule(dnn, row.singleNssai!)}
-                      <Button
-                        color="secondary"
-                        variant="outlined"
-                        onClick={() => onFlowRulesAdd(dnn, row.singleNssai!)}
-                        sx={{ m: 0 }}
-                      >
-                        +FLOW RULE
-                      </Button>
+                      <div>
+                        <Table>
+                          <TableBody>
+                            <TableRow>
+                              <TableCell>
+                                <Button
+                                  color="secondary"
+                                  variant="outlined"
+                                  onClick={() => onFlowRulesAdd(dnn, row.singleNssai!)}
+                                  sx={{ m: 0 }}
+                                >
+                                  +FLOW RULE
+                                </Button>
+                                </TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </div>
                       {upSecurity(row.dnnConfigurations![dnn])}
                     </Card>
                   </Box>
