@@ -1229,10 +1229,6 @@ export default function SubscriberCreate() {
                           onChange={(ev) => handleChangeFilter(ev, dnn, flowKey, flow.qosRef!)}
                         />
                       </TableCell>
-                    </TableRow>
-                  </TableBody>
-                  <TableBody id={idPrefix + flow.qosRef + "-Precedence"}>
-                    <TableRow>
                       <TableCell>
                         <TextField
                           label="Precedence"
@@ -1244,10 +1240,6 @@ export default function SubscriberCreate() {
                           onChange={(ev) => handleChangePrecedence(ev, dnn, flowKey, flow.qosRef!)}
                         />
                       </TableCell>
-                    </TableRow>
-                  </TableBody>
-                  <TableBody id={idPrefix + flow.qosRef +"-5QI"}>
-                    <TableRow>
                       <TableCell>
                         <TextField
                           label="5QI"
@@ -1273,10 +1265,6 @@ export default function SubscriberCreate() {
                           onChange={(ev) => handleChangeUplinkGBR(ev, dnn, flowKey, flow.qosRef!)}
                         />
                       </TableCell>
-                    </TableRow>
-                  </TableBody>
-                  <TableBody id={idPrefix + flow.qosRef + "-DlGBR"}>
-                    <TableRow>
                       <TableCell>
                         <TextField
                           label="Downlink GBR"
@@ -1287,10 +1275,6 @@ export default function SubscriberCreate() {
                           onChange={(ev) => handleChangeDownlinkGBR(ev, dnn, flowKey, flow.qosRef!)}
                         />
                       </TableCell>
-                    </TableRow>
-                  </TableBody>
-                  <TableBody id={idPrefix + flow.qosRef + "-UlMBR"}>
-                    <TableRow>
                       <TableCell>
                         <TextField
                           label="Uplink MBR"
@@ -1301,10 +1285,6 @@ export default function SubscriberCreate() {
                           onChange={(ev) => handleChangeUplinkMBR(ev, dnn, flowKey, flow.qosRef!)}
                         />
                       </TableCell>
-                    </TableRow>
-                  </TableBody>
-                  <TableBody id={idPrefix + flow.qosRef + "-DlMBR"}>
-                    <TableRow>
                       <TableCell>
                         <TextField
                           label="Downlink MBR"
