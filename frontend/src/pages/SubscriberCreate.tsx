@@ -8,7 +8,6 @@ import {
   Nssai,
   DnnConfiguration,
   AccessAndMobilitySubscriptionData,
-  FlowRules,
   QosFlows,
 } from "../api/api";
 
@@ -1121,68 +1120,68 @@ export default function SubscriberCreate() {
       const idPrefix = snssai + "-" + dnn + "-" + chargingData.qosRef + "-"
       if (chargingData.snssai === flowKey && chargingData.dnn === dnn && chargingData.qosRef === flow.qosRef) {
         return (
-          <Box sx={{ m: 2 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <h4>Charging Config</h4>
+          <div>
+            <Box sx={{ m: 2 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <h4>Charging Config</h4>
+                </Grid>
               </Grid>
-            </Grid>
-            <Table>
-              <TableBody id={idPrefix + "ChargingMethod"}>
-                <TableCell>
-                  <FormControl variant="outlined" fullWidth>
-                    <InputLabel>Charging Method</InputLabel>
-                    <Select
-                      label="Charging Method"
-                      variant="outlined"
-                      required
-                      fullWidth
-                      value={chargingData.chargingMethod}
-                      onChange={(ev) => handleChangeChargingMethod(ev, dnn, flowKey, flow.qosRef!)}
-                    >
-                      <MenuItem value="Offline">Offline</MenuItem>
-                      <MenuItem value="Online">Online</MenuItem>
-                    </Select>
-                  </FormControl>
-                </TableCell>
-              </TableBody>
-              <TableBody id={idPrefix + "Quota"}>
-                <TableCell>
-                  {data.ChargingDatas![i].chargingMethod === 'Online' ? 
-                    <TextField
-                      label="Quota (monetary)"
-                      variant="outlined"
-                      required
-                      fullWidth
-                      value={chargingData.quota}
-                      onChange={(ev) => handleChangeChargingQuota(ev, dnn, flowKey, flow.qosRef!)}
-                    />
-                  : 
-                    <TextField
-                      label="Quota (monetary)"
-                      variant="outlined"
-                      disabled
-                      fullWidth
-                      value={chargingData.quota}
-                      onChange={(ev) => handleChangeChargingQuota(ev, dnn, flowKey, flow.qosRef!)}
-                    />
-                  }
-                </TableCell>
-              </TableBody>
-              <TableBody id={idPrefix + "UnitCost"}>
-                <TableCell>
-                  <TextField
-                    label="Unit Cost (money per byte)"
-                    variant="outlined"
-                    required
-                    fullWidth
-                    value={chargingData.unitCost}
-                    onChange={(ev) => handleChangeChargingUnitCost(ev, dnn, flowKey, flow.qosRef!)}
-                  />
-                </TableCell>
-              </TableBody>
-            </Table>
-          </Box>
+                <Card variant="outlined">
+                  <Table>
+                    <TableBody id={idPrefix + "Charging Config"}>
+                      <TableCell style={{ width: "33%"}}>
+                        <FormControl variant="outlined" fullWidth>
+                          <InputLabel>Charging Method</InputLabel>
+                          <Select
+                            label="Charging Method"
+                            variant="outlined"
+                            required
+                            fullWidth
+                            value={chargingData.chargingMethod}
+                            onChange={(ev) => handleChangeChargingMethod(ev, dnn, flowKey, flow.qosRef!)}
+                          >
+                            <MenuItem value="Offline">Offline</MenuItem>
+                            <MenuItem value="Online">Online</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </TableCell>
+                      <TableCell style={{ width: "33%"}}>
+                        {data.ChargingDatas![i].chargingMethod === 'Online' ? 
+                          <TextField
+                            label="Quota (monetary)"
+                            variant="outlined"
+                            required
+                            fullWidth
+                            value={chargingData.quota}
+                            onChange={(ev) => handleChangeChargingQuota(ev, dnn, flowKey, flow.qosRef!)}
+                          />
+                        : 
+                          <TextField
+                            label="Quota (monetary)"
+                            variant="outlined"
+                            disabled
+                            fullWidth
+                            value={chargingData.quota}
+                            onChange={(ev) => handleChangeChargingQuota(ev, dnn, flowKey, flow.qosRef!)}
+                          />
+                        }
+                      </TableCell>
+                      <TableCell style={{ width: "33%"}}>
+                        <TextField
+                          label="Unit Cost (money per byte)"
+                          variant="outlined"
+                          required
+                          fullWidth
+                          value={chargingData.unitCost}
+                          onChange={(ev) => handleChangeChargingUnitCost(ev, dnn, flowKey, flow.qosRef!)}
+                        />
+                      </TableCell>
+                    </TableBody>
+                  </Table>
+                </Card>
+            </Box>
+          </div>
         )
       }
     }
@@ -1219,7 +1218,7 @@ export default function SubscriberCreate() {
                 <Table>
                   <TableBody>
                     <TableRow>
-                      <TableCell>
+                      <TableCell style={{ width: "25%"}}>
                         <TextField
                           label="IP Filter"
                           variant="outlined"
@@ -1229,7 +1228,7 @@ export default function SubscriberCreate() {
                           onChange={(ev) => handleChangeFilter(ev, dnn, flowKey, flow.qosRef!)}
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell style={{ width: "25%"}}>
                         <TextField
                           label="Precedence"
                           variant="outlined"
@@ -1240,7 +1239,7 @@ export default function SubscriberCreate() {
                           onChange={(ev) => handleChangePrecedence(ev, dnn, flowKey, flow.qosRef!)}
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell style={{ width: "25%"}}>
                         <TextField
                           label="5QI"
                           variant="outlined"
@@ -1255,7 +1254,7 @@ export default function SubscriberCreate() {
                   </TableBody>
                   <TableBody>
                     <TableRow>
-                      <TableCell>
+                      <TableCell style={{ width: "25%"}}>
                         <TextField
                           label="Uplink GBR"
                           variant="outlined"
@@ -1265,7 +1264,7 @@ export default function SubscriberCreate() {
                           onChange={(ev) => handleChangeUplinkGBR(ev, dnn, flowKey, flow.qosRef!)}
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell style={{ width: "25%"}}>
                         <TextField
                           label="Downlink GBR"
                           variant="outlined"
@@ -1275,7 +1274,7 @@ export default function SubscriberCreate() {
                           onChange={(ev) => handleChangeDownlinkGBR(ev, dnn, flowKey, flow.qosRef!)}
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell style={{ width: "25%"}}>
                         <TextField
                           label="Uplink MBR"
                           variant="outlined"
@@ -1285,7 +1284,7 @@ export default function SubscriberCreate() {
                           onChange={(ev) => handleChangeUplinkMBR(ev, dnn, flowKey, flow.qosRef!)}
                         />
                       </TableCell>
-                      <TableCell>
+                      <TableCell style={{ width: "25%"}}>
                         <TextField
                           label="Downlink MBR"
                           variant="outlined"
@@ -1297,10 +1296,8 @@ export default function SubscriberCreate() {
                       </TableCell>
                     </TableRow>
                   </TableBody>
-                  <TableBody>
-                    {chargingConfig(flow, dnn, snssai)}
-                  </TableBody>
                 </Table>
+                {chargingConfig(flow, dnn, snssai)}
               </Card>
             </Box>
           </div>
@@ -1422,6 +1419,16 @@ export default function SubscriberCreate() {
                   type="number"
                 />
               </TableCell>
+              <TableCell>
+                <TextField
+                  label="SUPI (IMSI)"
+                  variant="outlined"
+                  required
+                  fullWidth
+                  value={imsiValue(data.ueId)}
+                  onChange={handleChangeUeId}
+                />
+              </TableCell>
             </TableRow>
           </TableBody>
           <TableBody id="PLMN ID">
@@ -1436,24 +1443,6 @@ export default function SubscriberCreate() {
                   onChange={handleChangePlmnId}
                 />
               </TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody id="SUPI (IMSI)">
-            <TableRow>
-              <TableCell>
-                <TextField
-                  label="SUPI (IMSI)"
-                  variant="outlined"
-                  required
-                  fullWidth
-                  value={imsiValue(data.ueId)}
-                  onChange={handleChangeUeId}
-                />
-              </TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody id="MSISDN">
-            <TableRow>
               <TableCell>
                 <TextField
                   label="GPSI (MSISDN)"
@@ -1466,7 +1455,7 @@ export default function SubscriberCreate() {
               </TableCell>
             </TableRow>
           </TableBody>
-          <TableBody id="AMF">
+          <TableBody id="Authentication Management">
             <TableRow>
               <TableCell>
                 <TextField
@@ -1478,10 +1467,6 @@ export default function SubscriberCreate() {
                   onChange={handleChangeAuthenticationManagementField}
                 />
               </TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody id="Authentication Method">
-            <TableRow>
               <TableCell align="left">
                 <FormControl variant="outlined" fullWidth>
                   <InputLabel>Authentication Method</InputLabel>
@@ -1500,21 +1485,7 @@ export default function SubscriberCreate() {
               </TableCell>
             </TableRow>
           </TableBody>
-          <TableBody id="K">
-            <TableRow>
-              <TableCell>
-                <TextField
-                  label="K"
-                  variant="outlined"
-                  required
-                  fullWidth
-                  value={data.AuthenticationSubscription?.permanentKey?.permanentKeyValue}
-                  onChange={handleChangeK}
-                />
-              </TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody id="Operator Code Type">
+          <TableBody id="OP">
             <TableRow>
               <TableCell align="left">
                 <FormControl variant="outlined" fullWidth>
@@ -1532,10 +1503,6 @@ export default function SubscriberCreate() {
                   </Select>
                 </FormControl>
               </TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody id="Operator Code Value">
-            <TableRow>
               <TableCell>
                 <TextField
                   label="Operator Code Value"
@@ -1560,6 +1527,16 @@ export default function SubscriberCreate() {
                   onChange={handleChangeSQN}
                 />
               </TableCell>
+              <TableCell>
+                <TextField
+                  label="K"
+                  variant="outlined"
+                  required
+                  fullWidth
+                  value={data.AuthenticationSubscription?.permanentKey?.permanentKeyValue}
+                  onChange={handleChangeK}
+                />
+              </TableCell>
             </TableRow>
           </TableBody>
         </Table>
@@ -1567,7 +1544,7 @@ export default function SubscriberCreate() {
       <h3>Subscribed UE AMBR</h3>
       <Card variant="outlined">
         <Table>
-          <TableBody id="Uplink">
+          <TableBody id="Subscribed UE AMBR">
             <TableRow>
               <TableCell>
                 <TextField
@@ -1579,10 +1556,6 @@ export default function SubscriberCreate() {
                   onChange={handleChangeSubAmbrUplink}
                 />
               </TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody id="Downlink">
-            <TableRow>
               <TableCell>
                 <TextField
                   label="Downlink"
@@ -1618,9 +1591,9 @@ export default function SubscriberCreate() {
           </Grid>
           <Card variant="outlined">
             <Table>
-              <TableBody id={toHex(row.singleNssai!.sst)+row.singleNssai!.sd! + "-SST"}>
+              <TableBody id={"S-NSSAI Configuragtion" + toHex(row.singleNssai!.sst)+row.singleNssai!.sd!}>
                 <TableRow>
-                  <TableCell>
+                  <TableCell style={{ width: "50%" }}>
                     <TextField
                       label="SST"
                       variant="outlined"
@@ -1631,11 +1604,7 @@ export default function SubscriberCreate() {
                       onChange={(ev) => handleChangeSST(ev, index)}
                     />
                   </TableCell>
-                </TableRow>
-              </TableBody>
-              <TableBody id={toHex(row.singleNssai!.sst)+row.singleNssai!.sd! + "-SD"}>
-                <TableRow>
-                  <TableCell>
+                  <TableCell style={{ width: "50%" }}>
                     <TextField
                       label="SD"
                       variant="outlined"
@@ -1649,7 +1618,7 @@ export default function SubscriberCreate() {
               </TableBody>
               <TableBody id={toHex(row.singleNssai!.sst)+row.singleNssai!.sd! + "-Default S-NSSAI"}>
                 <TableRow>
-                  <TableCell style={{ width: "83%" }}>Default S-NSSAI</TableCell>
+                  <TableCell>Default S-NSSAI</TableCell>
                   <TableCell align="right">
                     <Checkbox
                       checked={isDefaultNssai(row.singleNssai)}
@@ -1693,7 +1662,7 @@ export default function SubscriberCreate() {
                             </TableCell>
                           </TableRow>
                         </TableBody>
-                        <TableBody id={toHex(row.singleNssai!.sst!) + row.singleNssai!.sd! + '-' + dnn! + "-UlAMBR"}>
+                        <TableBody id={toHex(row.singleNssai!.sst!) + row.singleNssai!.sd! + '-' + dnn! + "-AMBR&5QI"}>
                           <TableRow>
                             <TableCell>
                               <TextField
@@ -1705,10 +1674,6 @@ export default function SubscriberCreate() {
                                 onChange={(ev) => handleChangeUplinkAMBR(ev, index, dnn)}
                               />
                             </TableCell>
-                          </TableRow>
-                        </TableBody>
-                        <TableBody id={toHex(row.singleNssai!.sst!) + row.singleNssai!.sd! + '-' + dnn! + "-DlAMBR"}>
-                          <TableRow>
                             <TableCell>
                               <TextField
                                 label="Downlink AMBR"
@@ -1719,10 +1684,6 @@ export default function SubscriberCreate() {
                                 onChange={(ev) => handleChangeDownlinkAMBR(ev, index, dnn)}
                               />
                             </TableCell>
-                          </TableRow>
-                        </TableBody>
-                        <TableBody id={toHex(row.singleNssai!.sst!) + row.singleNssai!.sd! + '-' + dnn! + "-Default5QI"}>
-                          <TableRow>
                             <TableCell>
                               <TextField
                                 label="Default 5QI"

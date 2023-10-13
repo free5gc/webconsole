@@ -1,26 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { config } from "../constants/config";
-
 import axios from "../axios";
 import { ChargingRecord } from "../api/api";
-
 import Dashboard from "../Dashboard";
 
 import {
-  Button,
-  Grid,
   Table,
-  TableBody,
   TableCell,
   TableHead,
   TableRow,
-  TablePagination,
 } from "@mui/material";
 
 
 export default function ChargingRecordList() {
-  const navigation = useNavigate();
   const [data, setData] = useState<ChargingRecord[]>([]);
   const [limit, setLimit] = useState(50);
   const [page, setPage] = useState(0);
