@@ -208,14 +208,14 @@ export default function SubscriberCreate() {
     },
     "FlowRules": [
       {
-        "filter": "permit out ip from any to 10.60.0.0/16",
+        "filter": "0.0.0.0/32",
         "precedence": 128,
         "snssai": "01010203",
         "dnn": "internet",
         "qosRef": 1
       },
       {
-        "filter": "permit out ip from any to 10.60.0.0/16",
+        "filter": "0.0.0.0/32",
         "precedence": 127,
         "snssai": "01112233",
         "dnn": "internet",
@@ -249,7 +249,7 @@ export default function SubscriberCreate() {
         "snssai": "01010203",
         "dnn": "internet",
         "qosRef": 1,
-        "filter": "permit out ip from any to 10.60.0.1",
+        "filter": "0.0.0.0/32",
         "chargingMethod": "Offline",
         "quota": "0",
         "unitCost": "1",
@@ -258,7 +258,7 @@ export default function SubscriberCreate() {
         "snssai": "01112233",
         "dnn": "internet",
         "qosRef": 2,
-        "filter": "permit out ip from any to 10.60.0.2",
+        "filter": "0.0.0.0/32",
         "chargingMethod": "Online",
         "quota": "2000",
         "unitCost": "2",
@@ -1217,7 +1217,7 @@ export default function SubscriberCreate() {
               </Grid>
               <Card variant="outlined">
                 <Table>
-                  <TableBody id={idPrefix + flow.qosRef + "-IpFilter"}>
+                  <TableBody>
                     <TableRow>
                       <TableCell>
                         <TextField
@@ -1253,7 +1253,7 @@ export default function SubscriberCreate() {
                       </TableCell>
                     </TableRow>
                   </TableBody>
-                  <TableBody id={idPrefix + flow.qosRef +"-UlGBR"}>
+                  <TableBody>
                     <TableRow>
                       <TableCell>
                         <TextField

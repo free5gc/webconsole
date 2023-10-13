@@ -87,7 +87,7 @@ export default function SubscriberList() {
   };
 
   const onCreate = () => {
-    navigation("/subscriber/create/0/0");
+    navigation("/subscriber/create");
   };
 
   const handleModify = (subscriber: Subscriber) => {
