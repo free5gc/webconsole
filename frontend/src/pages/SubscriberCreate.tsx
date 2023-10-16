@@ -37,11 +37,8 @@ export default function SubscriberCreate() {
     id: string;
     plmn: string;
   }>();
-  if (id === "0" || id === undefined && plmn === "0" || plmn === undefined) {
-    isNewSubscriber = true
-  } else {
-    isNewSubscriber = false
-  }
+
+  isNewSubscriber = (id === undefined && plmn === undefined ? true : false)
   const navigation = useNavigate();
 
   const [data, setData] = useState<Subscription>({
@@ -1574,7 +1571,7 @@ export default function SubscriberCreate() {
         <div key={index} id={toHex(row.singleNssai!.sst)+row.singleNssai!.sd!}>
           <Grid container spacing={2}>
             <Grid item xs={10}>
-              <h3>S-NSSAI Configuragtion</h3>
+              <h3>S-NSSAI Configuragtion ({toHex(row.singleNssai!.sst)+row.singleNssai!.sd!})</h3>
             </Grid>
             <Grid item xs={2}>
               <Box display="flex" justifyContent="flex-end">
