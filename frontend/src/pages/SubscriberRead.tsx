@@ -129,12 +129,17 @@ export default function SubscriberRead() {
     }
   }
 
-  const chargingConfig = (flow: any, dnn: string, snssai: Nssai) => {
+  const chargingConfig = (flow: any, dnn: string | undefined, snssai: Nssai) => {
     const flowKey = toHex(snssai.sst) + snssai.sd;
     for (let i = 0; i < data.ChargingDatas!.length; i++) {
       const chargingData = data.ChargingDatas![i]
       console.log("data: ", data)
-      if (chargingData.snssai === flowKey && chargingData.dnn === dnn && chargingData.qosRef === flow.qosRef) {
+      if (
+        chargingData.snssai === flowKey && 
+        chargingData.dnn === dnn &&
+        (chargingData.qosRef === flow.qosRef || flow === "") 
+      )
+      {
         return (
           <Box sx={{ m: 2 }}>
             <Grid container spacing={2}>
@@ -147,12 +152,6 @@ export default function SubscriberRead() {
                 <TableCell style={{ width: "40%" }}> Charging Method </TableCell>
                 <TableCell>{chargingData.chargingMethod}</TableCell>
               </TableBody>
-              {/*
-              <TableBody>
-                <TableCell style={{ width: "40%" }}> Filter </TableCell>
-                <TableCell>{chargingData.filter}</TableCell>
-              </TableBody>
-              */}
               <TableBody>
                 <TableCell style={{ width: "40%" }}> Quota </TableCell>
                 <TableCell>{chargingData.quota}</TableCell>
@@ -418,6 +417,7 @@ export default function SubscriberRead() {
                       </Table>
                       {flowRule(dnn, row.singleNssai!)}
                       {upSecurity(row.dnnConfigurations![dnn])}
+                      {chargingConfig("", undefined, row.singleNssai!)}
                     </Card>
                   </Box>
                 </div>

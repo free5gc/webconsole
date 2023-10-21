@@ -1969,6 +1969,7 @@ func parseCDR(supi string) map[int64]RatingGroupDataUsage {
 }
 
 func GetChargingRecord(c *gin.Context) {
+	logger.BillingLog.Info("Get Charging Record")
 	setCorsHeader(c)
 
 	if !CheckAuth(c) {
