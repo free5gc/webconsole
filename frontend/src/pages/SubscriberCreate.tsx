@@ -240,7 +240,7 @@ export default function SubscriberCreate() {
         "gbrDL": "207 Mbps"
       }
     ],
-    "ChargingDatas": [
+    ChargingDatas: [
       {
         "snssai": "01010203",
         "filter": "",
@@ -340,7 +340,7 @@ export default function SubscriberCreate() {
       data.ueId = supi;
       axios
         .post("/api/subscriber/" + data.ueId + "/" + data.plmnID, data)
-        .then((res) => {
+        .then(() => {
           navigation("/subscriber");
         })
         .catch((err) => {
@@ -394,7 +394,7 @@ export default function SubscriberCreate() {
     }
     axios
       .put("/api/subscriber/" + data.ueId + "/" + data.plmnID, data)
-      .then((res) => {
+      .then(() => {
         navigation("/subscriber/" + data.ueId + "/" + data.plmnID);
       })
       .catch((err) => {
