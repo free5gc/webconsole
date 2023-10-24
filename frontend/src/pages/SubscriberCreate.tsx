@@ -1055,12 +1055,14 @@ export default function SubscriberCreate() {
     event: SelectChangeEvent<string>,
     dnn: string | undefined,
     flowKey: string,
+    filter: string | undefined,
   ): void => {
     for (let i = 0; i < data.ChargingDatas!.length; i++) {
       for (let j = 0 ; j < data.QosFlows!.length; j++) {
         if (
           data.ChargingDatas![i].snssai === flowKey && 
-          data.ChargingDatas![i].dnn === dnn
+          data.ChargingDatas![i].dnn === dnn &&
+          data.ChargingDatas![i].filter === filter
         ) 
         {
           data.ChargingDatas![i]!.chargingMethod = event.target.value;
@@ -1075,12 +1077,14 @@ export default function SubscriberCreate() {
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     dnn: string | undefined,
     flowKey: string,
+    filter: string | undefined,
   ): void => {
       for (let i = 0; i < data.ChargingDatas!.length; i++) {
         for (let j = 0 ; j < data.QosFlows!.length; j++) {
           if (
             data.ChargingDatas![i].snssai === flowKey && 
-            data.ChargingDatas![i].dnn === dnn
+            data.ChargingDatas![i].dnn === dnn &&
+            data.ChargingDatas![i].filter === filter
             ) 
           {
             data.ChargingDatas![i]!.quota = event.target.value;
@@ -1094,12 +1098,14 @@ export default function SubscriberCreate() {
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     dnn: string | undefined,
     flowKey: string,
+    filter: string | undefined,
   ): void => {
       for (let i = 0; i < data.ChargingDatas!.length; i++) {
         for (let j = 0 ; j < data.QosFlows!.length; j++) {
           if (
             data.ChargingDatas![i].snssai === flowKey && 
-            data.ChargingDatas![i].dnn === dnn
+            data.ChargingDatas![i].dnn === dnn &&
+            data.ChargingDatas![i].filter === filter
             ) 
           {
             data.ChargingDatas![i]!.unitCost = event.target.value;
@@ -1140,14 +1146,15 @@ export default function SubscriberCreate() {
     }
   }
 
-  const chargingConfig = (flow: any, dnn: string | undefined, snssai: Nssai) => {
+  const chargingConfig = (flow: any, dnn: string | undefined, snssai: Nssai, filter: string) => {
     const flowKey = toHex(snssai.sst) + snssai.sd;
     for (let i = 0; i < data.ChargingDatas!.length; i++) {
       const chargingData = data.ChargingDatas![i]
       const idPrefix = snssai + "-" + dnn + "-" + chargingData.qosRef + "-"
       if (
         chargingData.snssai === flowKey && 
-        chargingData.dnn === dnn
+        chargingData.dnn === dnn &&
+        chargingData.filter === filter
       )
       {
         return (
@@ -1170,7 +1177,7 @@ export default function SubscriberCreate() {
                             required
                             fullWidth
                             value={chargingData.chargingMethod}
-                            onChange={(ev) => handleChangeChargingMethod(ev, dnn, flowKey)}
+                            onChange={(ev) => handleChangeChargingMethod(ev, dnn, flowKey, filter)}
                           >
                             <MenuItem value="Offline">Offline</MenuItem>
                             <MenuItem value="Online">Online</MenuItem>
@@ -1185,7 +1192,7 @@ export default function SubscriberCreate() {
                             required
                             fullWidth
                             value={chargingData.quota}
-                            onChange={(ev) => handleChangeChargingQuota(ev, dnn, flowKey)}
+                            onChange={(ev) => handleChangeChargingQuota(ev, dnn, flowKey, filter)}
                           />
                         : 
                           <TextField
@@ -1194,7 +1201,7 @@ export default function SubscriberCreate() {
                             disabled
                             fullWidth
                             value={"0"}
-                            onChange={(ev) => handleChangeChargingQuota(ev, dnn, flowKey)}
+                            onChange={(ev) => handleChangeChargingQuota(ev, dnn, flowKey, filter)}
                           />
                         }
                       </TableCell>
@@ -1205,7 +1212,7 @@ export default function SubscriberCreate() {
                           required
                           fullWidth
                           value={chargingData.unitCost}
-                          onChange={(ev) => handleChangeChargingUnitCost(ev, dnn, flowKey)}
+                          onChange={(ev) => handleChangeChargingUnitCost(ev, dnn, flowKey, filter)}
                         />
                       </TableCell>
                     </TableBody>
@@ -1328,7 +1335,7 @@ export default function SubscriberCreate() {
                     </TableRow>
                   </TableBody>
                 </Table>
-                {chargingConfig(flow, dnn, snssai)}
+                {chargingConfig(flow, dnn, snssai, flow.filter!)}
               </Card>
             </Box>
           </div>
@@ -1781,7 +1788,7 @@ export default function SubscriberCreate() {
             </Grid>
             <div>
               <Box sx={{ m: 2 }}>
-                {chargingConfig(undefined, undefined, row.singleNssai!)}
+                {chargingConfig(undefined, undefined, row.singleNssai!, "")}
               </Box>
             </div>
           </Card>

@@ -1931,7 +1931,6 @@ type RatingGroupDataUsage struct {
 	TotalVol int64
 	UlVol    int64
 	DlVol    int64
-	Quota    int64
 }
 
 // Get vol from CDR
@@ -2052,7 +2051,6 @@ func GetChargingRecord(c *gin.Context) {
 				ueUsage.TotalVol += du.TotalVol
 				ueUsage.UlVol += du.UlVol
 				ueUsage.DlVol += du.DlVol
-				ueUsage.Quota = quota
 				// TODO: frontend should presentat pdu level charging information
 				logger.ProcLog.Tracef("Currently the frontend will not show the pdu level charging info")
 			}
@@ -2064,7 +2062,6 @@ func GetChargingRecord(c *gin.Context) {
 			"DataTotalVolume":    ueUsage.TotalVol,
 			"DataVolumeUplink":   ueUsage.UlVol,
 			"DataVolumeDownlink": ueUsage.DlVol,
-			"Quota":              ueUsage.Quota,
 		}
 
 		if len(flowInfos) > 0 {
