@@ -13,10 +13,13 @@ import {
   TableRow,
 } from "@mui/material";
 
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 export default function ChargingRecordList() {
   
   const [cr, setCr] = useState<ChargingRecord[]>([]) // cr: charging record
+  const [expand, setExpand] = useState(false)
 
   function fetchUEWithCR() {
     const MSG_FETCH_ERROR = "Error fetching registered UEs. Is the core network up?";
@@ -39,6 +42,14 @@ export default function ChargingRecordList() {
     fetchUEWithCR()
   }
 
+  const onExpand = () => {
+    if (expand === true) {
+      setExpand(false)
+    } else {
+      setExpand(true)
+    }
+  }
+
   const tableView = (
     <Table>
       <TableHead>
@@ -54,7 +65,14 @@ export default function ChargingRecordList() {
         <TableBody>
           {cr.map((row, index) => (
             <TableRow key={index}>
-              <TableCell>{row.Supi}</TableCell>
+              <TableCell>
+                {row.Supi}
+                <Button
+                  onClick={() => onExpand()}
+                >
+                {expand === true ? <ExpandMoreIcon viewBox="0 0 24 24"/> : <ExpandLessIcon viewBox="0 0 24 24"/>}
+                </Button>
+              </TableCell>
               <TableCell>{row.CmState}</TableCell>
               <TableCell>{row.Quota}</TableCell>
               <TableCell>{row.DataTotalVolume}</TableCell>
@@ -62,10 +80,10 @@ export default function ChargingRecordList() {
               <TableCell>{row.DataVolumeDownlink}</TableCell>
             </TableRow>
           ))}
-          {cr.map((row, index) => (
+          {expand === true ? cr.map((row, index) => (
             row.flowInfos?.map((flowChargingRecord, i) => (
               <TableRow key={i}>
-                <TableCell>{row.Supi}</TableCell>
+                <TableCell>{}</TableCell>
                 <TableCell>{flowChargingRecord.Filter}</TableCell>
                 <TableCell>{flowChargingRecord.QuotaLeft}</TableCell>
                 <TableCell>{flowChargingRecord.DataTotalVolume}</TableCell>
@@ -73,7 +91,9 @@ export default function ChargingRecordList() {
                 <TableCell>{flowChargingRecord.DataVolumeDownlink}</TableCell>
               </TableRow>
             ))
-          ))}
+          )): 
+              <></>
+          }
         </TableBody>
     </Table>
   )
