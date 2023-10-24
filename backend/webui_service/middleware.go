@@ -7,8 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// var PublicPath = "public"
-var PublicPath = "frontend/build"
+var PublicPath = "public"
+
+// var PublicPath = "frontend/build"
 
 func ReturnPublic() gin.HandlerFunc {
 	return func(context *gin.Context) {

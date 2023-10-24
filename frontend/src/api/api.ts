@@ -921,44 +921,99 @@ export interface Tenant {
     'unitCost'?: string;
 }
 /**
- * 
+ *
  * @export
  * @interface ChargingRecord
  */
  export interface ChargingRecord {
     /**
-     * 
+     *
      * @type {string}
      * @memberof ChargingRecord
      */
-     'SUPI'?: string;
+     'Supi'?: string;
      /**
-      * 
+      *
       * @type {string}
       * @memberof ChargingRecord
       */
-     'Status'?: string;
+     'CmState'?: string;
      /**
-     * 
+     *
      * @type {string}
      * @memberof ChargingRecord
      */
     'Quota'?: string;
     /**
-     * 
+     *
      * @type {string}
      * @memberof ChargingRecord
      */
-    'Data Total Volume'?: string;
+    'DataTotalVolume'?: string;
     /**
-     * 
+     *
      * @type {string}
      * @memberof ChargingRecord
      */
-     'Data Volume Downlink'?: string;
+    'DataVolumeDownlink'?: string;
+     /**
+     *
+     * @type {string}
+     * @memberof ChargingRecord
+     */
+    'DataVolumeUplink'?: string;
+    /**
+     *
+     * @type {flowChargingRecord[]}
+     * @memberof ChargingRecord
+     */
+    'flowInfos'?: flowChargingRecord[];
 }
 /**
- * 
+ *
+ * @export
+ * @interface ChargingRecord
+ */
+export interface flowChargingRecord {
+    /**
+     *
+     * @type {string}
+     * @memberof flowChargingRecord
+     */
+    'Supi'?: string;
+    /**
+     *
+     * @type {string}
+     * @memberof flowChargingRecord
+     */
+    'Filter'?: string;
+    /**
+    *
+    * @type {string}
+    * @memberof flowChargingRecord
+    */
+   'QuotaLeft'?: string;
+   /**
+    *
+    * @type {string}
+    * @memberof flowChargingRecord
+    */
+   'DataTotalVolume'?: string;
+   /**
+    *
+    * @type {string}
+    * @memberof flowChargingRecord
+    */
+   'DataVolumeDownlink'?: string;
+    /**
+    *
+    * @type {string}
+    * @memberof flowChargingRecord
+    */
+   'DataVolumeUplink'?: string;
+}
+/**
+ *
  * @export
  * @interface Tunnel
  */

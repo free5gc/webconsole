@@ -1931,6 +1931,7 @@ type RatingGroupDataUsage struct {
 	TotalVol int64
 	UlVol    int64
 	DlVol    int64
+	Quota    int64
 }
 
 // Get vol from CDR
@@ -1985,7 +1986,8 @@ func GetChargingRecord(c *gin.Context) {
 	if amfUris := webuiSelf.GetOamUris(models.NfType_AMF); amfUris != nil {
 		requestUri := fmt.Sprintf("%s/namf-oam/v1/registered-ue-context", amfUris[0])
 
-		resp, err := http.NewRequestWithContext(context.Background(), http.MethodGet, requestUri, nil)
+		// resp, err := http.NewRequestWithContext(context.Background(), http.MethodGet, requestUri, nil)
+		resp, err := httpsClient.Get(requestUri)
 		if err != nil {
 			logger.ProcLog.Error(err)
 			c.JSON(http.StatusInternalServerError, gin.H{})
@@ -2018,6 +2020,7 @@ func GetChargingRecord(c *gin.Context) {
 		ratingGroupDataUsage := parseCDR(supi)
 
 		for rg, du := range ratingGroupDataUsage {
+			logger.ProcLog.Warnln("rg:", rg, "du:", du)
 			var chargingData ChargingData
 
 			filter := bson.M{"ueId": supi, "ratingGroup": rg}
@@ -2036,7 +2039,7 @@ func GetChargingRecord(c *gin.Context) {
 				logger.BillingLog.Error(err)
 			}
 
-			if chargingData.Filter != "" && chargingData.Dnn != "" {
+			if chargingData.Filter != "" && chargingData.Dnn != "" { // per flow
 				flowInfos = append(flowInfos, FlowInfo{
 					Filter:             chargingData.Filter,
 					DataTotalVolume:    du.TotalVol,
@@ -2045,20 +2048,13 @@ func GetChargingRecord(c *gin.Context) {
 					QuotaLeft:          quota,
 				})
 			} else {
-				// UE only revord the PDU level usage to prevent count the volume of flow and pdu twice
+				// UE only record the PDU level usage to prevent count the volume of flow and pdu twice
 				ueUsage.TotalVol += du.TotalVol
 				ueUsage.UlVol += du.UlVol
 				ueUsage.DlVol += du.DlVol
-
+				ueUsage.Quota = quota
 				// TODO: frontend should presentat pdu level charging information
 				logger.ProcLog.Tracef("Currently the frontend will not show the pdu level charging info")
-				// flowInfos = append(flowInfos, FlowInfo{
-				// 	Filter:             chargingData.Snssai,
-				// 	DataTotalVolume:    du.TotalVol,
-				// 	DataVolumeUplink:   du.UlVol,
-				// 	DataVolumeDownlink: du.DlVol,
-				// 	QuotaLeft:          quota,
-				// })
 			}
 		}
 
@@ -2068,6 +2064,7 @@ func GetChargingRecord(c *gin.Context) {
 			"DataTotalVolume":    ueUsage.TotalVol,
 			"DataVolumeUplink":   ueUsage.UlVol,
 			"DataVolumeDownlink": ueUsage.DlVol,
+			"Quota":              ueUsage.Quota,
 		}
 
 		if len(flowInfos) > 0 {
