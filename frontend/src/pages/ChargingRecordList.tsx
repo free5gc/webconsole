@@ -56,7 +56,7 @@ export default function ChargingRecordList() {
   /* eslint-disable react/prop-types */
   const PerFlowTableView = ({ FlowCharingRecords }: Props): React.ReactElement => (
     <>
-      {expand === true ? FlowCharingRecords!.map((FlowChargingRecord, i) => (
+      {expand === true ? FlowCharingRecords?.map((FlowChargingRecord, i) => (
             <TableRow key={i}>
               <TableCell>{}</TableCell>
               <TableCell>{FlowChargingRecord.Filter}</TableCell>
