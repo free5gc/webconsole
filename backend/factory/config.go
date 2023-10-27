@@ -35,13 +35,14 @@ func (c *Config) Validate() (bool, error) {
 }
 
 type Info struct {
-	Version     string `yaml:"version,omitempty" valid:"required,in(1.0.1)"`
+	Version     string `yaml:"version,omitempty" valid:"required,in(1.0.2)"`
 	Description string `yaml:"description,omitempty" valid:"type(string)"`
 }
 
 type Configuration struct {
 	WebServer *WebServer `yaml:"webServer,omitempty" valid:"optional"`
 	Mongodb   *Mongodb   `yaml:"mongodb" valid:"required"`
+	NrfUri    string     `yaml:"nrfUri" valid:"required"`
 }
 
 type Logger struct {
