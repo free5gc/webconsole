@@ -1,4 +1,4 @@
-import React, { Component, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "../axios";
 import { ChargingRecord, flowChargingRecord } from "../api/api";
 import Dashboard from "../Dashboard";
@@ -30,7 +30,7 @@ export default function ChargingRecordList() {
         console.log(res.data)
       })
       .catch((err) => {
-        console.log(err)
+        console.log(MSG_FETCH_ERROR, err)
       })
   }
 
@@ -43,11 +43,8 @@ export default function ChargingRecordList() {
   }
 
   const onExpand = () => {
-    if (expand === true) {
-      setExpand(false)
-    } else {
-      setExpand(true)
-    }
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    const ret = (expand === true) ? setExpand(false) : setExpand(true)
   }
   
   interface Props {

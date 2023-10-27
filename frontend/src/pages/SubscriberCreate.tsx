@@ -244,8 +244,8 @@ export default function SubscriberCreate() {
       {
         "snssai": "01010203",
         "filter": "",
-        "chargingMethod": "Offline",
-        "quota": "0",
+        "chargingMethod": "Online",
+        "quota": "100000",
         "unitCost": "1",
       },
       {
@@ -254,14 +254,14 @@ export default function SubscriberCreate() {
         "qosRef": 1,
         "filter": "0.0.0.0/32",
         "chargingMethod": "Online",
-        "quota": "10000",
+        "quota": "100000",
         "unitCost": "2",
       },
       {
         "snssai": "01112233",
         "filter": "",
-        "chargingMethod": "Offline",
-        "quota": "0",
+        "chargingMethod": "Online",
+        "quota": "100000",
         "unitCost": "1",
       },
       {
@@ -441,7 +441,7 @@ export default function SubscriberCreate() {
     }
   };
 
-  const onDnn = (index: number) => {
+  const onDnnAdd = (index: number) => {
     if (data.SessionManagementSubscriptionData !== undefined) {
       const name = dnnName[index];
       if (name === undefined || name === "") {
@@ -538,49 +538,63 @@ export default function SubscriberCreate() {
   };
 
   const onFlowRulesAdd = (dnn: string, snssai: Nssai) => {
-    if (dnn !== undefined) {
-      const sstSd = toHex(snssai.sst) + snssai.sd!
-      const filter = "0.0.0.0/32"
-      const selected5Qi = select5Qi(dnn, snssai)
-      const selectedQosRef = selectQosRef()
-      data.FlowRules!.push({
-        "filter": filter,
-        "precedence": 127,
-        "snssai": sstSd,
-        "dnn": dnn,
-        "qosRef": selectedQosRef
-      })
-      data.QosFlows!.push({
-        "snssai": sstSd,
-        "dnn": dnn,
-        "qosRef": selectedQosRef,
-        "5qi": selected5Qi, 
-        "mbrUL": "200 Mbps",
-        "mbrDL": "200 Mbps",
-        "gbrUL": "100 Mbps",
-        "gbrDL": "100 Mbps"
+    const sstSd = toHex(snssai.sst) + snssai.sd!
+    let filter = "8.8.8.8/32"
+    for (;;) {
+      let flag = false
+      for (let i = 0 ; i < data.FlowRules!.length ; i++) {
+        if (filter === data.FlowRules![i]!.filter) {
+          const c = Math.floor(Math.random() * 256)
+          const d = Math.floor(Math.random() * 256)
+          filter  = "10.10." + c.toString() + "." + d.toString() + "/32"
+          flag = true
+          break
+        }
+      }
+
+      if (!flag) break
+    }
+
+    const selected5Qi = select5Qi(dnn, snssai)
+    const selectedQosRef = selectQosRef()
+    data.FlowRules!.push({
+      "filter": filter,
+      "precedence": 127,
+      "snssai": sstSd,
+      "dnn": dnn,
+      "qosRef": selectedQosRef
     })
+
+    data.QosFlows!.push({
+      "snssai": sstSd,
+      "dnn": dnn,
+      "qosRef": selectedQosRef,
+      "5qi": selected5Qi,
+      "mbrUL": "200 Mbps",
+      "mbrDL": "200 Mbps",
+      "gbrUL": "100 Mbps",
+      "gbrDL": "100 Mbps"
+    })
+
     data.ChargingDatas!.push({
         "snssai": sstSd,
         "dnn": dnn,
         "qosRef": selectedQosRef,
         "filter": filter,
-        "chargingMethod": "Offline",
-        "quota": "0",
+        "chargingMethod": "Online",
+        "quota": "100000",
         "unitCost": "1",
     })
-    }
+    
     setData({ ...data });
   };
 
-  const onUpSecurityDelete = (dnn: DnnConfiguration | undefined) => {
-    if (dnn !== undefined) {
-      dnn.upSecurity = undefined;
-    }
+  const onUpSecurityDelete = (dnn: DnnConfiguration) => {
+    dnn.upSecurity = undefined;
     setData({ ...data });
   };
 
-  const isDefaultNssai = (nssai: Nssai | undefined) => {
+  const isDefaultNssai = (nssai: Nssai) => {
     if (nssai === undefined || data.AccessAndMobilitySubscriptionData === undefined) {
       return false;
     } else {
@@ -882,8 +896,8 @@ export default function SubscriberCreate() {
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     index: number,
   ): void => {
-    dnnName[index] = event.target.value;
-    setDnnName({ ...dnnName });
+    dnnName[index] = event.target.value
+    setDnnName({ ...dnnName })
   };
 
   const handleChangeUplinkAMBR = (
@@ -1659,7 +1673,7 @@ export default function SubscriberCreate() {
                   <TableCell>Default S-NSSAI</TableCell>
                   <TableCell align="right">
                     <Checkbox
-                      checked={isDefaultNssai(row.singleNssai)}
+                      checked={isDefaultNssai(row.singleNssai!)}
                       onChange={(ev) => handleChangeDefaultSnssai(ev, row.singleNssai)}
                     />
                   </TableCell>
@@ -1778,7 +1792,7 @@ export default function SubscriberCreate() {
                   <Button
                     color="secondary"
                     variant="contained"
-                    onClick={() => onDnn(index)}
+                    onClick={() => onDnnAdd(index)}
                     sx={{ m: 3 }}
                   >
                     &nbsp;&nbsp;+DNN&nbsp;&nbsp;
