@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -1383,31 +1384,6 @@ func sendRechargeNotification(ueId string, rg int32) {
 	webuiSelf.UpdateNfProfiles()
 
 	requestUri := fmt.Sprintf("%s/nchf-convergedcharging/v3/recharging/%s_%d", "http://127.0.0.113:8000", ueId, rg)
-
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPut, requestUri, nil)
-	if err != nil {
-		logger.ProcLog.Error(err)
-	}
-
-	req.Header.Add("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		logger.ProcLog.Errorf("Send Charging Notification err: %+v", err)
-	}
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			logger.ProcLog.Error(closeErr)
-		}
-	}()
-}
-
-func sendRechargeNotification(ueId string, rg int32) {
-	logger.ProcLog.Infoln("Send Notification to CHF due to quota change")
-	webuiSelf := webui_context.GetSelf()
-	webuiSelf.UpdateNfProfiles()
-
-	requestUri := fmt.Sprintf("%s/nchf-convergedcharging/v3/recharging/%s_%d", "http://127.0.0.113:8000", ueId, rg)
 	req, err := http.NewRequest(http.MethodPut, requestUri, nil)
 	if err != nil {
 		logger.ProcLog.Error(err)
@@ -1739,6 +1715,15 @@ func PatchSubscriberByID(c *gin.Context) {
 	c.JSON(http.StatusNoContent, gin.H{})
 }
 
+func removeCdrFile(CdrFilePath string) {
+	if _, err := os.Stat(CdrFilePath); err == nil {
+		logger.BillingLog.Infof("Remove CDR file: " + CdrFilePath)
+		if err := os.Remove(CdrFilePath); err != nil {
+			logger.BillingLog.Warnf("Failed to remove CDR file: %s\n", CdrFilePath)
+		}
+	}
+}
+
 // Delete subscriber by IMSI(ueId) and PlmnID(servingPlmnId)
 func DeleteSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
@@ -1756,6 +1741,13 @@ func DeleteSubscriberByID(c *gin.Context) {
 	}
 	var claims jwt.MapClaims = nil
 	dbOperation(supi, servingPlmnId, "delete", nil, claims)
+
+	CdrFilePath := "/tmp/" + ueId + ".cdr"
+	removeCdrFile(CdrFilePath)
+
+	CdrFilePath = "/tmp/webconsole/" + ueId + ".cdr"
+	removeCdrFile(CdrFilePath)
+
 	c.JSON(http.StatusNoContent, gin.H{})
 }
 
