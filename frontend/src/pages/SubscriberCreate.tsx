@@ -243,7 +243,6 @@ export default function SubscriberCreate() {
     ChargingDatas: [
       {
         "snssai": "01010203",
-        "filter": "",
         "chargingMethod": "Online",
         "quota": "100000",
         "unitCost": "1",
@@ -259,7 +258,6 @@ export default function SubscriberCreate() {
       },
       {
         "snssai": "01112233",
-        "filter": "",
         "chargingMethod": "Online",
         "quota": "100000",
         "unitCost": "1",
@@ -1160,13 +1158,13 @@ export default function SubscriberCreate() {
     }
   }
 
-  const chargingConfig = (flow: any, dnn: string | undefined, snssai: Nssai, filter: string) => {
+  const chargingConfig = (flow: any, dnn: string | undefined, snssai: Nssai, filter: string | undefined) => {
     const flowKey = toHex(snssai.sst) + snssai.sd;
     for (let i = 0; i < data.ChargingDatas!.length; i++) {
       const chargingData = data.ChargingDatas![i]
       const idPrefix = snssai + "-" + dnn + "-" + chargingData.qosRef + "-"
       if (
-        chargingData.snssai === flowKey && 
+        chargingData.snssai === flowKey &&
         chargingData.dnn === dnn &&
         chargingData.filter === filter
       )
@@ -1802,7 +1800,7 @@ export default function SubscriberCreate() {
             </Grid>
             <div>
               <Box sx={{ m: 2 }}>
-                {chargingConfig(undefined, undefined, row.singleNssai!, "")}
+                {chargingConfig(toHex(row.singleNssai!.sst) + row.singleNssai!.sd!, undefined, row.singleNssai!, undefined)}
               </Box>
             </div>
           </Card>
