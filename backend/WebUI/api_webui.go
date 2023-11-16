@@ -171,7 +171,7 @@ func getMsisdn(gpsis interface{}) string {
 	return msisdn
 }
 
-func msisdnToSupi(ueId string) string {
+func gpsiToSupi(ueId string) string {
 	if strings.HasPrefix(ueId, "msisdn-") {
 		filter := bson.M{"msisdn": ueId[7:]}
 		dbResult, err := mongoapi.RestfulAPIGetOne(identityDataColl, filter)
@@ -1068,7 +1068,7 @@ func GetSubscriberByID(c *gin.Context) {
 	var subsData SubsData
 
 	ueId := c.Param("ueId")
-	ueId = msisdnToSupi(ueId)
+	ueId = gpsiToSupi(ueId)
 	servingPlmnId := c.Param("servingPlmnId")
 	// checking whether msisdn is successfully transformed to supi or not
 	if ueId == "" {
@@ -1300,7 +1300,7 @@ func PostSubscriberByID(c *gin.Context) {
 		subsData.AccessAndMobilitySubscriptionData.Gpsis[0] = "msisdn-" + msisdn
 		// create a msisdn-supi map
 		logger.ProcLog.Infof("PostSubscriberByID msisdn: %+v", msisdn)
-		msisdnSupiMapOperation(ueId, msisdn, "post")
+		identityDataOperation(ueId, msisdn, "post")
 		filterUeIdOnly := bson.M{"ueId": ueId}
 
 		// Lookup same UE ID of other tenant's subscription.
@@ -1336,19 +1336,19 @@ func validate(supi string, msisdn string) bool {
 	}
 }
 
-func msisdnSupiMapOperation(supi string, msisdn string, method string) {
+func identityDataOperation(supi string, msisdn string, method string) {
 	filter := bson.M{"ueId": supi}
 	data := bson.M{"ueId": supi, "msisdn": msisdn}
 
 	if method == "put" || method == "post" {
 		if msisdn != "" {
 			if _, err := mongoapi.RestfulAPIPutOne(identityDataColl, filter, data); err != nil {
-				logger.ProcLog.Errorf("PutMsisdnSupiMap err: %+v", err)
+				logger.ProcLog.Errorf("PutIdentityData err: %+v", err)
 			}
 		} else {
 			// delete
 			if err := mongoapi.RestfulAPIDeleteOne(identityDataColl, filter); err != nil {
-				logger.ProcLog.Errorf("DeleteMsisdnSupiMap err: %+v", err)
+				logger.ProcLog.Errorf("DeleteIdentityData err: %+v", err)
 			}
 		}
 	}
@@ -1513,7 +1513,7 @@ func PutSubscriberByID(c *gin.Context) {
 	}
 
 	logger.ProcLog.Infof("PutSubscriberByID msisdn: %+v", msisdn)
-	msisdnSupiMapOperation(ueId, msisdn, "put")
+	identityDataOperation(ueId, msisdn, "put")
 
 	var claims jwt.MapClaims = nil
 	dbOperation(ueId, servingPlmnId, "put", &subsData, claims)
@@ -1535,7 +1535,7 @@ func PatchSubscriberByID(c *gin.Context) {
 	}
 
 	ueId := c.Param("ueId")
-	ueId = msisdnToSupi(ueId)
+	ueId = gpsiToSupi(ueId)
 	servingPlmnId := c.Param("servingPlmnId")
 	// checking whether msisdn is successfully transformed to supi or not
 	if ueId == "" {
@@ -1614,7 +1614,7 @@ func DeleteSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Delete One Subscriber Data")
 	ueId := c.Param("ueId")
-	ueId = msisdnToSupi(ueId)
+	ueId = gpsiToSupi(ueId)
 	servingPlmnId := c.Param("servingPlmnId")
 	// checking whether msisdn is successfully transformed to supi or not
 	if ueId == "" {
