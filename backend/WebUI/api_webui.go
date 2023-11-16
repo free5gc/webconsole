@@ -26,17 +26,17 @@ import (
 )
 
 const (
-	authSubsDataColl  = "subscriptionData.authenticationData.authenticationSubscription"
-	amDataColl        = "subscriptionData.provisionedData.amData"
-	smDataColl        = "subscriptionData.provisionedData.smData"
-	smfSelDataColl    = "subscriptionData.provisionedData.smfSelectionSubscriptionData"
-	amPolicyDataColl  = "policyData.ues.amData"
-	smPolicyDataColl  = "policyData.ues.smData"
-	flowRuleDataColl  = "policyData.ues.flowRule"
-	qosFlowDataColl   = "policyData.ues.qosFlow"
-	userDataColl      = "userData"
-	tenantDataColl    = "tenantData"
-	msisdnSupiMapColl = "subscriptionData.msisdnSupiMap"
+	authSubsDataColl = "subscriptionData.authenticationData.authenticationSubscription"
+	amDataColl       = "subscriptionData.provisionedData.amData"
+	smDataColl       = "subscriptionData.provisionedData.smData"
+	smfSelDataColl   = "subscriptionData.provisionedData.smfSelectionSubscriptionData"
+	amPolicyDataColl = "policyData.ues.amData"
+	smPolicyDataColl = "policyData.ues.smData"
+	flowRuleDataColl = "policyData.ues.flowRule"
+	qosFlowDataColl  = "policyData.ues.qosFlow"
+	userDataColl     = "userData"
+	tenantDataColl   = "tenantData"
+	identityDataColl = "subscriptionData.identityData"
 )
 
 var jwtKey = "" // for generating JWT
@@ -174,7 +174,7 @@ func getMsisdn(gpsis interface{}) string {
 func msisdnToSupi(ueId string) string {
 	if strings.HasPrefix(ueId, "msisdn-") {
 		filter := bson.M{"msisdn": ueId[7:]}
-		dbResult, err := mongoapi.RestfulAPIGetOne(msisdnSupiMapColl, filter)
+		dbResult, err := mongoapi.RestfulAPIGetOne(identityDataColl, filter)
 		if err != nil {
 			logger.ProcLog.Errorf("GetSupibyMsisdn err: %+v", err)
 		}
@@ -1325,7 +1325,7 @@ func PostSubscriberByID(c *gin.Context) {
 
 func validate(supi string, msisdn string) bool {
 	filter := bson.M{"msisdn": msisdn}
-	msisdnSupiMap, err := mongoapi.RestfulAPIGetOne(msisdnSupiMapColl, filter)
+	msisdnSupiMap, err := mongoapi.RestfulAPIGetOne(identityDataColl, filter)
 	if err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 	}
@@ -1342,12 +1342,12 @@ func msisdnSupiMapOperation(supi string, msisdn string, method string) {
 
 	if method == "put" || method == "post" {
 		if msisdn != "" {
-			if _, err := mongoapi.RestfulAPIPutOne(msisdnSupiMapColl, filter, data); err != nil {
+			if _, err := mongoapi.RestfulAPIPutOne(identityDataColl, filter, data); err != nil {
 				logger.ProcLog.Errorf("PutMsisdnSupiMap err: %+v", err)
 			}
 		} else {
 			// delete
-			if err := mongoapi.RestfulAPIDeleteOne(msisdnSupiMapColl, filter); err != nil {
+			if err := mongoapi.RestfulAPIDeleteOne(identityDataColl, filter); err != nil {
 				logger.ProcLog.Errorf("DeleteMsisdnSupiMap err: %+v", err)
 			}
 		}
@@ -1391,7 +1391,7 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 		if err := mongoapi.RestfulAPIDeleteMany(qosFlowDataColl, filter); err != nil {
 			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
 		}
-		if err := mongoapi.RestfulAPIDeleteOne(msisdnSupiMapColl, filterUeIdOnly); err != nil {
+		if err := mongoapi.RestfulAPIDeleteOne(identityDataColl, filterUeIdOnly); err != nil {
 			logger.ProcLog.Errorf("DeleteMsisdnSupiMap err: %+v", err)
 		}
 	}
