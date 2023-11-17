@@ -165,28 +165,31 @@ func getMsisdn(gpsis interface{}) string { // select first msisdn from gpsis
 	for i := 0; i < gpsisReflected.Len(); i++ {
 		gpsi := gpsisReflected.Index(i).Interface().(string) // transform type reflect.value to string
 		if strings.HasPrefix(gpsi, "msisdn-") {              // check if gpsi contain prefix "msisdn-"
-			msisdn = gpsi[7:]
+			msisdn = gpsi
 		}
 	}
+
 	return msisdn
 }
 
-func gpsiToSupi(gpsi string) string {
-	if strings.HasPrefix(gpsi, "msisdn-") { // if gpsi's prefix is "msisdn-"
-		filter := bson.M{"gpsi": gpsi[7:]}
+func gpsiToSupi(ueId string) string { // input ueId could be: IMSI, GPSI
+	// If ueId is IMSI, immediately return IMSI without modify.
+	// If ueId prefix is "msisdn-", it means that ueId now is GPSI (MSISDN), and we have to map to SUPI.
+	if strings.HasPrefix(ueId, "msisdn-") {
+		filter := bson.M{"gpsi": ueId}
 		dbResult, err := mongoapi.RestfulAPIGetOne(identityDataColl, filter)
 		if err != nil {
 			logger.ProcLog.Errorf("GetSupibyMsisdn err: %+v", err)
 		}
 		if dbResult != nil {
-			gpsi = dbResult["ueId"].(string)
+			ueId = dbResult["ueId"].(string)
 		} else {
 			// db cannot find a supi mapped to msisdn, return null string for error detection
 			logger.ProcLog.Error("msisdn not found")
 			return ""
 		}
 	}
-	return gpsi
+	return ueId // This must match SUPI format
 }
 
 func sendResponseToClient(c *gin.Context, response *http.Response) {
@@ -1262,13 +1265,16 @@ func PostSubscriberByID(c *gin.Context) {
 		return
 	}
 	gpsi := getMsisdn(toBsonM(subsData.AccessAndMobilitySubscriptionData)["gpsis"])
-	gpsiTemp := 0
+	gpsiInt := 0
 	if gpsi != "" {
-		gpsiTemp, err = strconv.Atoi(gpsi)
+		if len(gpsi) > 7 && gpsi[:7] == "msisdn-" { // case: MSISDN
+			gpsiInt, err = strconv.Atoi(gpsi[7:])
+		}
+
 		if err != nil {
 			logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err)
 			c.JSON(http.StatusBadRequest, gin.H{
-				"cause": "gpsi format incorrect",
+				"cause": "gpsi format incorrect (now only support MSISDN format)",
 			})
 			return
 		}
@@ -1285,7 +1291,7 @@ func PostSubscriberByID(c *gin.Context) {
 
 	for i := 0; i < userNumberTemp; i++ {
 		ueId = fmt.Sprintf("imsi-%015d", ueIdTemp)
-		if gpsiTemp != 0 {
+		if gpsiInt != 0 {
 			if !validate(ueId, gpsi) {
 				logger.ProcLog.Errorf("duplicate gpsi: %v", gpsi)
 				c.JSON(http.StatusBadRequest, gin.H{
@@ -1293,11 +1299,11 @@ func PostSubscriberByID(c *gin.Context) {
 				})
 				return
 			}
-			gpsiTemp += 1
+			gpsiInt += 1
 		}
 		ueIdTemp += 1
 
-		subsData.AccessAndMobilitySubscriptionData.Gpsis[0] = "msisdn-" + gpsi
+		subsData.AccessAndMobilitySubscriptionData.Gpsis[0] = gpsi
 		// create a msisdn-supi map
 		logger.ProcLog.Infof("PostSubscriberByID gpsi: %+v", subsData.AccessAndMobilitySubscriptionData.Gpsis[0])
 		identityDataOperation(ueId, gpsi, "post")

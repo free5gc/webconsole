@@ -1256,7 +1256,7 @@ export default function SubscriberCreate() {
             <TableRow>
               <TableCell>
                 <TextField
-                  label="MSISDN"
+                  label="GPSI (MSISDN)"
                   variant="outlined"
                   required
                   fullWidth
