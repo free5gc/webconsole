@@ -204,14 +204,14 @@ export default function SubscriberCreate() {
     },
     FlowRules: [
       {
-        "filter": "0.0.0.0/32",
+        "filter": "10.10.0.84/32",
         "precedence": 128,
         "snssai": "01010203",
         "dnn": "internet",
         "qosRef": 1
       },
       {
-        "filter": "0.0.0.0/32",
+        "filter": "10.10.0.84/32",
         "precedence": 127,
         "snssai": "01112233",
         "dnn": "internet",
@@ -251,7 +251,7 @@ export default function SubscriberCreate() {
         "snssai": "01010203",
         "dnn": "internet",
         "qosRef": 1,
-        "filter": "0.0.0.0/32",
+        "filter": "10.10.0.84/32",
         "chargingMethod": "Online",
         "quota": "100000",
         "unitCost": "2",
@@ -266,7 +266,7 @@ export default function SubscriberCreate() {
         "snssai": "01112233",
         "dnn": "internet",
         "qosRef": 2,
-        "filter": "0.0.0.0/32",
+        "filter": "10.10.0.84/32",
         "chargingMethod": "Online",
         "quota": "2000",
         "unitCost": "2",

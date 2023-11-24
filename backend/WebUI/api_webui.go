@@ -1942,7 +1942,6 @@ func parseCDR(supi string) map[int64]RatingGroupDataUsage {
 			logger.BillingLog.Error(err)
 		}
 		chargingRecord := *(val.(*cdrType.ChargingRecord))
-
 		for _, multipleUnitUsage := range chargingRecord.ListOfMultipleUnitUsage {
 			rg := multipleUnitUsage.RatingGroup.Value
 			du := dataUsage[rg]
@@ -2011,7 +2010,6 @@ func GetChargingRecord(c *gin.Context) {
 		ratingGroupDataUsage := parseCDR(supi)
 
 		for rg, du := range ratingGroupDataUsage {
-			logger.ProcLog.Warnln("rg:", rg, "du:", du)
 			var chargingData ChargingData
 
 			filter := bson.M{"ueId": supi, "ratingGroup": rg}
