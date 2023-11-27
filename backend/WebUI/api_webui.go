@@ -43,6 +43,8 @@ const (
 	userDataColl     = "userData"
 	tenantDataColl   = "tenantData"
 	identityDataColl = "subscriptionData.identityData"
+
+	queryStrength = 2
 )
 
 var jwtKey = "" // for generating JWT
@@ -1558,6 +1560,7 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 				if err != nil {
 					logger.ProcLog.Error(err)
 				}
+
 				ratingGroup := previousChargingDataInterface["ratingGroup"]
 				if ratingGroup != nil {
 					rg := ratingGroup.(int32)
