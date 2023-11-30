@@ -1158,7 +1158,7 @@ export default function SubscriberCreate() {
     }
   }
 
-  const chargingConfig = (flow: any, dnn: string | undefined, snssai: Nssai, filter: string | undefined) => {
+  const chargingConfig = (dnn: string | undefined, snssai: Nssai, filter: string | undefined) => {
     const flowKey = toHex(snssai.sst) + snssai.sd;
     for (let i = 0; i < data.ChargingDatas!.length; i++) {
       const chargingData = data.ChargingDatas![i]
@@ -1347,7 +1347,7 @@ export default function SubscriberCreate() {
                     </TableRow>
                   </TableBody>
                 </Table>
-                {chargingConfig(flow, dnn, snssai, flow.filter!)}
+                {chargingConfig(dnn, snssai, flow.filter!)}
               </Card>
             </Box>
           </div>
@@ -1800,7 +1800,7 @@ export default function SubscriberCreate() {
             </Grid>
             <div>
               <Box sx={{ m: 2 }}>
-                {chargingConfig(toHex(row.singleNssai!.sst) + row.singleNssai!.sd!, undefined, row.singleNssai!, undefined)}
+                {chargingConfig(undefined, row.singleNssai!, undefined)}
               </Box>
             </div>
           </Card>

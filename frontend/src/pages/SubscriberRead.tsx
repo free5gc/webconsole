@@ -129,15 +129,14 @@ export default function SubscriberRead() {
     }
   }
 
-  const chargingConfig = (flow: any, dnn: string | undefined, snssai: Nssai) => {
+  const chargingConfig = (dnn: string | undefined, snssai: Nssai, filter: string | undefined) => {
     const flowKey = toHex(snssai.sst) + snssai.sd;
     for (let i = 0; i < data.ChargingDatas!.length; i++) {
       const chargingData = data.ChargingDatas![i]
-      console.log("data: ", data)
       if (
         chargingData.snssai === flowKey && 
         chargingData.dnn === dnn &&
-        (chargingData.qosRef === flow.qosRef || flow === "") 
+        chargingData.filter === filter
       )
       {
         return (
@@ -225,7 +224,7 @@ export default function SubscriberRead() {
                     </TableRow>
                   </TableBody>
                   <TableBody>
-                    <TableCell>{chargingConfig(flow, dnn, snssai!)}</TableCell>
+                    <TableCell>{chargingConfig(dnn, snssai!, flow.filter)}</TableCell>
                   </TableBody>
                 </Table>
               </Card>
@@ -417,7 +416,7 @@ export default function SubscriberRead() {
                       </Table>
                       {flowRule(dnn, row.singleNssai!)}
                       {upSecurity(row.dnnConfigurations![dnn])}
-                      {chargingConfig("", undefined, row.singleNssai!)}
+                      {chargingConfig("", row.singleNssai!, "")}
                     </Card>
                   </Box>
                 </div>
