@@ -2012,6 +2012,7 @@ func GetChargingRecord(c *gin.Context) {
 		supi := ueBsonM["Supi"].(string)
 		ratingGroupDataUsage := parseCDR(supi)
 
+		var pduLevelQuota int64
 		for rg, du := range ratingGroupDataUsage {
 			var chargingData ChargingData
 
@@ -2045,6 +2046,7 @@ func GetChargingRecord(c *gin.Context) {
 				ueUsage.UlVol += du.UlVol
 				ueUsage.DlVol += du.DlVol
 				// TODO: frontend should presentat pdu level charging information
+				pduLevelQuota = quota
 				logger.ProcLog.Tracef("Currently the frontend will not show the pdu level charging info")
 			}
 		}
@@ -2055,6 +2057,7 @@ func GetChargingRecord(c *gin.Context) {
 			"DataTotalVolume":    ueUsage.TotalVol,
 			"DataVolumeUplink":   ueUsage.UlVol,
 			"DataVolumeDownlink": ueUsage.DlVol,
+			"Quota":              pduLevelQuota,
 		}
 
 		if len(flowInfos) > 0 {
