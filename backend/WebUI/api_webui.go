@@ -26,17 +26,17 @@ import (
 )
 
 const (
-	authSubsDataColl  = "subscriptionData.authenticationData.authenticationSubscription"
-	amDataColl        = "subscriptionData.provisionedData.amData"
-	smDataColl        = "subscriptionData.provisionedData.smData"
-	smfSelDataColl    = "subscriptionData.provisionedData.smfSelectionSubscriptionData"
-	amPolicyDataColl  = "policyData.ues.amData"
-	smPolicyDataColl  = "policyData.ues.smData"
-	flowRuleDataColl  = "policyData.ues.flowRule"
-	qosFlowDataColl   = "policyData.ues.qosFlow"
-	userDataColl      = "userData"
-	tenantDataColl    = "tenantData"
-	msisdnSupiMapColl = "subscriptionData.msisdnSupiMap"
+	authSubsDataColl = "subscriptionData.authenticationData.authenticationSubscription"
+	amDataColl       = "subscriptionData.provisionedData.amData"
+	smDataColl       = "subscriptionData.provisionedData.smData"
+	smfSelDataColl   = "subscriptionData.provisionedData.smfSelectionSubscriptionData"
+	amPolicyDataColl = "policyData.ues.amData"
+	smPolicyDataColl = "policyData.ues.smData"
+	flowRuleDataColl = "policyData.ues.flowRule"
+	qosFlowDataColl  = "policyData.ues.qosFlow"
+	userDataColl     = "userData"
+	tenantDataColl   = "tenantData"
+	identityDataColl = "subscriptionData.identityData"
 )
 
 var jwtKey = "" // for generating JWT
@@ -159,22 +159,25 @@ func setCorsHeader(c *gin.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, PATCH, DELETE")
 }
 
-func getMsisdn(gpsis interface{}) string {
+func getMsisdn(gpsis interface{}) string { // select first msisdn from gpsis
 	msisdn := ""
 	gpsisReflected := reflect.ValueOf(gpsis) // use reflect to range over interface{}
 	for i := 0; i < gpsisReflected.Len(); i++ {
 		gpsi := gpsisReflected.Index(i).Interface().(string) // transform type reflect.value to string
 		if strings.HasPrefix(gpsi, "msisdn-") {              // check if gpsi contain prefix "msisdn-"
-			msisdn = gpsi[7:]
+			msisdn = gpsi
 		}
 	}
+
 	return msisdn
 }
 
-func msisdnToSupi(ueId string) string {
+func gpsiToSupi(ueId string) string { // input ueId could be: IMSI, GPSI
+	// If ueId is IMSI, immediately return IMSI without modify.
+	// If ueId prefix is "msisdn-", it means that ueId now is GPSI (MSISDN), and we have to map to SUPI.
 	if strings.HasPrefix(ueId, "msisdn-") {
-		filter := bson.M{"msisdn": ueId[7:]}
-		dbResult, err := mongoapi.RestfulAPIGetOne(msisdnSupiMapColl, filter)
+		filter := bson.M{"gpsi": ueId}
+		dbResult, err := mongoapi.RestfulAPIGetOne(identityDataColl, filter)
 		if err != nil {
 			logger.ProcLog.Errorf("GetSupibyMsisdn err: %+v", err)
 		}
@@ -186,7 +189,7 @@ func msisdnToSupi(ueId string) string {
 			return ""
 		}
 	}
-	return ueId
+	return ueId // This must match SUPI format
 }
 
 func sendResponseToClient(c *gin.Context, response *http.Response) {
@@ -1028,7 +1031,7 @@ func GetSubscribers(c *gin.Context) {
 	for _, amData := range amDataList {
 		ueId := amData["ueId"]
 		servingPlmnId := amData["servingPlmnId"]
-		msisdn := getMsisdn(amData["gpsis"])
+		gpsi := getMsisdn(amData["gpsis"])
 		tenantId := amData["tenantId"]
 
 		filterUeIdOnly := bson.M{"ueId": ueId}
@@ -1051,7 +1054,7 @@ func GetSubscribers(c *gin.Context) {
 			tmp := SubsListIE{
 				PlmnID: servingPlmnId.(string),
 				UeId:   ueId.(string),
-				Msisdn: msisdn,
+				Gpsi:   gpsi,
 			}
 			subsList = append(subsList, tmp)
 		}
@@ -1068,13 +1071,13 @@ func GetSubscriberByID(c *gin.Context) {
 	var subsData SubsData
 
 	ueId := c.Param("ueId")
-	ueId = msisdnToSupi(ueId)
+	ueId = gpsiToSupi(ueId)
 	servingPlmnId := c.Param("servingPlmnId")
-	// checking whether msisdn is successfully transformed to supi or not
+	// checking whether gpsi is successfully transformed to supi or not
 	if ueId == "" {
-		logger.ProcLog.Errorf("GetSubscriberByID err: msisdn does not exists")
+		logger.ProcLog.Errorf("GetSubscriberByID err: gpsi does not exists")
 		c.JSON(http.StatusNotFound, gin.H{
-			"cause": "msisdn does not exists",
+			"cause": "gpsi does not exists",
 		})
 		return
 	}
@@ -1261,14 +1264,17 @@ func PostSubscriberByID(c *gin.Context) {
 		})
 		return
 	}
-	msisdn := getMsisdn(toBsonM(subsData.AccessAndMobilitySubscriptionData)["gpsis"])
-	msisdnTemp := 0
-	if msisdn != "" {
-		msisdnTemp, err = strconv.Atoi(msisdn)
+	gpsi := getMsisdn(toBsonM(subsData.AccessAndMobilitySubscriptionData)["gpsis"])
+	gpsiInt := 0
+	if gpsi != "" {
+		if len(gpsi) > 7 && gpsi[:7] == "msisdn-" { // case: MSISDN
+			gpsiInt, err = strconv.Atoi(gpsi[7:])
+		}
+
 		if err != nil {
 			logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err)
 			c.JSON(http.StatusBadRequest, gin.H{
-				"cause": "msisdn format incorrect",
+				"cause": "gpsi format incorrect (now only support MSISDN format)",
 			})
 			return
 		}
@@ -1285,22 +1291,22 @@ func PostSubscriberByID(c *gin.Context) {
 
 	for i := 0; i < userNumberTemp; i++ {
 		ueId = fmt.Sprintf("imsi-%015d", ueIdTemp)
-		if msisdnTemp != 0 {
-			if !validate(ueId, msisdn) {
-				logger.ProcLog.Errorf("duplicate msisdn: %v", msisdn)
+		if gpsiInt != 0 {
+			if !validate(ueId, gpsi) {
+				logger.ProcLog.Errorf("duplicate gpsi: %v", gpsi)
 				c.JSON(http.StatusBadRequest, gin.H{
-					"cause": "duplicate msisdn",
+					"cause": "duplicate gpsi",
 				})
 				return
 			}
-			msisdnTemp += 1
+			gpsiInt += 1
 		}
 		ueIdTemp += 1
 
-		subsData.AccessAndMobilitySubscriptionData.Gpsis[0] = "msisdn-" + msisdn
+		subsData.AccessAndMobilitySubscriptionData.Gpsis[0] = gpsi
 		// create a msisdn-supi map
-		logger.ProcLog.Infof("PostSubscriberByID msisdn: %+v", msisdn)
-		msisdnSupiMapOperation(ueId, msisdn, "post")
+		logger.ProcLog.Infof("PostSubscriberByID gpsi: %+v", subsData.AccessAndMobilitySubscriptionData.Gpsis[0])
+		identityDataOperation(ueId, gpsi, "post")
 		filterUeIdOnly := bson.M{"ueId": ueId}
 
 		// Lookup same UE ID of other tenant's subscription.
@@ -1323,32 +1329,32 @@ func PostSubscriberByID(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{})
 }
 
-func validate(supi string, msisdn string) bool {
-	filter := bson.M{"msisdn": msisdn}
-	msisdnSupiMap, err := mongoapi.RestfulAPIGetOne(msisdnSupiMapColl, filter)
+func validate(supi string, gpsi string) bool {
+	filter := bson.M{"gpsi": gpsi}
+	identityData, err := mongoapi.RestfulAPIGetOne(identityDataColl, filter)
 	if err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 	}
-	if msisdnSupiMap != nil && msisdnSupiMap["ueId"] != supi {
+	if identityData != nil && identityData["ueId"] != supi {
 		return false
 	} else {
 		return true
 	}
 }
 
-func msisdnSupiMapOperation(supi string, msisdn string, method string) {
+func identityDataOperation(supi string, gpsi string, method string) {
 	filter := bson.M{"ueId": supi}
-	data := bson.M{"ueId": supi, "msisdn": msisdn}
+	data := bson.M{"ueId": supi, "gpsi": gpsi}
 
 	if method == "put" || method == "post" {
-		if msisdn != "" {
-			if _, err := mongoapi.RestfulAPIPutOne(msisdnSupiMapColl, filter, data); err != nil {
-				logger.ProcLog.Errorf("PutMsisdnSupiMap err: %+v", err)
+		if gpsi != "" {
+			if _, err := mongoapi.RestfulAPIPutOne(identityDataColl, filter, data); err != nil {
+				logger.ProcLog.Errorf("PutIdentityData err: %+v", err)
 			}
 		} else {
 			// delete
-			if err := mongoapi.RestfulAPIDeleteOne(msisdnSupiMapColl, filter); err != nil {
-				logger.ProcLog.Errorf("DeleteMsisdnSupiMap err: %+v", err)
+			if err := mongoapi.RestfulAPIDeleteOne(identityDataColl, filter); err != nil {
+				logger.ProcLog.Errorf("DeleteIdentityData err: %+v", err)
 			}
 		}
 	}
@@ -1391,8 +1397,8 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 		if err := mongoapi.RestfulAPIDeleteMany(qosFlowDataColl, filter); err != nil {
 			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
 		}
-		if err := mongoapi.RestfulAPIDeleteOne(msisdnSupiMapColl, filterUeIdOnly); err != nil {
-			logger.ProcLog.Errorf("DeleteMsisdnSupiMap err: %+v", err)
+		if err := mongoapi.RestfulAPIDeleteOne(identityDataColl, filterUeIdOnly); err != nil {
+			logger.ProcLog.Errorf("DeleteIdnetityData err: %+v", err)
 		}
 	}
 	if method == "post" || method == "put" {
@@ -1502,18 +1508,18 @@ func PutSubscriberByID(c *gin.Context) {
 	}
 	ueId := c.Param("ueId")
 	servingPlmnId := c.Param("servingPlmnId")
-	// modify a msisdn-supi map
-	msisdn := getMsisdn(toBsonM(subsData.AccessAndMobilitySubscriptionData)["gpsis"])
-	if !validate(ueId, msisdn) {
-		logger.ProcLog.Errorf("duplicate msisdn: %v", msisdn)
+	// modify a gpsi-supi map
+	gpsi := getMsisdn(toBsonM(subsData.AccessAndMobilitySubscriptionData)["gpsis"])
+	if !validate(ueId, gpsi) {
+		logger.ProcLog.Errorf("duplicate gpsi: %v", gpsi)
 		c.JSON(http.StatusBadRequest, gin.H{
-			"cause": "duplicate msisdn",
+			"cause": "duplicate gpsi",
 		})
 		return
 	}
 
-	logger.ProcLog.Infof("PutSubscriberByID msisdn: %+v", msisdn)
-	msisdnSupiMapOperation(ueId, msisdn, "put")
+	logger.ProcLog.Infof("PutSubscriberByID gpsi: %+v", gpsi)
+	identityDataOperation(ueId, gpsi, "put")
 
 	var claims jwt.MapClaims = nil
 	dbOperation(ueId, servingPlmnId, "put", &subsData, claims)
@@ -1535,23 +1541,23 @@ func PatchSubscriberByID(c *gin.Context) {
 	}
 
 	ueId := c.Param("ueId")
-	ueId = msisdnToSupi(ueId)
+	supi := gpsiToSupi(ueId)
 	servingPlmnId := c.Param("servingPlmnId")
-	// checking whether msisdn is successfully transformed to supi or not
+	// checking whether gpsi is successfully transformed to supi or not
 	if ueId == "" {
-		logger.ProcLog.Errorf("PatchSubscriberByID err: msisdn does not exists")
+		logger.ProcLog.Errorf("PatchSubscriberByID err: gpsi does not exists")
 		c.JSON(http.StatusNotFound, gin.H{
-			"cause": "msisdn does not exists",
+			"cause": "gpsi does not exists",
 		})
 		return
 	}
-	filterUeIdOnly := bson.M{"ueId": ueId}
-	filter := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId}
+	filterUeIdOnly := bson.M{"ueId": supi}
+	filter := bson.M{"ueId": supi, "servingPlmnId": servingPlmnId}
 
 	authSubsBsonM := toBsonM(subsData.AuthenticationSubscription)
-	authSubsBsonM["ueId"] = ueId
+	authSubsBsonM["ueId"] = supi
 	amDataBsonM := toBsonM(subsData.AccessAndMobilitySubscriptionData)
-	amDataBsonM["ueId"] = ueId
+	amDataBsonM["ueId"] = supi
 	amDataBsonM["servingPlmnId"] = servingPlmnId
 
 	// Replace all data with new one
@@ -1562,9 +1568,9 @@ func PatchSubscriberByID(c *gin.Context) {
 	}
 	for _, data := range subsData.SessionManagementSubscriptionData {
 		smDataBsonM := toBsonM(data)
-		smDataBsonM["ueId"] = ueId
+		smDataBsonM["ueId"] = supi
 		smDataBsonM["servingPlmnId"] = servingPlmnId
-		filterSmData := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId, "snssai": data.SingleNssai}
+		filterSmData := bson.M{"ueId": supi, "servingPlmnId": servingPlmnId, "snssai": data.SingleNssai}
 		if err := mongoapi.RestfulAPIMergePatch(smDataColl, filterSmData, smDataBsonM); err != nil {
 			logger.ProcLog.Errorf("PatchSubscriberByID err: %+v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{})
@@ -1573,12 +1579,12 @@ func PatchSubscriberByID(c *gin.Context) {
 	}
 
 	smfSelSubsBsonM := toBsonM(subsData.SmfSelectionSubscriptionData)
-	smfSelSubsBsonM["ueId"] = ueId
+	smfSelSubsBsonM["ueId"] = supi
 	smfSelSubsBsonM["servingPlmnId"] = servingPlmnId
 	amPolicyDataBsonM := toBsonM(subsData.AmPolicyData)
-	amPolicyDataBsonM["ueId"] = ueId
+	amPolicyDataBsonM["ueId"] = supi
 	smPolicyDataBsonM := toBsonM(subsData.SmPolicyData)
-	smPolicyDataBsonM["ueId"] = ueId
+	smPolicyDataBsonM["ueId"] = supi
 
 	if err := mongoapi.RestfulAPIMergePatch(authSubsDataColl, filterUeIdOnly, authSubsBsonM); err != nil {
 		logger.ProcLog.Errorf("PatchSubscriberByID err: %+v", err)
@@ -1614,18 +1620,18 @@ func DeleteSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Delete One Subscriber Data")
 	ueId := c.Param("ueId")
-	ueId = msisdnToSupi(ueId)
+	supi := gpsiToSupi(ueId)
 	servingPlmnId := c.Param("servingPlmnId")
-	// checking whether msisdn is successfully transformed to supi or not
-	if ueId == "" {
-		logger.ProcLog.Errorf("DeleteSubscriberByID err: msisdn does not exists")
+	// checking whether supi is successfully transformed to supi or not
+	if supi == "" {
+		logger.ProcLog.Errorf("DeleteSubscriberByID err: supi does not exists")
 		c.JSON(http.StatusNotFound, gin.H{
-			"cause": "msisdn does not exists",
+			"cause": "supi does not exists",
 		})
 		return
 	}
 	var claims jwt.MapClaims = nil
-	dbOperation(ueId, servingPlmnId, "delete", nil, claims)
+	dbOperation(supi, servingPlmnId, "delete", nil, claims)
 	c.JSON(http.StatusNoContent, gin.H{})
 }
 

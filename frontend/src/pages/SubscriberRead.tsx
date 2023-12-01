@@ -76,7 +76,7 @@ export default function SubscriberRead() {
       return "";
     } else {
       if (subData.gpsis !== undefined && subData.gpsis!.length !== 0) {
-        return subData.gpsis[0].replace("msisdn-", "");
+        return subData.gpsis[0].replaceAll("msisdn-", "");
       } else {
         return "";
       }
@@ -243,7 +243,7 @@ export default function SubscriberRead() {
           </TableBody>
           <TableBody>
             <TableRow>
-              <TableCell style={{ width: "40%" }}>MSISDN</TableCell>
+              <TableCell style={{ width: "40%" }}>GPSI (MSISDN)</TableCell>
               <TableCell>{msisdnValue(data.AccessAndMobilitySubscriptionData)}</TableCell>
             </TableRow>
           </TableBody>

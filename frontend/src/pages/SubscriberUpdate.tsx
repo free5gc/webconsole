@@ -271,7 +271,7 @@ export default function SubscriberUpdate() {
       return "";
     } else {
       if (subData.gpsis !== undefined && subData.gpsis!.length !== 0) {
-        return subData.gpsis[0].replace("msisdn-", "");
+        return subData.gpsis[0].replaceAll("msisdn-", "");
       } else {
         return "";
       }
