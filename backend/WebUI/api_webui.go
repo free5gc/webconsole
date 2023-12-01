@@ -1371,8 +1371,8 @@ func identityDataOperation(supi string, gpsi string, method string) {
 			}
 		} else {
 			// delete
-			if err := mongoapi.RestfulAPIDeleteOne(msisdnSupiMapColl, filter); err != nil {
-				logger.ProcLog.Errorf("DeleteMsisdnSupiMap err: %+v", err)
+			if err := mongoapi.RestfulAPIDeleteOne(identityDataColl, filter); err != nil {
+				logger.ProcLog.Errorf("DeleteIdentityData err: %+v", err)
 			}
 			if err := mongoapi.RestfulAPIDeleteOne(identityDataColl, filter); err != nil {
 				logger.ProcLog.Errorf("DeleteIdentityData err: %+v", err)
