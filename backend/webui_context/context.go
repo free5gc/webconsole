@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	"github.com/free5gc/openapi/models"
-	timedecode "github.com/free5gc/util/mapstruct"
-	"github.com/free5gc/util/mongoapi"
 	"github.com/free5gc/webconsole/backend/logger"
 )
 
@@ -22,19 +20,32 @@ type NfOamInstance struct {
 	Uri    string
 }
 
+var NrfUri string
+
+func NrfAmfUri() string {
+	return NrfUri + "/nnrf-disc/v1/nf-instances?target-nf-type=AMF&requester-nf-type=AMF"
+}
+
+func NrfSmfUri() string {
+	return NrfUri + "/nnrf-disc/v1/nf-instances?target-nf-type=SMF&requester-nf-type=AMF"
+}
+
 func (context *WEBUIContext) UpdateNfProfiles() {
-	nfProfilesRaw, err := mongoapi.RestfulAPIGetMany("NfProfile", nil)
+	var nfProfiles []models.NfProfile
+
+	nfProfiles, err := NrfGetNfProfiles(NrfAmfUri())
 	if err != nil {
 		logger.CtxLog.Error(err)
 		return
 	}
-	var nfProfiles []models.NfProfile
-	if err := timedecode.Decode(nfProfilesRaw, &nfProfiles); err != nil {
+	context.NFProfiles = append(context.NFProfiles, nfProfiles...)
+
+	nfProfiles, err = NrfGetNfProfiles(NrfSmfUri())
+	if err != nil {
 		logger.CtxLog.Error(err)
 		return
 	}
-
-	context.NFProfiles = nfProfiles
+	context.NFProfiles = append(context.NFProfiles, nfProfiles...)
 
 	for _, nfProfile := range context.NFProfiles {
 		if nfProfile.NfServices == nil || context.NfProfileAlreadyExists(nfProfile) {

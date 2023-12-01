@@ -78,6 +78,9 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 		return
 	}
 
+	nrfUri := factory.WebuiConfig.Configuration.NrfUri
+	webui_context.NrfUri = nrfUri
+
 	logger.InitLog.Infoln("Server started")
 
 	router := WebUI.NewRouter()
