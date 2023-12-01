@@ -1,13 +1,20 @@
 # free5GC Web Console
 
-Prior to building webconsole, install nodejs and yarn package first:
+### Install yarn:
 ```bash
-sudo apt remove cmdtest
-sudo apt remove yarn
+sudo apt remove cmdtest yarn
 curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
 echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
 sudo apt-get update
 sudo apt-get install -y nodejs yarn
+```
+
+### Install Node.js
+```bash
+sudo apt remove nodejs -y
+curl -s https://deb.nodesource.com/setup_16.x | sudo bash
+sudo apt install nodejs -y
+node -v # check version is 16.x
 ```
 
 To run free5GC webconsole server. The following steps are to be considered.
