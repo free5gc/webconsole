@@ -1929,8 +1929,12 @@ type RatingGroupDataUsage struct {
 }
 
 // Get vol from CDR
-func parseCDR(supi string) map[int64]RatingGroupDataUsage {
+func parseCDR(supi string) (map[int64]RatingGroupDataUsage, error) {
+	logger.BillingLog.Traceln("parseCDR")
 	fileName := "/tmp/webconsole/" + supi + ".cdr"
+	if _, err := os.Stat(fileName); err != nil {
+		return nil, err
+	}
 
 	newCdrFile := cdrFile.CDRFile{}
 
@@ -1959,7 +1963,7 @@ func parseCDR(supi string) map[int64]RatingGroupDataUsage {
 		}
 	}
 
-	return dataUsage
+	return dataUsage, nil
 }
 
 func GetChargingRecord(c *gin.Context) {
@@ -2010,7 +2014,11 @@ func GetChargingRecord(c *gin.Context) {
 		ueBsonM := toBsonM(ueData)
 
 		supi := ueBsonM["Supi"].(string)
-		ratingGroupDataUsage := parseCDR(supi)
+
+		ratingGroupDataUsage, err := parseCDR(supi)
+		if err != nil {
+			logger.BillingLog.Warnln(err)
+		}
 
 		var pduLevelQuota int64
 		for rg, du := range ratingGroupDataUsage {

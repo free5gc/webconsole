@@ -17,9 +17,9 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 export default function ChargingRecordList() {
-  
   const [cr, setCr] = useState<ChargingRecord[]>([]) // cr: charging record
   const [expand, setExpand] = useState(false)
+
 
   function fetchUEWithCR() {
     const MSG_FETCH_ERROR = "Error fetching registered UEs. Is the core network up?";
@@ -35,7 +35,10 @@ export default function ChargingRecordList() {
   }
 
   useEffect(() => {
-    fetchUEWithCR()
+    const id = setInterval(() => {
+      fetchUEWithCR()
+    }, 1000 );
+    return () => clearInterval(id);
   }, [])
 
   const onRefresh = () => {
@@ -53,7 +56,7 @@ export default function ChargingRecordList() {
   /* eslint-disable react/prop-types */
   const PerFlowTableView = ({ FlowCharingRecords }: Props): React.ReactElement => (
     <>
-      {expand === true ? FlowCharingRecords?.map((FlowChargingRecord, i) => (
+      {expand === true ? FlowCharingRecords?.sort((a, b) => (a!.Filter! > b!.Filter!) ? 1 : -1).map((FlowChargingRecord, i) => (
             <TableRow key={i}>
               <TableCell>{}</TableCell>
               <TableCell>{FlowChargingRecord.Filter}</TableCell>
@@ -80,7 +83,7 @@ export default function ChargingRecordList() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {cr.map((row, index) => (
+          {cr.sort((a, b) => (a!.Supi! > b!.Supi!) ? 1 : -1).map((row, index) => (
             <>
               <TableRow key={index}>
                 <TableCell>
