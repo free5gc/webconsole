@@ -27,7 +27,7 @@ export default function StatusRead() {
     Promise.all([...fetchData]).then((res) => {
       const pdus: PduSessionInfo[] = [];
       for (let i = 0; i < res.length; i++) {
-        pdus.push(res[0].data);
+        pdus.push(res[i].data);
       }
       setData(pdus);
     });
