@@ -933,6 +933,18 @@ export interface Tenant {
      */
      'Supi'?: string;
      /**
+     *
+     * @type {string}
+     * @memberof flowChargingRecord
+     */
+    'S-NSSAI'?: string;
+    /**
+     *
+     * @type {string}
+     * @memberof flowChargingRecord
+     */
+    'DNN'?: string;
+     /**
       *
       * @type {string}
       * @memberof ChargingRecord

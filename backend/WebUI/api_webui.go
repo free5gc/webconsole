@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -1719,10 +1720,17 @@ func PatchSubscriberByID(c *gin.Context) {
 }
 
 func removeCdrFile(CdrFilePath string) {
-	if _, err := os.Stat(CdrFilePath); err == nil {
-		logger.BillingLog.Infof("Remove CDR file: " + CdrFilePath)
-		if err := os.Remove(CdrFilePath); err != nil {
-			logger.BillingLog.Warnf("Failed to remove CDR file: %s\n", CdrFilePath)
+	files, err := filepath.Glob(CdrFilePath + "*.cdr")
+	if err != nil {
+		logger.BillingLog.Warnf("CDR file not found in %s", CdrFilePath)
+	}
+
+	for _, file := range files {
+		if _, err := os.Stat(file); err == nil {
+			logger.BillingLog.Infof("Remove CDR file: " + file)
+			if err := os.Remove(file); err != nil {
+				logger.BillingLog.Warnf("Failed to remove CDR file: %s\n", file)
+			}
 		}
 	}
 }
@@ -1745,10 +1753,10 @@ func DeleteSubscriberByID(c *gin.Context) {
 	var claims jwt.MapClaims = nil
 	dbOperation(supi, servingPlmnId, "delete", nil, claims)
 
-	CdrFilePath := "/tmp/" + ueId + ".cdr"
-	removeCdrFile(CdrFilePath)
+	// CdrFilePath := "/tmp/" + ueId + ".cdr"
+	// removeCdrFile(CdrFilePath)
 
-	CdrFilePath = "/tmp/webconsole/" + ueId + ".cdr"
+	CdrFilePath := "/tmp/webconsole/"
 	removeCdrFile(CdrFilePath)
 
 	c.JSON(http.StatusNoContent, gin.H{})
@@ -1948,6 +1956,7 @@ func parseCDR(supi string) (map[int64]RatingGroupDataUsage, error) {
 		if err != nil {
 			logger.BillingLog.Error(err)
 		}
+
 		chargingRecord := *(val.(*cdrType.ChargingRecord))
 		for _, multipleUnitUsage := range chargingRecord.ListOfMultipleUnitUsage {
 			rg := multipleUnitUsage.RatingGroup.Value

@@ -59,6 +59,8 @@ export default function ChargingRecordList() {
       {expand === true ? FlowCharingRecords?.sort((a, b) => (a!.Filter! > b!.Filter!) ? 1 : -1).map((FlowChargingRecord, i) => (
             <TableRow key={i}>
               <TableCell>{}</TableCell>
+              <TableCell>{}</TableCell>
+              <TableCell>{}</TableCell>
               <TableCell>{FlowChargingRecord.Filter}</TableCell>
               <TableCell>{FlowChargingRecord.QuotaLeft}</TableCell>
               <TableCell>{FlowChargingRecord.DataTotalVolume}</TableCell>
@@ -75,6 +77,8 @@ export default function ChargingRecordList() {
       <TableHead>
           <TableRow>
             <TableCell>SUPI</TableCell>
+            <TableCell>S-NSSAI</TableCell>
+            <TableCell>DNN</TableCell>
             <TableCell>Status/IP Filter</TableCell>
             <TableCell>Quota Left</TableCell>
             <TableCell>Data Total Volume</TableCell>
@@ -94,6 +98,8 @@ export default function ChargingRecordList() {
                   {expand === true ? <ExpandMoreIcon viewBox="0 0 24 24"/> : <ExpandLessIcon viewBox="0 0 24 24"/>}
                   </Button>
                 </TableCell>
+                <TableCell>{row["S-NSSAI"]}</TableCell>
+                <TableCell>{row.DNN}</TableCell>
                 <TableCell>{row.CmState}</TableCell>
                 <TableCell>{row.Quota}</TableCell>
                 <TableCell>{row.DataTotalVolume}</TableCell>
