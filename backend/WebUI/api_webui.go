@@ -1924,6 +1924,8 @@ func OptionsSubscribers(c *gin.Context) {
 
 type FlowInfo struct {
 	Filter             string `bson:"Filter"`
+	Snssai             string `bson:"Snssai"`
+	Dnn                string `bson:"Dnn"`
 	DataTotalVolume    int64  `bson:"DataTotalVolume"`
 	DataVolumeUplink   int64  `bson:"DataVolumeUplink"`
 	DataVolumeDownlink int64  `bson:"DataVolumeDownlink"`
@@ -1931,6 +1933,8 @@ type FlowInfo struct {
 }
 
 type RatingGroupDataUsage struct {
+	snssai   string
+	dnn      string
 	TotalVol int64
 	UlVol    int64
 	DlVol    int64
@@ -1955,12 +1959,22 @@ func parseCDR(supi string) (map[int64]RatingGroupDataUsage, error) {
 		err := asn.UnmarshalWithParams(recvByte, val, "")
 		if err != nil {
 			logger.BillingLog.Error(err)
+			continue
 		}
 
 		chargingRecord := *(val.(*cdrType.ChargingRecord))
+
 		for _, multipleUnitUsage := range chargingRecord.ListOfMultipleUnitUsage {
 			rg := multipleUnitUsage.RatingGroup.Value
 			du := dataUsage[rg]
+
+			logger.BillingLog.Warnln("rg:", rg)
+			logger.BillingLog.Warnln("SD:", string(chargingRecord.PDUSessionChargingInformation.NetworkSliceInstanceID.SD.Value))
+
+			du.snssai = fmt.Sprintf("%02d", chargingRecord.PDUSessionChargingInformation.NetworkSliceInstanceID.SST.Value) +
+				string(chargingRecord.PDUSessionChargingInformation.NetworkSliceInstanceID.SD.Value)
+
+			du.dnn = string(chargingRecord.PDUSessionChargingInformation.DataNetworkNameIdentifier.Value)
 
 			for _, usedUnitContainer := range multipleUnitUsage.UsedUnitContainers {
 				du.TotalVol += usedUnitContainer.DataTotalVolume.Value
@@ -2024,13 +2038,14 @@ func GetChargingRecord(c *gin.Context) {
 
 		supi := ueBsonM["Supi"].(string)
 
-		ratingGroupDataUsage, err := parseCDR(supi)
+		ratingGroupDataUsages, err := parseCDR(supi)
 		if err != nil {
 			logger.BillingLog.Warnln(err)
 		}
 
 		var pduLevelQuota int64
-		for rg, du := range ratingGroupDataUsage {
+		for rg, du := range ratingGroupDataUsages {
+			logger.BillingLog.Warnln("snssai: ", du.snssai)
 			var chargingData ChargingData
 
 			filter := bson.M{"ueId": supi, "ratingGroup": rg}
@@ -2052,6 +2067,8 @@ func GetChargingRecord(c *gin.Context) {
 			if chargingData.Filter != "" && chargingData.Dnn != "" { // per flow
 				flowInfos = append(flowInfos, FlowInfo{
 					Filter:             chargingData.Filter,
+					Snssai:             du.snssai,
+					Dnn:                du.dnn,
 					DataTotalVolume:    du.TotalVol,
 					DataVolumeUplink:   du.UlVol,
 					DataVolumeDownlink: du.DlVol,
@@ -2062,6 +2079,8 @@ func GetChargingRecord(c *gin.Context) {
 				ueUsage.TotalVol += du.TotalVol
 				ueUsage.UlVol += du.UlVol
 				ueUsage.DlVol += du.DlVol
+				ueUsage.snssai = du.snssai
+				ueUsage.dnn = du.dnn
 				// TODO: frontend should presentat pdu level charging information
 				pduLevelQuota = quota
 				logger.ProcLog.Tracef("Currently the frontend will not show the pdu level charging info")
@@ -2070,6 +2089,8 @@ func GetChargingRecord(c *gin.Context) {
 
 		ueRecordsBsonM := bson.M{
 			"Supi":               supi,
+			"Snssai":             ueUsage.snssai,
+			"Dnn":                ueUsage.dnn,
 			"CmState":            ueBsonM["CmState"].(string),
 			"DataTotalVolume":    ueUsage.TotalVol,
 			"DataVolumeUplink":   ueUsage.UlVol,
