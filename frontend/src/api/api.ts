@@ -923,70 +923,9 @@ export interface Tenant {
 /**
  *
  * @export
- * @interface ChargingRecord
+ * @interface FlowChargingRecord
  */
- export interface ChargingRecord {
-    /**
-     *
-     * @type {string}
-     * @memberof ChargingRecord
-     */
-     'Supi'?: string;
-     /**
-     *
-     * @type {string}
-     * @memberof flowChargingRecord
-     */
-    'S-NSSAI'?: string;
-    /**
-     *
-     * @type {string}
-     * @memberof flowChargingRecord
-     */
-    'DNN'?: string;
-     /**
-      *
-      * @type {string}
-      * @memberof ChargingRecord
-      */
-     'CmState'?: string;
-     /**
-     *
-     * @type {string}
-     * @memberof ChargingRecord
-     */
-    'Quota'?: string;
-    /**
-     *
-     * @type {string}
-     * @memberof ChargingRecord
-     */
-    'TotalVol'?: string;
-    /**
-     *
-     * @type {string}
-     * @memberof ChargingRecord
-     */
-    'DlVol'?: string;
-     /**
-     *
-     * @type {string}
-     * @memberof ChargingRecord
-     */
-    'UlVol'?: string;
-    /**
-     *
-     * @type {flowChargingRecord[]}
-     * @memberof ChargingRecord
-     */
-    'flowInfos'?: flowChargingRecord[];
-}
-/**
- *
- * @export
- * @interface ChargingRecord
- */
-export interface flowChargingRecord {
+export interface FlowChargingRecord {
     /**
      *
      * @type {string}

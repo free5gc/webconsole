@@ -1922,16 +1922,6 @@ func OptionsSubscribers(c *gin.Context) {
 	c.JSON(http.StatusNoContent, gin.H{})
 }
 
-// type FlowInfo struct {
-// 	Filter             string `bson:"Filter"`
-// 	Snssai             string `bson:"Snssai"`
-// 	Dnn                string `bson:"Dnn"`
-// 	DataTotalVolume    int64  `bson:"DataTotalVolume"`
-// 	DataVolumeUplink   int64  `bson:"DataVolumeUplink"`
-// 	DataVolumeDownlink int64  `bson:"DataVolumeDownlink"`
-// 	QuotaLeft          int64  `bson:"QuotaLeft"`
-// }
-
 type RatingGroupDataUsage struct {
 	Supi      string `bson:"Supi"`
 	Filter    string `bson:"Filter"`
@@ -2075,7 +2065,6 @@ func GetChargingRecord(c *gin.Context) {
 		}
 	}
 
-	logger.BillingLog.Warnf("chargingRecordsBsonA: %v\n", chargingRecordsBsonA)
 	c.JSON(http.StatusOK, chargingRecordsBsonA)
 }
 

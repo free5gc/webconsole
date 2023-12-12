@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "../axios";
-import { ChargingRecord, flowChargingRecord } from "../api/api";
+import { FlowChargingRecord } from "../api/api";
 import Dashboard from "../Dashboard";
 
 import {
@@ -18,7 +18,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 
 export default function ChargingRecordList() {
-  const [cr, setCr] = useState<flowChargingRecord[]>([]) // cr: charging record
+  const [cr, setCr] = useState<FlowChargingRecord[]>([]) // cr: charging record
   const [expand, setExpand] = useState(false)
 
 
@@ -59,7 +59,7 @@ export default function ChargingRecordList() {
   /* eslint-disable react/prop-types */
   const PerFlowTableView = ({ Supi, Snssai }: Props): React.ReactElement => (
     <>
-      {expand === true ? cr.filter((a) => a!.Filter !== "" && a!.Dnn! !== "" && a!.Supi === Supi && a!.Snssai === Snssai).map((row, index) => (
+      {expand === true ? cr.filter((a) => a!.Filter !== "" && a!.Dnn! !== "" && a!.Supi === Supi && a!.Snssai === Snssai).sort((a,b) => a!.Filter! > b!.Filter! ? 1 : -1).map((row, index) => (
             <TableRow key={index}>
               <TableCell>{}</TableCell>
               <TableCell>{row.Snssai}</TableCell>
