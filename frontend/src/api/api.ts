@@ -961,19 +961,19 @@ export interface Tenant {
      * @type {string}
      * @memberof ChargingRecord
      */
-    'DataTotalVolume'?: string;
+    'TotalVol'?: string;
     /**
      *
      * @type {string}
      * @memberof ChargingRecord
      */
-    'DataVolumeDownlink'?: string;
+    'DlVol'?: string;
      /**
      *
      * @type {string}
      * @memberof ChargingRecord
      */
-    'DataVolumeUplink'?: string;
+    'UlVol'?: string;
     /**
      *
      * @type {flowChargingRecord[]}
@@ -998,6 +998,18 @@ export interface flowChargingRecord {
      * @type {string}
      * @memberof flowChargingRecord
      */
+    'Snssai'?: string;
+    /**
+     *
+     * @type {string}
+     * @memberof flowChargingRecord
+     */
+    'Dnn'?: string;
+    /**
+     *
+     * @type {string}
+     * @memberof flowChargingRecord
+     */
     'Filter'?: string;
     /**
     *
@@ -1010,19 +1022,19 @@ export interface flowChargingRecord {
     * @type {string}
     * @memberof flowChargingRecord
     */
-   'DataTotalVolume'?: string;
+   'TotalVol'?: string;
    /**
     *
     * @type {string}
     * @memberof flowChargingRecord
     */
-   'DataVolumeDownlink'?: string;
+   'UlVol'?: string;
     /**
     *
     * @type {string}
     * @memberof flowChargingRecord
     */
-   'DataVolumeUplink'?: string;
+   'DlVol'?: string;
 }
 /**
  *

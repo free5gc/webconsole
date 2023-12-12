@@ -16,8 +16,9 @@ import {
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
+
 export default function ChargingRecordList() {
-  const [cr, setCr] = useState<ChargingRecord[]>([]) // cr: charging record
+  const [cr, setCr] = useState<flowChargingRecord[]>([]) // cr: charging record
   const [expand, setExpand] = useState(false)
 
 
@@ -51,27 +52,30 @@ export default function ChargingRecordList() {
   }
   
   interface Props {
-    FlowCharingRecords: flowChargingRecord[] | undefined
+    //FlowCharingRecords: flowChargingRecord[] | undefined
+    Supi: string | undefined
+    Snssai: string | undefined
   }
   /* eslint-disable react/prop-types */
-  const PerFlowTableView = ({ FlowCharingRecords }: Props): React.ReactElement => (
+  const PerFlowTableView = ({ Supi, Snssai }: Props): React.ReactElement => (
     <>
-      {expand === true ? FlowCharingRecords?.sort((a, b) => (a!.Filter! > b!.Filter!) ? 1 : -1).map((FlowChargingRecord, i) => (
-            <TableRow key={i}>
+      {expand === true ? cr.filter((a) => a!.Filter !== "" && a!.Dnn! !== "" && a!.Supi === Supi && a!.Snssai === Snssai).map((row, index) => (
+            <TableRow key={index}>
               <TableCell>{}</TableCell>
-              <TableCell>{}</TableCell>
-              <TableCell>{}</TableCell>
-              <TableCell>{FlowChargingRecord.Filter}</TableCell>
-              <TableCell>{FlowChargingRecord.QuotaLeft}</TableCell>
-              <TableCell>{FlowChargingRecord.DataTotalVolume}</TableCell>
-              <TableCell>{FlowChargingRecord.DataVolumeUplink}</TableCell>
-              <TableCell>{FlowChargingRecord.DataVolumeDownlink}</TableCell>
+              <TableCell>{row.Snssai}</TableCell>
+              <TableCell>{row.Dnn}</TableCell>
+              <TableCell>{row.Filter}</TableCell>
+              <TableCell>{row.QuotaLeft}</TableCell>
+              <TableCell>{row.TotalVol}</TableCell>
+              <TableCell>{row.UlVol}</TableCell>
+              <TableCell>{row.DlVol}</TableCell>
             </TableRow>
          )) : <></>
       }
     </>
   )
   
+
   const tableView = (
     <Table>
       <TableHead>
@@ -79,7 +83,7 @@ export default function ChargingRecordList() {
             <TableCell>SUPI</TableCell>
             <TableCell>S-NSSAI</TableCell>
             <TableCell>DNN</TableCell>
-            <TableCell>Status/IP Filter</TableCell>
+            <TableCell>IP Filter</TableCell>
             <TableCell>Quota Left</TableCell>
             <TableCell>Data Total Volume</TableCell>
             <TableCell>Data Volume Uplink</TableCell>
@@ -87,26 +91,26 @@ export default function ChargingRecordList() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {cr.sort((a, b) => (a!.Supi! > b!.Supi!) ? 1 : -1).map((row, index) => (
+          {cr.filter((a) => a!.Filter === "" && a!.Dnn === "" ).sort((a, b) => (a!.Snssai! > b!.Snssai!) ? 1 : -1).map((row, index) => (
             <>
               <TableRow key={index}>
                 <TableCell>
                   {row.Supi}
-                  <Button
+                  {<Button
                     onClick={() => onExpand()}
                   >
                   {expand === true ? <ExpandMoreIcon viewBox="0 0 24 24"/> : <ExpandLessIcon viewBox="0 0 24 24"/>}
-                  </Button>
+                  </Button>}
                 </TableCell>
-                <TableCell>{row["S-NSSAI"]}</TableCell>
-                <TableCell>{row.DNN}</TableCell>
-                <TableCell>{row.CmState}</TableCell>
-                <TableCell>{row.Quota}</TableCell>
-                <TableCell>{row.DataTotalVolume}</TableCell>
-                <TableCell>{row.DataVolumeUplink}</TableCell>
-                <TableCell>{row.DataVolumeDownlink}</TableCell>
+                <TableCell>{row.Snssai}</TableCell>
+                <TableCell>{row.Dnn}</TableCell>
+                <TableCell>{row.Filter}</TableCell>
+                <TableCell>{row.QuotaLeft}</TableCell>
+                <TableCell>{row.TotalVol}</TableCell>
+                <TableCell>{row.UlVol}</TableCell>
+                <TableCell>{row.DlVol}</TableCell>
               </TableRow>
-              <PerFlowTableView FlowCharingRecords={row.flowInfos} />
+              {<PerFlowTableView Supi={row.Supi} Snssai={row.Snssai} />}
             </>
           ))}
         </TableBody>
