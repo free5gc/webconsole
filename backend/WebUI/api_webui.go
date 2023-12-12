@@ -1922,22 +1922,25 @@ func OptionsSubscribers(c *gin.Context) {
 	c.JSON(http.StatusNoContent, gin.H{})
 }
 
-type FlowInfo struct {
-	Filter             string `bson:"Filter"`
-	Snssai             string `bson:"Snssai"`
-	Dnn                string `bson:"Dnn"`
-	DataTotalVolume    int64  `bson:"DataTotalVolume"`
-	DataVolumeUplink   int64  `bson:"DataVolumeUplink"`
-	DataVolumeDownlink int64  `bson:"DataVolumeDownlink"`
-	QuotaLeft          int64  `bson:"QuotaLeft"`
-}
+// type FlowInfo struct {
+// 	Filter             string `bson:"Filter"`
+// 	Snssai             string `bson:"Snssai"`
+// 	Dnn                string `bson:"Dnn"`
+// 	DataTotalVolume    int64  `bson:"DataTotalVolume"`
+// 	DataVolumeUplink   int64  `bson:"DataVolumeUplink"`
+// 	DataVolumeDownlink int64  `bson:"DataVolumeDownlink"`
+// 	QuotaLeft          int64  `bson:"QuotaLeft"`
+// }
 
 type RatingGroupDataUsage struct {
-	snssai   string
-	dnn      string
-	TotalVol int64
-	UlVol    int64
-	DlVol    int64
+	Supi      string `bson:"Supi"`
+	Filter    string `bson:"Filter"`
+	Snssai    string `bson:"Snssai"`
+	Dnn       string `bson:"Dnn"`
+	TotalVol  int64  `bson:"TotalVol"`
+	UlVol     int64  `bson:"UlVol"`
+	DlVol     int64  `bson:"DlVol"`
+	QuotaLeft int64  `bson:"QuotaLeft"`
 }
 
 // Get vol from CDR
@@ -1968,13 +1971,13 @@ func parseCDR(supi string) (map[int64]RatingGroupDataUsage, error) {
 			rg := multipleUnitUsage.RatingGroup.Value
 			du := dataUsage[rg]
 
-			logger.BillingLog.Warnln("rg:", rg)
-			logger.BillingLog.Warnln("SD:", string(chargingRecord.PDUSessionChargingInformation.NetworkSliceInstanceID.SD.Value))
+			// logger.BillingLog.Warnln("rg:", rg)
+			// logger.BillingLog.Warnln("SD:", string(chargingRecord.PDUSessionChargingInformation.NetworkSliceInstanceID.SD.Value))
 
-			du.snssai = fmt.Sprintf("%02d", chargingRecord.PDUSessionChargingInformation.NetworkSliceInstanceID.SST.Value) +
+			du.Snssai = fmt.Sprintf("%02d", chargingRecord.PDUSessionChargingInformation.NetworkSliceInstanceID.SST.Value) +
 				string(chargingRecord.PDUSessionChargingInformation.NetworkSliceInstanceID.SD.Value)
 
-			du.dnn = string(chargingRecord.PDUSessionChargingInformation.DataNetworkNameIdentifier.Value)
+			du.Dnn = string(chargingRecord.PDUSessionChargingInformation.DataNetworkNameIdentifier.Value)
 
 			for _, usedUnitContainer := range multipleUnitUsage.UsedUnitContainers {
 				du.TotalVol += usedUnitContainer.DataTotalVolume.Value
@@ -2031,9 +2034,6 @@ func GetChargingRecord(c *gin.Context) {
 	chargingRecordsBsonA := make([]interface{}, 0, len(uesBsonA))
 
 	for _, ueData := range uesBsonA {
-		var ueUsage RatingGroupDataUsage
-		var flowInfos []FlowInfo
-
 		ueBsonM := toBsonM(ueData)
 
 		supi := ueBsonM["Supi"].(string)
@@ -2043,67 +2043,84 @@ func GetChargingRecord(c *gin.Context) {
 			logger.BillingLog.Warnln(err)
 		}
 
-		var pduLevelQuota int64
 		for rg, du := range ratingGroupDataUsages {
-			logger.BillingLog.Warnln("snssai: ", du.snssai)
-			var chargingData ChargingData
-
-			filter := bson.M{"ueId": supi, "ratingGroup": rg}
+			filter := bson.M{"ratingGroup": rg}
 			chargingDataInterface, err := mongoapi.RestfulAPIGetOne(chargingDataColl, filter)
 			if err != nil {
 				logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err)
 			}
 
+			var chargingData ChargingData
 			err = json.Unmarshal(mapToByte(chargingDataInterface), &chargingData)
 			if err != nil {
 				logger.BillingLog.Error(err)
 			}
 
-			quota, err := strconv.ParseInt(chargingData.Quota, 10, 64)
-			if err != nil {
-				logger.BillingLog.Error(err)
-			}
+			du.Snssai = chargingData.Snssai
+			du.Dnn = chargingData.Dnn
+			du.Supi = supi
+			du.Filter = chargingData.Filter
+			tmpInt, _ := strconv.Atoi(chargingData.Quota)
+			du.QuotaLeft = int64(tmpInt)
 
-			if chargingData.Filter != "" && chargingData.Dnn != "" { // per flow
-				flowInfos = append(flowInfos, FlowInfo{
-					Filter:             chargingData.Filter,
-					Snssai:             du.snssai,
-					Dnn:                du.dnn,
-					DataTotalVolume:    du.TotalVol,
-					DataVolumeUplink:   du.UlVol,
-					DataVolumeDownlink: du.DlVol,
-					QuotaLeft:          quota,
-				})
-			} else {
-				// UE only record the PDU level usage to prevent count the volume of flow and pdu twice
-				ueUsage.TotalVol += du.TotalVol
-				ueUsage.UlVol += du.UlVol
-				ueUsage.DlVol += du.DlVol
-				ueUsage.snssai = du.snssai
-				ueUsage.dnn = du.dnn
-				// TODO: frontend should presentat pdu level charging information
-				pduLevelQuota = quota
-				logger.ProcLog.Tracef("Currently the frontend will not show the pdu level charging info")
+			ratingGroupDataUsages[rg] = du
+			chargingRecordsBsonA = append(chargingRecordsBsonA, toBsonM(du))
+		}
+
+		// Flow's Tol, Dl, Ul volume add back to PDU Session Level
+		for _, du := range ratingGroupDataUsages {
+			if du.Filter != "" && du.Dnn != "" {
+				addVolumeToPduLevelDataUsage(ratingGroupDataUsages, du)
 			}
 		}
-
-		ueRecordsBsonM := bson.M{
-			"Supi":               supi,
-			"Snssai":             ueUsage.snssai,
-			"Dnn":                ueUsage.dnn,
-			"CmState":            ueBsonM["CmState"].(string),
-			"DataTotalVolume":    ueUsage.TotalVol,
-			"DataVolumeUplink":   ueUsage.UlVol,
-			"DataVolumeDownlink": ueUsage.DlVol,
-			"Quota":              pduLevelQuota,
-		}
-
-		if len(flowInfos) > 0 {
-			ueRecordsBsonM["flowInfos"] = flowInfos
-		}
-
-		chargingRecordsBsonA = append(chargingRecordsBsonA, ueRecordsBsonM)
 	}
 
+	logger.BillingLog.Warnf("chargingRecordsBsonA: %v\n", chargingRecordsBsonA)
 	c.JSON(http.StatusOK, chargingRecordsBsonA)
+}
+
+func addVolumeToPduLevelDataUsage(ratingGroupDataUsages map[int64]RatingGroupDataUsage, flow_du RatingGroupDataUsage) {
+	found := false
+	for rg, du := range ratingGroupDataUsages {
+		if du.Filter == "" && du.Dnn == "" && du.Supi == flow_du.Supi && du.Snssai == flow_du.Snssai {
+			found = true
+			du.TotalVol += flow_du.TotalVol
+			du.DlVol += flow_du.DlVol
+			du.UlVol += flow_du.UlVol
+			ratingGroupDataUsages[rg] = du
+		}
+	}
+	if !found {
+		filter := bson.M{"filter": "", "dnn": "", "snssai": flow_du.Snssai, "ueId": flow_du.Supi}
+		chargingDataInterface, err := mongoapi.RestfulAPIGetOne(chargingDataColl, filter)
+		if err != nil {
+			logger.BillingLog.Errorln(err)
+		}
+
+		var chargingData ChargingData
+		err = json.Unmarshal(mapToByte(chargingDataInterface), &chargingData)
+		if err != nil {
+			logger.BillingLog.Error(err)
+		}
+
+		if chargingData.RatingGroup == 0 {
+			logger.BillingLog.Errorf("Supi: %s's PDU Level Rating Group is 0", flow_du.Supi)
+			return
+		}
+
+		quota, err := strconv.Atoi(chargingData.Quota)
+		if err != nil {
+			logger.BillingLog.Errorf("Quota convert error, supi: %s, flow: %s", flow_du.Supi, flow_du.Filter)
+		}
+		ratingGroupDataUsages[chargingData.RatingGroup] = RatingGroupDataUsage{
+			Supi:      flow_du.Supi,
+			Filter:    "",
+			Snssai:    flow_du.Snssai,
+			Dnn:       "",
+			TotalVol:  flow_du.TotalVol,
+			DlVol:     flow_du.DlVol,
+			UlVol:     flow_du.UlVol,
+			QuotaLeft: int64(quota),
+		}
+	}
 }
