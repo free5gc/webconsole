@@ -2058,6 +2058,7 @@ func GetChargingRecord(c *gin.Context) {
 		}
 
 		// Flow's Tol, Dl, Ul volume add back to PDU Session Level
+		// TODO: O(n^2) too slow
 		for _, du := range ratingGroupDataUsages {
 			if du.Filter != "" && du.Dnn != "" {
 				addVolumeToPduLevelDataUsage(ratingGroupDataUsages, du)
@@ -2077,8 +2078,10 @@ func addVolumeToPduLevelDataUsage(ratingGroupDataUsages map[int64]RatingGroupDat
 			du.DlVol += flow_du.DlVol
 			du.UlVol += flow_du.UlVol
 			ratingGroupDataUsages[rg] = du
+			break
 		}
 	}
+
 	if !found {
 		filter := bson.M{"filter": "", "dnn": "", "snssai": flow_du.Snssai, "ueId": flow_du.Supi}
 		chargingDataInterface, err := mongoapi.RestfulAPIGetOne(chargingDataColl, filter)
@@ -2087,8 +2090,7 @@ func addVolumeToPduLevelDataUsage(ratingGroupDataUsages map[int64]RatingGroupDat
 		}
 
 		var chargingData ChargingData
-		err = json.Unmarshal(mapToByte(chargingDataInterface), &chargingData)
-		if err != nil {
+		if json.Unmarshal(mapToByte(chargingDataInterface), &chargingData) != nil {
 			logger.BillingLog.Error(err)
 		}
 
@@ -2101,6 +2103,7 @@ func addVolumeToPduLevelDataUsage(ratingGroupDataUsages map[int64]RatingGroupDat
 		if err != nil {
 			logger.BillingLog.Errorf("Quota convert error, supi: %s, flow: %s", flow_du.Supi, flow_du.Filter)
 		}
+
 		ratingGroupDataUsages[chargingData.RatingGroup] = RatingGroupDataUsage{
 			Supi:      flow_du.Supi,
 			Filter:    "",

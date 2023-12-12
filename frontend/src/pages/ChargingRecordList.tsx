@@ -59,7 +59,9 @@ export default function ChargingRecordList() {
   /* eslint-disable react/prop-types */
   const PerFlowTableView = ({ Supi, Snssai }: Props): React.ReactElement => (
     <>
-      {expand === true ? cr.filter((a) => a!.Filter !== "" && a!.Dnn! !== "" && a!.Supi === Supi && a!.Snssai === Snssai).sort((a,b) => a!.Filter! > b!.Filter! ? 1 : -1).map((row, index) => (
+      {expand === true ? cr.filter((a) => a!.Filter !== "" && a!.Dnn! !== "" && a!.Supi === Supi && a!.Snssai === Snssai)
+                              .sort((a,b) => a!.Filter! > b!.Filter! ? 1 : -1)
+                                  .map((row, index) => (
             <TableRow key={index}>
               <TableCell>{}</TableCell>
               <TableCell>{row.Snssai}</TableCell>
