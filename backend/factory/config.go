@@ -44,7 +44,6 @@ type Configuration struct {
 	Mongodb       *Mongodb       `yaml:"mongodb" valid:"required"`
 	NrfUri        string         `yaml:"nrfUri" valid:"required"`
 	BillingServer *BillingServer `yaml:"billingServer,omitempty" valid:"required"`
-	NrfUri        string         `yaml:"nrfUri" valid:"required"`
 }
 
 type Logger struct {

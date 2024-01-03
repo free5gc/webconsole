@@ -45,7 +45,7 @@ const (
 	tenantDataColl   = "tenantData"
 	identityDataColl = "subscriptionData.identityData"
 
-	queryStrength = 2
+	// queryStrength = 2
 )
 
 var jwtKey = "" // for generating JWT
@@ -1391,10 +1391,19 @@ func sendRechargeNotification(ueId string, rg int32) {
 	if err != nil {
 		logger.ProcLog.Error(err)
 	}
+	defer func() {
+		if err = req.Body.Close(); err != nil {
+			logger.ProcLog.Error(err)
+		}
+	}()
 	req.Header.Add("Content-Type", "application/json")
 
-	if _, err = http.DefaultClient.Do(req); err != nil {
-		logger.ProcLog.Errorf("Send Charging Notification err: %+v", err)
+	resp, err1 := http.DefaultClient.Do(req)
+	if err != nil {
+		logger.ProcLog.Errorf("Send Charging Notification err: %+v", err1)
+	}
+	if err = resp.Body.Close(); err != nil {
+		logger.ProcLog.Error(err)
 	}
 }
 
@@ -1962,7 +1971,8 @@ func parseCDR(supi string) (map[int64]RatingGroupDataUsage, error) {
 			du := dataUsage[rg]
 
 			// logger.BillingLog.Warnln("rg:", rg)
-			// logger.BillingLog.Warnln("SD:", string(chargingRecord.PDUSessionChargingInformation.NetworkSliceInstanceID.SD.Value))
+			// logger.BillingLog.Warnln("SD:",
+			//  string(chargingRecord.PDUSessionChargingInformation.NetworkSliceInstanceID.SD.Value))
 
 			du.Snssai = fmt.Sprintf("%02d", chargingRecord.PDUSessionChargingInformation.NetworkSliceInstanceID.SST.Value) +
 				string(chargingRecord.PDUSessionChargingInformation.NetworkSliceInstanceID.SD.Value)
@@ -1999,8 +2009,8 @@ func GetChargingRecord(c *gin.Context) {
 	if amfUris := webuiSelf.GetOamUris(models.NfType_AMF); amfUris != nil {
 		requestUri := fmt.Sprintf("%s/namf-oam/v1/registered-ue-context", amfUris[0])
 
-		// resp, err := http.NewRequestWithContext(context.Background(), http.MethodGet, requestUri, nil)
-		resp, err := httpsClient.Get(requestUri)
+		resp, err := http.NewRequestWithContext(context.Background(), http.MethodGet, requestUri, nil)
+		// resp, err := httpsClient.Get(requestUri)
 		if err != nil {
 			logger.ProcLog.Error(err)
 			c.JSON(http.StatusInternalServerError, gin.H{})
@@ -2050,7 +2060,10 @@ func GetChargingRecord(c *gin.Context) {
 			du.Dnn = chargingData.Dnn
 			du.Supi = supi
 			du.Filter = chargingData.Filter
-			tmpInt, _ := strconv.Atoi(chargingData.Quota)
+			tmpInt, err1 := strconv.Atoi(chargingData.Quota)
+			if err1 != nil {
+				logger.BillingLog.Error("Quota strconv: ", err1)
+			}
 			du.QuotaLeft = int64(tmpInt)
 
 			ratingGroupDataUsages[rg] = du
