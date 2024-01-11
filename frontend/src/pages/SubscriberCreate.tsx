@@ -76,7 +76,12 @@ export default function SubscriberCreate() {
             "sd": "010203"
           }
         ],
-        singleNssais: [],
+        singleNssais: [
+          {
+            "sst": 1,
+            "sd": "112233"
+          }
+        ],
       },
     },
     SessionManagementSubscriptionData: [
