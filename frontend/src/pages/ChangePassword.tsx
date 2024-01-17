@@ -57,7 +57,7 @@ export default function ChangePassword() {
       return;
     }
     const newUser: User = {
-      email: user?.username,
+      email: user?.username ?? "",
       encryptedPassword: password.password,
     };
     axios.post("/api/change-password", newUser).then((res) => {

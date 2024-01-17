@@ -53,16 +53,30 @@ components:
           type: integer
           format: int64
     # Subscriber
+    # github.com/free5gc/webconsole/backend/WebUI/model_subs_list_ie.go:SubsListIE
     Subscriber:
       type: object
+      required:
+        - plmnID
+        - ueId
+        - gpsi
       properties:
         plmnID:
           type: string
         ueId:
           type: string
+        gpsi:
+          type: string
     # PduSession
+    # github.com/free5gc/amf/internal/sbi/producer/oam.go:PduSession
     PduSession:
       type: object
+      required:
+        - Dnn
+        - PduSessionId
+        - Sd
+        - SmContextRef
+        - Sst
       properties:
         Dnn:
           type: string
@@ -75,8 +89,18 @@ components:
         Sst:
           type: string
     # UeContext
+    # github.com/free5gc/amf/internal/sbi/producer/oam.go:UEContext
     UeContext:
       type: object
+      required:
+        - AccessType
+        - CmState
+        - Guti
+        - Mcc
+        - Mnc
+        - PduSessions
+        - Supi
+        - Tac
       properties:
         AccessType:
           type: string
@@ -97,14 +121,21 @@ components:
         Tac:
           type: string
     # SessionRule
+    # github.com/free5gc/openapi/models/model_session_rule.go:SessionRule
     SessionRule:
       type: object
+      required:
+        - sessRuleId
       properties:
         sessRuleId:
           type: string
     # ANInformation
+    # github.com/free5gc/smf/internal/context/upf.go:UPTunnel/ANInformation
     ANInformation:
       type: object
+      required:
+        - IPAddress
+        - TEID
       properties:
         IPAddress:
           type: string
@@ -112,18 +143,35 @@ components:
           type: integer
           format: int64
     # Tunnel
+    # github.com/free5gc/smf/internal/context/upf.go:UPTunnel
     Tunnel:
       type: object
+      required:
+        - ANInformation
+        - DataPathPool
+        - PathIDGenerator
       properties:
         ANInformation:
           $ref: "#/components/schemas/ANInformation"
         DataPathPool:
-          type: string
+          description: github.com/free5gc/smf/internal/context/datapath.go:DataPathPool
         PathIDGenerator:
-          type: string
+          description: github.com/free5gc/util/idgenerator/idgenerator.go:IDGenerator
     # PduSessionInfo
+    # github.com/free5gc/smf/internal/sbi/producer/oam.go:PDUSessionInfo
     PduSessionInfo:
       type: object
+      required:
+        - AnType
+        - Dnn
+        - PDUAddress
+        - PDUSessionID
+        - Sd
+        - SessionRule
+        - Sst
+        - Supi
+        - Tunnel
+        - UpCnxState
       properties:
         AnType:
           type: string
@@ -150,16 +198,23 @@ components:
         UpCnxState:
           type: string
     # Tenant
+    # github.com/free5gc/webconsole/backend/WebUI/model_tenant_data.go:Tenant
     Tenant:
       type: object
+      required:
+        - tenantName
       properties:
         tenantId:
           type: string
         tenantName:
           type: string
     # User
+    # github.com/free5gc/webconsole/backend/WebUI/model_user_data.go:User
     User:
       type: object
+      required:
+        - email
+        - encryptedPassword
       properties:
         userId:
           type: string
@@ -170,7 +225,12 @@ components:
         encryptedPassword:
           type: string
     # Opc
+    # github.com/free5gc/openapi/models/model_opc.go:Opc
     Opc:
+      required:
+        - opcValue
+        - encryptionKey
+        - encryptionAlgorithm
       type: object
       properties:
         opcValue:
@@ -182,8 +242,13 @@ components:
           type: integer
           format: int64
     # MilenageOp
+    # github.com/free5gc/openapi/models/model_op.go:Op
     MilenageOp:
       type: object
+      required:
+        - opValue
+        - encryptionKey
+        - encryptionAlgorithm
       properties:
         opValue:
           type: string
@@ -194,14 +259,20 @@ components:
           type: integer
           format: int64
     # Milenage
+    # github.com/free5gc/openapi/models/model_milenage.go:Milenage
     Milenage:
       type: object
       properties:
         op:
           $ref: "#/components/schemas/MilenageOp"
     # PermanentKey
+    # github.com/free5gc/openapi/models/model_permanent_key.go:PermanentKey
     PermanentKey:
       type: object
+      required:
+        - permanentKeyValue
+        - encryptionKey
+        - encryptionAlgorithm
       properties:
         permanentKeyValue:
           type: string
@@ -212,8 +283,13 @@ components:
           type: integer
           format: int64
     # AuthenticationSubscription
+    # github.com/free5gc/openapi/models/model_authentication_subscription.go:AuthenticationSubscription
     AuthenticationSubscription:
       type: object
+      required:
+        - authenticationMethod
+        - permanentKey
+        - sequenceNumber
       properties:
         authenticationMethod:
           type: string
@@ -228,16 +304,23 @@ components:
         opc:
           $ref: "#/components/schemas/Opc"
     # SubscribedUeAmbr
+    # github.com/free5gc/openapi/models/model_ambr_rm.go:AmbrRm
     SubscribedUeAmbr:
       type: object
+      required:
+        - uplink
+        - downlink
       properties:
         uplink:
           type: string
         downlink:
           type: string
     # Nssai
+    # github.com/free5gc/openapi/models/model_snssai.go:Snssai
     Nssai:
       type: object
+      required:
+        - sst
       properties:
         sst:
           type: integer
@@ -245,8 +328,11 @@ components:
         sd:
           type: string
     # DefaultSingleNssais
+    # github.com/free5gc/openapi/models/model_nssai.go:Nssai
     DefaultSingleNssais:
       type: object
+      required:
+        - defaultSingleNssais
       properties:
         defaultSingleNssais:
           type: array
@@ -257,6 +343,7 @@ components:
           items:
             $ref: "#/components/schemas/Nssai"
     # AccessAndMobilitySubscriptionData
+    # github.com/free5gc/openapi/models/model_access_and_mobility_subscription_data.go:AccessAndMobilitySubscriptionData
     AccessAndMobilitySubscriptionData:
       type: object
       properties:
@@ -269,16 +356,22 @@ components:
         nssai:
           $ref: "#/components/schemas/DefaultSingleNssais"
     # SessionManagementSubscriptionData
+    # github.com/free5gc/openapi/models/model_session_management_subscription_data.go:SessionManagementSubscriptionData
     SessionManagementSubscriptionData:
       type: object
+      required:
+        - singleNssai
       properties:
         singleNssai:
           $ref: "#/components/schemas/Nssai"
         dnnConfigurations:
           $ref: "#/components/schemas/DnnConfigurations"
     # PduSessionTypes
+    # github.com/free5gc/openapi/models/model_pdu_session_types.go:PduSessionTypes
     PduSessionTypes:
       type: object
+      required:
+        - defaultSessionType
       properties:
         defaultSessionType:
           type: string
@@ -287,8 +380,11 @@ components:
           items:
             type: string
     # SscModes
+    # github.com/free5gc/openapi/models/model_ssc_modes.go:SscModes
     SscModes:
       type: object
+      required:
+        - defaultSscMode
       properties:
         defaultSscMode:
           type: string
@@ -297,8 +393,13 @@ components:
           items:
             type: string
     # Arp
+    # github.com/free5gc/openapi/models/model_arp.go:Arp
     Arp:
       type: object
+      required:
+        - priorityLevel
+        - preemptCap
+        - preemptVuln
       properties:
         priorityLevel:
           type: integer
@@ -308,8 +409,12 @@ components:
         preemptVuln:
           type: string
     # 5gQosProfile
+    # github.com/free5gc/openapi/models/model_subscribed_default_qos.go:SubscribedDefaultQos
     5gQosProfile:
       type: object
+      required:
+        - 5qi
+        - arp
       properties:
         5qi:
           type: integer
@@ -320,24 +425,47 @@ components:
           type: integer
           format: int64
     # SessionAmbr
+    # github.com/free5gc/openapi/models/model_ambr.go:Ambr
     SessionAmbr:
       type: object
+      required:
+        - uplink
+        - downlink
       properties:
         uplink:
           type: string
         downlink:
           type: string
+    # IpAddress
+    # github.com/free5gc/openapi/models/model_ip_address.go:IpAddress
+    IpAddress:
+      type: object
+      properties:
+        ipv4Addr:
+          type: string
+        ipv6Addr:
+          type: string
+        ipv6Prefix:
+          type: string
     # UpSecurity
+    # github.com/free5gc/openapi/models/model_up_security.go:UpSecurity
     UpSecurity:
       type: object
+      required:
+        - upIntegr
+        - upConfid
       properties:
         upIntegr:
           type: string
         upConfid:
           type: string
     # DnnConfiguration
+    # github.com/free5gc/openapi/models/model_dnn_configuration.go:DnnConfiguration
     DnnConfiguration:
       type: object
+      required:
+        - pduSessionTypes
+        - sscModes
       properties:
         pduSessionTypes:
           $ref: "#/components/schemas/PduSessionTypes"
@@ -347,39 +475,54 @@ components:
           $ref: "#/components/schemas/5gQosProfile"
         sessionAmbr:
           $ref: "#/components/schemas/SessionAmbr"
+        staticIpAddress:
+          type: array
+          items:
+            $ref: '#/components/schemas/IpAddress'
         upSecurity:
           $ref: "#/components/schemas/UpSecurity"
     # DnnConfigurations
+    # map[string]DnnConfiguration
     DnnConfigurations:
       type: object
       additionalProperties:
         $ref: "#/components/schemas/DnnConfiguration"
     # Dnn
+    # github.com/free5gc/openapi/models/model_dnn_info.go:DnnInfo
+    # github.com/free5gc/openapi/models/model_sm_policy_dnn_data.go:SmPolicyDnnData
     Dnn:
       type: object
+      required:
+        - dnn
       properties:
         dnn:
           type: string
     # SubscribedSnssaiInfo
+    # github.com/free5gc/openapi/models/model_snssai_info.go:SnssaiInfo
     SubscribedSnssaiInfo:
       type: object
+      required:
+        - dnnInfos
       properties:
         dnnInfos:
           type: array
           items:
             $ref: "#/components/schemas/Dnn"
     # SubscribedSnssaiInfos
+    # map[string]SnssaiInfo
     SubscribedSnssaiInfos:
       type: object
       additionalProperties:
         $ref: "#/components/schemas/SubscribedSnssaiInfo"
     # SmfSelectionSubscriptionData
+    # github.com/free5gc/openapi/models/model_smf_selection_subscription_data.go:SmfSelectionSubscriptionData
     SmfSelectionSubscriptionData:
       type: object
       properties:
         subscribedSnssaiInfos:
           $ref: "#/components/schemas/SubscribedSnssaiInfos"
     # AmPolicyData
+    # github.com/free5gc/openapi/models/model_am_policy_data.go:AmPolicyData
     AmPolicyData:
       type: object
       properties:
@@ -388,30 +531,39 @@ components:
           items:
             type: string
     # SmPolicyDnnData
+    # map[string]SmPolicyDnnData
     SmPolicyDnnData:
       type: object
       additionalProperties:
         $ref: "#/components/schemas/Dnn"
     # SmPolicySnssai
+    # github.com/free5gc/openapi/models/model_sm_policy_snssai_data.go:SmPolicySnssaiData
     SmPolicySnssai:
       type: object
+      required:
+        - snssai
       properties:
         snssai:
           $ref: "#/components/schemas/Nssai"
         smPolicyDnnData:
           $ref: "#/components/schemas/SmPolicyDnnData"
     # SmPolicySnssaiData
+    # map[string]SmPolicySnssaiData
     SmPolicySnssaiData:
       type: object
       additionalProperties:
         $ref: "#/components/schemas/SmPolicySnssai"
     # SmPolicyData
+    # github.com/free5gc/openapi/models/model_sm_policy_data.go:SmPolicyData
     SmPolicyData:
       type: object
+      required:
+        - smPolicySnssaiData
       properties:
         smPolicySnssaiData:
           $ref: "#/components/schemas/SmPolicySnssaiData"
     # FlowRules
+    # github.com/free5gc/webconsole/backend/WebUI/model_flow_rule.go:FlowRule
     FlowRules:
       type: object
       properties:
@@ -427,8 +579,14 @@ components:
         qfi:
           type: integer
           format: int64
+    # github.com/free5gc/webconsole/backend/WebUI/model_qos_flow.go:QosFlow
     QosFlows:
       type: object
+      required:
+        - snssai
+        - dnn
+        - qfi
+        - 5qi
       properties:
         snssai:
           type: string
@@ -449,8 +607,20 @@ components:
         gbrDL:
           type: string
     # Subscription
+    # github.com/free5gc/webconsole/backend/WebUI/model_subs_data.go:SubsData
     Subscription:
       type: object
+      required:
+        - plmnID
+        - ueId
+        - AuthenticationSubscription
+        - AccessAndMobilitySubscriptionData
+        - SessionManagementSubscriptionData
+        - SmfSelectionSubscriptionData
+        - AmPolicyData
+        - SmPolicyData
+        - FlowRules
+        - QosFlows
       properties:
         userNumber:
           type: integer

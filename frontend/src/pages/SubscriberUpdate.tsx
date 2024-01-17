@@ -39,9 +39,26 @@ export default function SubscriberUpdate() {
   const navigation = useNavigate();
 
   const [data, setData] = useState<Subscription>({
+    plmnID: "",
+    ueId: "",
     AuthenticationSubscription: {
-      authenticationMethod: "5G_AKA",
+        authenticationMethod: "5G_AKA",
+      permanentKey: {
+        permanentKeyValue: "",
+        encryptionKey: 0,
+        encryptionAlgorithm: 0,
+      },
+      sequenceNumber: "",
     },
+    AccessAndMobilitySubscriptionData: {},
+    SessionManagementSubscriptionData: [],
+    SmfSelectionSubscriptionData: {},
+    AmPolicyData: {},
+    SmPolicyData: {
+      smPolicySnssaiData: {},
+    },
+    FlowRules: [],
+    QosFlows: [],
   });
   const [opcType, setOpcType] = useState<string>("OPc");
   const [opcValue, setOpcValue] = useState<string>("8e27b6af0e692e750f32667a3b14605d");
@@ -130,7 +147,9 @@ export default function SubscriberUpdate() {
       setData({ ...data });
     } else {
       data.SessionManagementSubscriptionData.push({
-        singleNssai: {},
+        singleNssai: {
+          sst: 1,
+        },
         dnnConfigurations: {},
       });
       setData({ ...data });
@@ -169,7 +188,10 @@ export default function SubscriberUpdate() {
           },
           priorityLevel: 8,
         },
-        sessionAmbr: {},
+        sessionAmbr: {
+          uplink: "",
+          downlink: "",
+        },
       };
       setData({ ...data });
       dnnName[index] = "";
@@ -228,7 +250,10 @@ export default function SubscriberUpdate() {
 
   const onUpSecurity = (dnn: DnnConfiguration | undefined) => {
     if (dnn !== undefined) {
-      dnn.upSecurity = {};
+      dnn.upSecurity = {
+        upIntegr: "NOT_NEEDED",
+        upConfid: "NOT_NEEDED",
+      };
     }
     setData({ ...data });
   };
@@ -333,6 +358,8 @@ export default function SubscriberUpdate() {
         ...data.AuthenticationSubscription,
         permanentKey: {
           permanentKeyValue: event.target.value,
+          encryptionKey: 0,
+          encryptionAlgorithm: 0,
         },
       },
     });
@@ -348,10 +375,14 @@ export default function SubscriberUpdate() {
           milenage: {
             op: {
               opValue: opcValue,
+              encryptionKey: 0,
+              encryptionAlgorithm: 0,
             },
           },
           opc: {
             opcValue: "",
+            encryptionKey: 0,
+            encryptionAlgorithm: 0,
           },
         },
       };
@@ -365,10 +396,14 @@ export default function SubscriberUpdate() {
           milenage: {
             op: {
               opValue: "",
+              encryptionKey: 0,
+              encryptionAlgorithm: 0,
             },
           },
           opc: {
             opcValue: opcValue,
+            encryptionKey: 0,
+            encryptionAlgorithm: 0,
           },
         },
       };
@@ -390,10 +425,14 @@ export default function SubscriberUpdate() {
             milenage: {
               op: {
                 opValue: event.target.value,
+                encryptionKey: 0,
+                encryptionAlgorithm: 0,
               },
             },
             opc: {
               opcValue: "",
+              encryptionKey: 0,
+              encryptionAlgorithm: 0,
             },
           },
         };
@@ -406,10 +445,14 @@ export default function SubscriberUpdate() {
             milenage: {
               op: {
                 opValue: "",
+                encryptionKey: 0,
+                encryptionAlgorithm: 0,
               },
             },
             opc: {
               opcValue: event.target.value,
+              encryptionKey: 0,
+              encryptionAlgorithm: 0,
             },
           },
         };
@@ -438,8 +481,8 @@ export default function SubscriberUpdate() {
       AccessAndMobilitySubscriptionData: {
         ...data.AccessAndMobilitySubscriptionData,
         subscribedUeAmbr: {
-          ...data.AccessAndMobilitySubscriptionData?.subscribedUeAmbr,
           uplink: event.target.value,
+          downlink: data.AccessAndMobilitySubscriptionData.subscribedUeAmbr?.downlink ?? "",
         },
       },
     });
@@ -453,7 +496,7 @@ export default function SubscriberUpdate() {
       AccessAndMobilitySubscriptionData: {
         ...data.AccessAndMobilitySubscriptionData,
         subscribedUeAmbr: {
-          ...data.AccessAndMobilitySubscriptionData?.subscribedUeAmbr,
+          uplink: data.AccessAndMobilitySubscriptionData.subscribedUeAmbr?.uplink ?? "",
           downlink: event.target.value,
         },
       },
@@ -465,7 +508,7 @@ export default function SubscriberUpdate() {
     index: number,
   ): void => {
     if (event.target.value === "") {
-      data.SessionManagementSubscriptionData![index].singleNssai!.sst = undefined;
+      data.SessionManagementSubscriptionData![index].singleNssai!.sst = 0;
     } else {
       data.SessionManagementSubscriptionData![index].singleNssai!.sst! = Number(event.target.value);
     }
@@ -516,7 +559,7 @@ export default function SubscriberUpdate() {
         def.push(nssai);
       }
     }
-    data.AccessAndMobilitySubscriptionData!.nssai!.defaultSingleNssais = def;
+    data.AccessAndMobilitySubscriptionData!.nssai!.defaultSingleNssais = def ?? [];
     data.AccessAndMobilitySubscriptionData!.nssai!.singleNssais = single;
     setData({ ...data });
   };
@@ -561,7 +604,7 @@ export default function SubscriberUpdate() {
     if (event.target.value === "") {
       data.SessionManagementSubscriptionData![index].dnnConfigurations![dnn]["5gQosProfile"]![
         "5qi"
-      ] = undefined;
+      ] = 8;
     } else {
       data.SessionManagementSubscriptionData![index].dnnConfigurations![dnn]["5gQosProfile"]![
         "5qi"
@@ -625,8 +668,8 @@ export default function SubscriberUpdate() {
       for (let i = 0; i < data.QosFlows!.length; i++) {
         if (data.QosFlows![i].snssai === flowKey && data.QosFlows![i].dnn === dnn) {
           if (event.target.value == "") {
-            data.QosFlows![i].qfi = undefined;
-            data.QosFlows![i]["5qi"] = undefined;
+            data.QosFlows![i].qfi = 8;
+            data.QosFlows![i]["5qi"] = 8;
           } else {
             data.QosFlows![i].qfi = Number(event.target.value);
             data.QosFlows![i]["5qi"] = Number(event.target.value);

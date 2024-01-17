@@ -14,7 +14,7 @@ export default function TenantUpdate() {
     id: string;
   }>();
   const navigation = useNavigate();
-  const [tenant, setTenant] = useState<Tenant>({});
+  const [tenant, setTenant] = useState<Tenant>({tenantName: ""});
 
   useEffect(() => {
     axios.get("/api/tenant/" + id).then((res) => {

@@ -44,6 +44,8 @@ export default function SubscriberCreate() {
       authenticationManagementField: "8000",
       permanentKey: {
         permanentKeyValue: "8baf473f2f8fd09487cccbd7097c6862",
+        encryptionKey: 0,
+        encryptionAlgorithm: 0,
       },
       milenage: {
         op: {
@@ -54,6 +56,8 @@ export default function SubscriberCreate() {
       },
       opc: {
         opcValue: "8e27b6af0e692e750f32667a3b14605d",
+        encryptionKey: 0,
+        encryptionAlgorithm: 0,
       },
     },
     AccessAndMobilitySubscriptionData: {
@@ -328,7 +332,9 @@ export default function SubscriberCreate() {
       setData({ ...data });
     } else {
       data.SessionManagementSubscriptionData.push({
-        singleNssai: {},
+        singleNssai: {
+          sst: 1,
+        },
         dnnConfigurations: {},
       });
       setData({ ...data });
@@ -367,7 +373,10 @@ export default function SubscriberCreate() {
           },
           priorityLevel: 8,
         },
-        sessionAmbr: {},
+        sessionAmbr: {
+          uplink: "",
+          downlink: "",
+        },
       };
       setData({ ...data });
       dnnName[index] = "";
@@ -434,7 +443,10 @@ export default function SubscriberCreate() {
 
   const onUpSecurity = (dnn: DnnConfiguration | undefined) => {
     if (dnn !== undefined) {
-      dnn.upSecurity = {};
+      dnn.upSecurity = {
+        upIntegr: "NOT_NEEDED",
+        upConfid: "NOT_NEEDED",
+      };
     }
     setData({ ...data });
   };
@@ -552,6 +564,8 @@ export default function SubscriberCreate() {
         ...data.AuthenticationSubscription,
         permanentKey: {
           permanentKeyValue: event.target.value,
+          encryptionKey: 0,
+          encryptionAlgorithm: 0,
         },
       },
     });
@@ -567,10 +581,14 @@ export default function SubscriberCreate() {
           milenage: {
             op: {
               opValue: opcValue,
+              encryptionKey: 0,
+              encryptionAlgorithm: 0,
             },
           },
           opc: {
             opcValue: "",
+            encryptionKey: 0,
+            encryptionAlgorithm: 0,
           },
         },
       };
@@ -584,10 +602,14 @@ export default function SubscriberCreate() {
           milenage: {
             op: {
               opValue: "",
+              encryptionKey: 0,
+              encryptionAlgorithm: 0,
             },
           },
           opc: {
             opcValue: opcValue,
+            encryptionKey: 0,
+            encryptionAlgorithm: 0,
           },
         },
       };
@@ -609,10 +631,14 @@ export default function SubscriberCreate() {
             milenage: {
               op: {
                 opValue: event.target.value,
+                encryptionKey: 0,
+                encryptionAlgorithm: 0,
               },
             },
             opc: {
               opcValue: "",
+              encryptionKey: 0,
+              encryptionAlgorithm: 0,
             },
           },
         };
@@ -625,10 +651,14 @@ export default function SubscriberCreate() {
             milenage: {
               op: {
                 opValue: "",
+                encryptionKey: 0,
+                encryptionAlgorithm: 0,
               },
             },
             opc: {
               opcValue: event.target.value,
+              encryptionKey: 0,
+              encryptionAlgorithm: 0,
             },
           },
         };
@@ -657,8 +687,8 @@ export default function SubscriberCreate() {
       AccessAndMobilitySubscriptionData: {
         ...data.AccessAndMobilitySubscriptionData,
         subscribedUeAmbr: {
-          ...data.AccessAndMobilitySubscriptionData?.subscribedUeAmbr,
           uplink: event.target.value,
+          downlink: data.AccessAndMobilitySubscriptionData.subscribedUeAmbr?.downlink ?? "",
         },
       },
     });
@@ -672,7 +702,7 @@ export default function SubscriberCreate() {
       AccessAndMobilitySubscriptionData: {
         ...data.AccessAndMobilitySubscriptionData,
         subscribedUeAmbr: {
-          ...data.AccessAndMobilitySubscriptionData?.subscribedUeAmbr,
+          uplink: data.AccessAndMobilitySubscriptionData.subscribedUeAmbr?.uplink ?? "",
           downlink: event.target.value,
         },
       },
@@ -684,7 +714,7 @@ export default function SubscriberCreate() {
     index: number,
   ): void => {
     if (event.target.value === "") {
-      data.SessionManagementSubscriptionData![index].singleNssai!.sst = undefined;
+      data.SessionManagementSubscriptionData![index].singleNssai!.sst = 0;
     } else {
       data.SessionManagementSubscriptionData![index].singleNssai!.sst! = Number(event.target.value);
     }
@@ -735,7 +765,7 @@ export default function SubscriberCreate() {
         def.push(nssai);
       }
     }
-    data.AccessAndMobilitySubscriptionData!.nssai!.defaultSingleNssais = def;
+    data.AccessAndMobilitySubscriptionData!.nssai!.defaultSingleNssais = def ?? [];
     data.AccessAndMobilitySubscriptionData!.nssai!.singleNssais = single;
     setData({ ...data });
   };
@@ -780,7 +810,7 @@ export default function SubscriberCreate() {
     if (event.target.value === "") {
       data.SessionManagementSubscriptionData![index].dnnConfigurations![dnn]["5gQosProfile"]![
         "5qi"
-      ] = undefined;
+      ] = 8;
     } else {
       data.SessionManagementSubscriptionData![index].dnnConfigurations![dnn]["5gQosProfile"]![
         "5qi"
@@ -844,8 +874,8 @@ export default function SubscriberCreate() {
       for (let i = 0; i < data.QosFlows!.length; i++) {
         if (data.QosFlows![i].snssai === flowKey && data.QosFlows![i].dnn === dnn) {
           if (event.target.value == "") {
-            data.QosFlows![i].qfi = undefined;
-            data.QosFlows![i]["5qi"] = undefined;
+            data.QosFlows![i].qfi = 8;
+            data.QosFlows![i]["5qi"] = 8;
           } else {
             data.QosFlows![i].qfi = Number(event.target.value);
             data.QosFlows![i]["5qi"] = Number(event.target.value);

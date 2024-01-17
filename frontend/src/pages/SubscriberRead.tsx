@@ -32,7 +32,7 @@ export default function SubscriberRead() {
   }>();
   const navigation = useNavigate();
 
-  const [data, setData] = useState<Subscription>({});
+  const [data, setData] = useState<Subscription | null>(null);
   // const [update, setUpdate] = useState<boolean>(false);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export default function SubscriberRead() {
   };
 
   const isDefaultNssai = (nssai: Nssai | undefined) => {
-    if (nssai === undefined) {
+    if (nssai === undefined || data == null) {
       return false;
     } else {
       for (
@@ -115,9 +115,8 @@ export default function SubscriberRead() {
   };
 
   const qosFlow = (flowKey: string, dnn: string): QosFlows|undefined => {
-    if (data.QosFlows !== undefined) {
-      for (let i = 0; i < data.QosFlows?.length; i++) {
-        const qos = data.QosFlows![i];
+    if (data != null) {
+      for (const qos of data.QosFlows) {
         if (qos.snssai === flowKey && qos.dnn === dnn) {
           return qos;
         }
@@ -130,7 +129,7 @@ export default function SubscriberRead() {
       return ("00" + v?.toString(16).toUpperCase()).substr(-2);
     }
     const flowKey = toHex(snssai.sst) + snssai.sd;
-    if (data.FlowRules !== undefined) {
+    if (data?.FlowRules !== undefined) {
       for (let i = 0; i < data.FlowRules?.length; i++) {
         const flow = data.FlowRules![i];
         if (flow.snssai === flowKey && flow.dnn === dnn) {
@@ -232,59 +231,59 @@ export default function SubscriberRead() {
           <TableBody>
             <TableRow>
               <TableCell>PLMN ID</TableCell>
-              <TableCell>{data.plmnID}</TableCell>
+              <TableCell>{data?.plmnID}</TableCell>
             </TableRow>
           </TableBody>
           <TableBody>
             <TableRow>
               <TableCell style={{ width: "40%" }}>SUPI (IMSI)</TableCell>
-              <TableCell>{imsiValue(data.ueId)}</TableCell>
+              <TableCell>{imsiValue(data?.ueId)}</TableCell>
             </TableRow>
           </TableBody>
           <TableBody>
             <TableRow>
               <TableCell style={{ width: "40%" }}>GPSI (MSISDN)</TableCell>
-              <TableCell>{msisdnValue(data.AccessAndMobilitySubscriptionData)}</TableCell>
+              <TableCell>{msisdnValue(data?.AccessAndMobilitySubscriptionData)}</TableCell>
             </TableRow>
           </TableBody>
           <TableBody>
             <TableRow>
               <TableCell style={{ width: "40%" }}>Authentication Management Field (AMF)</TableCell>
               <TableCell>
-                {data.AuthenticationSubscription?.authenticationManagementField}
+                {data?.AuthenticationSubscription?.authenticationManagementField}
               </TableCell>
             </TableRow>
           </TableBody>
           <TableBody>
             <TableRow>
               <TableCell style={{ width: "40%" }}>Authentication Method</TableCell>
-              <TableCell>{data.AuthenticationSubscription?.authenticationMethod}</TableCell>
+              <TableCell>{data?.AuthenticationSubscription?.authenticationMethod}</TableCell>
             </TableRow>
           </TableBody>
           <TableBody>
             <TableRow>
               <TableCell style={{ width: "40%" }}>K</TableCell>
               <TableCell>
-                {data.AuthenticationSubscription?.permanentKey?.permanentKeyValue}
+                {data?.AuthenticationSubscription?.permanentKey?.permanentKeyValue}
               </TableCell>
             </TableRow>
           </TableBody>
           <TableBody>
             <TableRow>
               <TableCell style={{ width: "40%" }}>Operator Code Type</TableCell>
-              <TableCell>{operationCodeType(data.AuthenticationSubscription)}</TableCell>
+              <TableCell>{operationCodeType(data?.AuthenticationSubscription)}</TableCell>
             </TableRow>
           </TableBody>
           <TableBody>
             <TableRow>
               <TableCell style={{ width: "40%" }}>Operator Code Value</TableCell>
-              <TableCell>{operationCodeValue(data.AuthenticationSubscription)}</TableCell>
+              <TableCell>{operationCodeValue(data?.AuthenticationSubscription)}</TableCell>
             </TableRow>
           </TableBody>
           <TableBody>
             <TableRow>
               <TableCell style={{ width: "40%" }}>SQN</TableCell>
-              <TableCell>{data.AuthenticationSubscription?.sequenceNumber}</TableCell>
+              <TableCell>{data?.AuthenticationSubscription?.sequenceNumber}</TableCell>
             </TableRow>
           </TableBody>
         </Table>
@@ -296,7 +295,7 @@ export default function SubscriberRead() {
             <TableRow>
               <TableCell style={{ width: "40%" }}>Uplink</TableCell>
               <TableCell>
-                {data.AccessAndMobilitySubscriptionData?.subscribedUeAmbr?.uplink}
+                {data?.AccessAndMobilitySubscriptionData?.subscribedUeAmbr?.uplink}
               </TableCell>
             </TableRow>
           </TableBody>
@@ -304,13 +303,13 @@ export default function SubscriberRead() {
             <TableRow>
               <TableCell style={{ width: "40%" }}>Downlink</TableCell>
               <TableCell>
-                {data.AccessAndMobilitySubscriptionData?.subscribedUeAmbr?.downlink}
+                {data?.AccessAndMobilitySubscriptionData?.subscribedUeAmbr?.downlink}
               </TableCell>
             </TableRow>
           </TableBody>
         </Table>
       </Card>
-      {data.SessionManagementSubscriptionData?.map((row, index) => (
+      {data?.SessionManagementSubscriptionData?.map((row, index) => (
         <div key={index}>
           <h3>S-NSSAI Configuragtion</h3>
           <Card variant="outlined">
