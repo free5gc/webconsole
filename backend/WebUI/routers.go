@@ -236,4 +236,11 @@ var routes = Routes{
 		"/charging-record",
 		GetChargingRecord,
 	},
+
+	{
+		"Charging Data",
+		http.MethodGet,
+		"/charging-data/:chargingMethod",
+		GetChargingData,
+	},
 }

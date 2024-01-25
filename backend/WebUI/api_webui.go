@@ -569,6 +569,9 @@ type AuthSub struct {
 // Parse JWT
 func ParseJWT(tokenStr string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		// Tolerance for User's Time quicker than Server's time
+		mapClaims := token.Claims.(jwt.MapClaims)
+		delete(mapClaims, "iat")
 		return []byte(jwtKey), nil
 	})
 	if err != nil {
@@ -1762,9 +1765,6 @@ func DeleteSubscriberByID(c *gin.Context) {
 	var claims jwt.MapClaims = nil
 	dbOperation(supi, servingPlmnId, "delete", nil, claims)
 
-	// CdrFilePath := "/tmp/" + ueId + ".cdr"
-	// removeCdrFile(CdrFilePath)
-
 	CdrFilePath := "/tmp/webconsole/"
 	removeCdrFile(CdrFilePath)
 
@@ -1931,6 +1931,7 @@ func OptionsSubscribers(c *gin.Context) {
 	c.JSON(http.StatusNoContent, gin.H{})
 }
 
+// frontend's FlowChargingRecord
 type RatingGroupDataUsage struct {
 	Supi      string `bson:"Supi"`
 	Filter    string `bson:"Filter"`
@@ -1943,6 +1944,7 @@ type RatingGroupDataUsage struct {
 }
 
 // Get vol from CDR
+// TS 32.297: Charging Data Record (CDR) file format and transfer
 func parseCDR(supi string) (map[int64]RatingGroupDataUsage, error) {
 	logger.BillingLog.Traceln("parseCDR")
 	fileName := "/tmp/webconsole/" + supi + ".cdr"
@@ -1960,7 +1962,7 @@ func parseCDR(supi string) (map[int64]RatingGroupDataUsage, error) {
 		val := reflect.New(reflect.TypeOf(&cdrType.ChargingRecord{}).Elem()).Interface()
 		err := asn.UnmarshalWithParams(recvByte, val, "")
 		if err != nil {
-			logger.BillingLog.Error(err)
+			logger.BillingLog.Errorf("parseCDR error when unmarshal with params: %+v", err)
 			continue
 		}
 
@@ -2009,9 +2011,14 @@ func GetChargingRecord(c *gin.Context) {
 	if amfUris := webuiSelf.GetOamUris(models.NfType_AMF); amfUris != nil {
 		requestUri := fmt.Sprintf("%s/namf-oam/v1/registered-ue-context", amfUris[0])
 
-		resp, err := http.NewRequestWithContext(context.Background(), http.MethodGet, requestUri, nil)
-		// resp, err := httpsClient.Get(requestUri)
+		res, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, requestUri, nil)
 		if err != nil {
+			logger.ProcLog.Error(err)
+			c.JSON(http.StatusInternalServerError, gin.H{})
+			return
+		}
+		resp, res_err := httpsClient.Do(res)
+		if res_err != nil {
 			logger.ProcLog.Error(err)
 			c.JSON(http.StatusInternalServerError, gin.H{})
 			return
@@ -2063,6 +2070,7 @@ func GetChargingRecord(c *gin.Context) {
 			tmpInt, err1 := strconv.Atoi(chargingData.Quota)
 			if err1 != nil {
 				logger.BillingLog.Error("Quota strconv: ", err1)
+				logger.BillingLog.Error(rg, du, chargingData)
 			}
 			du.QuotaLeft = int64(tmpInt)
 
@@ -2102,22 +2110,22 @@ func addVolumeToPduLevelDataUsage(ratingGroupDataUsages map[int64]RatingGroupDat
 			logger.BillingLog.Errorln(err)
 		}
 
-		var chargingData ChargingData
-		if json.Unmarshal(mapToByte(chargingDataInterface), &chargingData) != nil {
+		var chargingRecord ChargingRecord
+		if json.Unmarshal(mapToByte(chargingDataInterface), &chargingRecord) != nil {
 			logger.BillingLog.Error(err)
 		}
 
-		if chargingData.RatingGroup == 0 {
+		if chargingRecord.RatingGroup == 0 {
 			logger.BillingLog.Errorf("Supi: %s's PDU Level Rating Group is 0", flow_du.Supi)
 			return
 		}
 
-		quota, err := strconv.Atoi(chargingData.Quota)
+		quota, err := strconv.Atoi(chargingRecord.Quota)
 		if err != nil {
 			logger.BillingLog.Errorf("Quota convert error, supi: %s, flow: %s", flow_du.Supi, flow_du.Filter)
 		}
 
-		ratingGroupDataUsages[chargingData.RatingGroup] = RatingGroupDataUsage{
+		ratingGroupDataUsages[chargingRecord.RatingGroup] = RatingGroupDataUsage{
 			Supi:      flow_du.Supi,
 			Filter:    "",
 			Snssai:    flow_du.Snssai,

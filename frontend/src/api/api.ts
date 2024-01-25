@@ -919,6 +919,12 @@ export interface Tenant {
      * @memberof ChargingData
      */
     'unitCost'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'ueId'?:string; 
 }
 /**
  *

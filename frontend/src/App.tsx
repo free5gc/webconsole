@@ -14,7 +14,7 @@ import UserCreate from "./pages/UserCreate";
 import UserUpdate from "./pages/UserUpdate";
 import Login from "./pages/Login";
 import ChangePassword from "./pages/ChangePassword";
-import ChargingRecordList from "./pages/ChargingRecordList";
+import ChargingTable from "./pages/Charging/ChargingTable";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { LoginContext, User } from "./LoginContext";
 
@@ -150,7 +150,7 @@ export default function App() {
             path="/charging-record"
             element={
               <ProtectedRoute>
-                <ChargingRecordList />
+                <ChargingTable />
               </ProtectedRoute>
             }
           />

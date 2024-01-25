@@ -1,0 +1,115 @@
+import React, { useState, useEffect } from "react";
+import axios from "../../axios";
+import { FlowChargingRecord, ChargingData } from "../../api/api";
+
+import { Button, Grid, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
+
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+
+const OnlineChargingList: React.FC<{
+  expand: boolean;
+  chargingData: ChargingData[];
+  chargingRecord: FlowChargingRecord[];
+}> = (props) => {
+  const tableColumnNames = [
+    "SUPI",
+    "S-NSSAI",
+    "DNN",
+    "IP Filter",
+    "Quota Left",
+    "Data Total Volume",
+    "Data Volume UL",
+    "Data Volume DL",
+  ];
+
+  const FlowUsageCell: React.FC<{ supi: string; dnn: string; snssai: string; filter: string }> = (
+    Props,
+  ) => {
+    const chargingRecordMatch = props.chargingRecord.find(
+      (a) =>
+        a.Supi === Props.supi! &&
+        a.Dnn! === Props.dnn &&
+        a.Snssai! === Props.snssai &&
+        a.Filter! === Props.filter,
+    );
+
+    return (
+      <>
+        <TableCell>{chargingRecordMatch ? chargingRecordMatch.QuotaLeft : "-"}</TableCell>
+        <TableCell>{chargingRecordMatch ? chargingRecordMatch.TotalVol : "-"}</TableCell>
+        <TableCell>{chargingRecordMatch ? chargingRecordMatch.UlVol : "-"}</TableCell>
+        <TableCell>{chargingRecordMatch ? chargingRecordMatch.DlVol : "-"}</TableCell>
+      </>
+    );
+  };
+
+  const PerFlowTableView: React.FC<{ Supi: string; Snssai: string }> = (Props) => (
+    <>
+      {props.expand === true ? (
+        props.chargingData
+          .filter((a) => a!.filter !== "" && a!.ueId === Props.Supi && a!.snssai === Props.Snssai)
+          .map((cd, idx) => (
+            <TableRow key={idx}>
+              <TableCell></TableCell>
+              <TableCell>{cd.snssai}</TableCell>
+              <TableCell>{cd.dnn}</TableCell>
+              <TableCell>{cd.filter}</TableCell>
+              {
+                <FlowUsageCell
+                  supi={Props.Supi}
+                  dnn={cd.dnn!}
+                  snssai={Props.Snssai}
+                  filter={cd.filter!}
+                />
+              }
+            </TableRow>
+          ))
+      ) : (
+        <></>
+      )}
+    </>
+  );
+
+  const tableView = (
+    <Table>
+      <TableHead>
+        <h3>Online Charging</h3>
+        <TableRow>
+          {tableColumnNames.map((colName, idx) => {
+            return <TableCell key={idx}>{colName}</TableCell>;
+          })}
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {props.chargingData
+          .filter((a) => a!.filter === "")
+          .map((cd, idx) => {
+            return (
+              <>
+                <TableRow key={idx}>
+                  <TableCell>{cd.ueId}</TableCell>
+                  <TableCell>{cd.snssai}</TableCell>
+                  <TableCell>{cd.dnn}</TableCell>
+                  <TableCell>{cd.filter}</TableCell>
+                  {
+                    <FlowUsageCell
+                      supi={cd.ueId!}
+                      dnn={cd.dnn!}
+                      snssai={cd.snssai!}
+                      filter={cd.filter!}
+                    />
+                  }
+                </TableRow>
+                {<PerFlowTableView Supi={cd.ueId!} Snssai={cd.snssai!} />}
+              </>
+            );
+          })}
+      </TableBody>
+    </Table>
+  );
+
+  return <>{tableView}</>;
+};
+
+export default OnlineChargingList;
