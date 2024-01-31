@@ -962,6 +962,12 @@ export interface FlowChargingRecord {
     * @memberof flowChargingRecord
     */
    'QuotaLeft'?: string;
+    /**
+    *
+    * @type {string}
+    * @memberof flowChargingRecord
+    */
+    'Usage'?: string;
    /**
     *
     * @type {string}

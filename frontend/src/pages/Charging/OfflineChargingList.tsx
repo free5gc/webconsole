@@ -20,9 +20,13 @@ const OfflineChargingList: React.FC<{
     "Data Volume DL",
   ];
 
-  const FlowUsageCell: React.FC<{ supi: string; dnn: string; snssai: string; filter: string }> = (
-    Props,
-  ) => {
+  const FlowUsageCell: React.FC<{
+    supi: string;
+    dnn: string;
+    snssai: string;
+    filter: string;
+    unitcost: string;
+  }> = (Props) => {
     const chargingRecordMatch = props.chargingRecord.find(
       (a) =>
         a.Supi === Props.supi! &&
@@ -31,9 +35,16 @@ const OfflineChargingList: React.FC<{
         a.Filter! === Props.filter,
     );
 
+    let usage = 0;
+    if (chargingRecordMatch) {
+      usage = chargingRecordMatch.TotalVol ? Number(chargingRecordMatch.TotalVol) : 0;
+      usage = usage * Number(Props.unitcost);
+    }
+
     return (
       <>
-        <TableCell>{chargingRecordMatch ? chargingRecordMatch.QuotaLeft : "-"}</TableCell>
+        {/* <TableCell>{chargingRecordMatch ? usage : "-"}</TableCell> */}
+        <TableCell>{chargingRecordMatch ? chargingRecordMatch.Usage : "-"}</TableCell>
         <TableCell>{chargingRecordMatch ? chargingRecordMatch.TotalVol : "-"}</TableCell>
         <TableCell>{chargingRecordMatch ? chargingRecordMatch.UlVol : "-"}</TableCell>
         <TableCell>{chargingRecordMatch ? chargingRecordMatch.DlVol : "-"}</TableCell>
@@ -58,6 +69,7 @@ const OfflineChargingList: React.FC<{
                   dnn={cd.dnn!}
                   snssai={Props.Snssai}
                   filter={cd.filter!}
+                  unitcost={cd.unitCost!}
                 />
               }
             </TableRow>
@@ -94,6 +106,7 @@ const OfflineChargingList: React.FC<{
                     dnn={cd.dnn!}
                     snssai={cd.snssai!}
                     filter={cd.filter!}
+                    unitcost={cd.unitCost!}
                   />
                 </TableRow>
                 {<PerFlowTableView Supi={cd.ueId!} Snssai={cd.snssai!} />}
