@@ -65,7 +65,7 @@ export default function ChargingTable() {
   useEffect(() => {
     const id = setInterval(() => {
       onRefresh();
-    }, 60000);
+    }, 10000);
     return () => clearInterval(id);
   }, []);
 
@@ -74,7 +74,7 @@ export default function ChargingTable() {
   };
 
   return (
-    <Dashboard title="UE CHARGING RECORD">
+    <Dashboard title="UE CHARGING">
       <Grid container spacing="2">
         <Grid item>
           <Button

@@ -63,12 +63,12 @@ export const MainListItems = () => {
       ) : (
         <div />
       )}
-      <Link to="/charging-record" style={{ color: "inherit", textDecoration: "inherit" }}>
+      <Link to="/charging" style={{ color: "inherit", textDecoration: "inherit" }}>
         <ListItemButton>
           <ListItemIcon>
             <AttachMoneyOutlinedIcon />
           </ListItemIcon>
-          <ListItemText primary="UE CHARGING RECORD" />
+          <ListItemText primary="UE CHARGING" />
         </ListItemButton>
       </Link>
     </React.Fragment>

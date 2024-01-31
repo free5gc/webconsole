@@ -11,27 +11,3 @@ type ChargingData struct {
 	UnitCost       string `json:"unitCost,omitempty" yaml:"unitCost" bson:"unitCost" mapstructure:"unitCost"`
 	UeId           string `json:"ueId,omitempty" yaml:"ueId" bson:"ueId" mapstructure:"ueId"`
 }
-
-// api.ts
-// export interface ChargingData {
-//     'snssai'?: string;
-//     'dnn'?: string;
-//     'qosRef'?: number;
-//     'filter'?: string;
-//     'chargingMethod'?: string;
-//     'quota'?: string;
-//     'unitCost'?: string;
-
-//     'ueId'?:string;      // Add
-// }
-
-// type RatingGroupDataUsage struct {
-// 	Supi      string `bson:"Supi"`
-// 	Filter    string `bson:"Filter"`
-// 	Snssai    string `bson:"Snssai"`
-// 	Dnn       string `bson:"Dnn"`
-// 	TotalVol  int64  `bson:"TotalVol"`
-// 	UlVol     int64  `bson:"UlVol"`
-// 	DlVol     int64  `bson:"DlVol"`
-// 	QuotaLeft int64  `bson:"QuotaLeft"`
-// }

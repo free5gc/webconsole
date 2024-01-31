@@ -147,7 +147,7 @@ export default function App() {
             }
           />
           <Route
-            path="/charging-record"
+            path="/charging"
             element={
               <ProtectedRoute>
                 <ChargingTable />
