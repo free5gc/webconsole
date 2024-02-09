@@ -12,9 +12,10 @@ sudo apt install -y yarn
 ### Install Node.js
 ```bash
 sudo apt remove nodejs -y
-curl -s https://deb.nodesource.com/setup_16.x | sudo bash
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt update
 sudo apt install nodejs -y
-node -v # check version is 16.x
+node -v # check that version is 18.x
 ```
 
 To run free5GC webconsole server. The following steps are to be considered.
@@ -35,7 +36,8 @@ go run server.go
 
 ### Connect to WebConsole
 
-Enter <WebConsole server's IP>:5000 in URL bar.
+Enter `<WebConsole server's IP>:5000` in an internet browser URL bar
 
-Username: admin
-Password: free5gc
+Then use the credentials below:
+- Username: admin
+- Password: free5gc
