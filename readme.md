@@ -3,8 +3,6 @@
 ### Install yarn:
 ```bash
 sudo apt remove cmdtest yarn
-sudo apt update
-sudo apt install -y yarn
 ```
 
 ### Install Node.js
