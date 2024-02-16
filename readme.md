@@ -11,7 +11,7 @@ sudo apt remove nodejs -y
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt update
 sudo apt install nodejs -y
-node -v # check that version is 18.x
+node -v # check that version is 20.x
 ```
 
 To run free5GC webconsole server. The following steps are to be considered.
