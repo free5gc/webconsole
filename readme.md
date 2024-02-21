@@ -14,7 +14,10 @@ sudo apt install nodejs -y
 node -v # check that version is 20.x
 ```
 
-To run free5GC webconsole server. The following steps are to be considered.
+### Build the Server
+
+To be able to run free5gc's webconsole server, consider building its source through the following steps:
+
 ```bash
 # (In directory: ~/free5gc/webconsole)
 cd frontend
@@ -25,6 +28,9 @@ cp -R build ../public
 ```
 
 ### Run the Server
+
+To run free5gc's webconsole server, use:
+
 ```bash
 # (In directory: ~/free5gc/webconsole)
 go run server.go
