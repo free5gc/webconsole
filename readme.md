@@ -1,10 +1,5 @@
 # free5GC Web Console
 
-### Install yarn:
-```bash
-sudo apt remove cmdtest yarn
-```
-
 ### Install Node.js
 ```bash
 sudo apt remove nodejs -y
