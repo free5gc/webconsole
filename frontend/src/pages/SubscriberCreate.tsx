@@ -197,14 +197,14 @@ export default function SubscriberCreate() {
     },
     FlowRules: [
       {
-        filter: "10.10.0.84/32",
+        filter: "1.1.1.1/32",
         precedence: 128,
         snssai: "01010203",
         dnn: "internet",
         qosRef: 1,
       },
       {
-        filter: "10.10.0.84/32",
+        filter: "1.1.1.1/32",
         precedence: 127,
         snssai: "01112233",
         dnn: "internet",
@@ -236,7 +236,7 @@ export default function SubscriberCreate() {
     ChargingDatas: [
       {
         snssai: "01010203",
-        chargingMethod: "Online",
+        chargingMethod: "Offline",
         quota: "100000",
         unitCost: "1",
       },
@@ -244,10 +244,10 @@ export default function SubscriberCreate() {
         snssai: "01010203",
         dnn: "internet",
         qosRef: 1,
-        filter: "10.10.0.84/32",
-        chargingMethod: "Online",
+        filter: "1.1.1.1/32",
+        chargingMethod: "Offline",
         quota: "100000",
-        unitCost: "2",
+        unitCost: "1",
       },
       {
         snssai: "01112233",
@@ -259,10 +259,10 @@ export default function SubscriberCreate() {
         snssai: "01112233",
         dnn: "internet",
         qosRef: 2,
-        filter: "10.10.0.84/32",
+        filter: "1.1.1.1/32",
         chargingMethod: "Online",
         quota: "2000",
-        unitCost: "2",
+        unitCost: "1",
       },
     ],
   });
@@ -444,6 +444,7 @@ export default function SubscriberCreate() {
       if (name === undefined || name === "") {
         return;
       }
+      // TODO: add charging rule for this DNN
       const session = data.SessionManagementSubscriptionData![index];
       session.dnnConfigurations![name] = {
         pduSessionTypes: {
@@ -1211,58 +1212,49 @@ export default function SubscriberCreate() {
         chargingData.filter === filter
       ) {
         return (
-          <div>
-            <Box sx={{ m: 2 }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <h4>Charging Config</h4>
-                </Grid>
-              </Grid>
-              <Card variant="outlined">
-                <Table>
-                  <TableBody id={idPrefix + "Charging Config"}>
-                    <TableCell style={{ width: "33%" }}>
-                      <FormControl variant="outlined" fullWidth>
-                        <InputLabel>Charging Method</InputLabel>
-                        <Select
-                          label="Charging Method"
-                          variant="outlined"
-                          required
-                          fullWidth
-                          value={chargingData.chargingMethod}
-                          onChange={(ev) => handleChangeChargingMethod(ev, dnn, flowKey, filter)}
-                        >
-                          <MenuItem value="Offline">Offline</MenuItem>
-                          <MenuItem value="Online">Online</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </TableCell>
-                    <TableCell style={{ width: "33%" }}>
-                      <TextField
-                        label="Quota (monetary)"
-                        variant="outlined"
-                        required={isOnlineCharging}
-                        disabled={!isOnlineCharging}
-                        fullWidth
-                        value={chargingData.quota}
-                        onChange={(ev) => handleChangeChargingQuota(ev, dnn, flowKey, filter)}
-                      />
-                    </TableCell>
-                    <TableCell style={{ width: "33%" }}>
-                      <TextField
-                        label="Unit Cost (money per byte)"
-                        variant="outlined"
-                        required
-                        fullWidth
-                        value={chargingData.unitCost}
-                        onChange={(ev) => handleChangeChargingUnitCost(ev, dnn, flowKey, filter)}
-                      />
-                    </TableCell>
-                  </TableBody>
-                </Table>
-              </Card>
-            </Box>
-          </div>
+          <>
+            <Table>
+              <TableBody id={idPrefix + "Charging Config"}>
+                <TableCell style={{ width: "33%" }}>
+                  <FormControl variant="outlined" fullWidth>
+                    <InputLabel>Charging Method</InputLabel>
+                    <Select
+                      label="Charging Method"
+                      variant="outlined"
+                      required
+                      fullWidth
+                      value={chargingData.chargingMethod}
+                      onChange={(ev) => handleChangeChargingMethod(ev, dnn, flowKey, filter)}
+                    >
+                      <MenuItem value="Offline">Offline</MenuItem>
+                      <MenuItem value="Online">Online</MenuItem>
+                    </Select>
+                  </FormControl>
+                </TableCell>
+                <TableCell style={{ width: "33%" }}>
+                  <TextField
+                    label="Quota (monetary)"
+                    variant="outlined"
+                    required={isOnlineCharging}
+                    disabled={!isOnlineCharging}
+                    fullWidth
+                    value={chargingData.quota}
+                    onChange={(ev) => handleChangeChargingQuota(ev, dnn, flowKey, filter)}
+                  />
+                </TableCell>
+                <TableCell style={{ width: "33%" }}>
+                  <TextField
+                    label="Unit Cost (money per byte)"
+                    variant="outlined"
+                    required
+                    fullWidth
+                    value={chargingData.unitCost}
+                    onChange={(ev) => handleChangeChargingUnitCost(ev, dnn, flowKey, filter)}
+                  />
+                </TableCell>
+              </TableBody>
+            </Table>
+          </>
         );
       }
     }
@@ -1713,6 +1705,7 @@ export default function SubscriberCreate() {
                 </TableRow>
               </TableBody>
             </Table>
+            {chargingConfig(undefined, row.singleNssai!, undefined)}
             {row.dnnConfigurations &&
               Object.keys(row.dnnConfigurations!).map((dnn) => (
                 <div
@@ -1803,7 +1796,11 @@ export default function SubscriberCreate() {
                           </TableRow>
                         </TableBody>
                       </Table>
+
+                      {chargingConfig(dnn, row.singleNssai!, undefined)}
+
                       {flowRule(dnn, row.singleNssai!)}
+
                       <div>
                         <Table>
                           <TableBody>
@@ -1861,9 +1858,6 @@ export default function SubscriberCreate() {
                 </Box>
               </Grid>
             </Grid>
-            <div>
-              <Box sx={{ m: 2 }}>{chargingConfig(undefined, row.singleNssai!, undefined)}</Box>
-            </div>
           </Card>
         </div>
       ))}

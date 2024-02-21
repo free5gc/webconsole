@@ -152,7 +152,7 @@ func GetChargingRecord(c *gin.Context) {
 		flowTotalVolum int64
 		flowTotalUsage int64
 	}
-
+	// Use for sum all the flow-based charging, and add to the PDU-based at the end.
 	offlineChargingPDUTypeMap := make(map[string]OfflinePDUTypeMap)
 
 	for _, ueData := range uesBsonA {
@@ -227,24 +227,26 @@ func GetChargingRecord(c *gin.Context) {
 		}
 	}
 	for idx, record := range chargingRecordsBsonA {
-		var rd RatingGroupDataUsage
-
 		tmp, err := json.Marshal(record)
 		if err != nil {
 			logger.BillingLog.Errorln("Marshal chargingRecordsBsonA error:", err.Error())
 			continue
 		}
+
+		var rd RatingGroupDataUsage
+
 		err = json.Unmarshal(tmp, &rd)
 		if err != nil {
-			logger.BillingLog.Errorln("Unmarshall chargingRecordsBsonA error:", err.Error())
+			logger.BillingLog.Errorln("Unmarshall RatingGroupDataUsage error:", err.Error())
 			continue
 		}
 
 		if rd.Filter != "" {
+			// Skip the Flow-based charging
 			continue
 		}
 
-		key := rd.Supi + rd.Snssai + rd.Dnn
+		key := rd.Supi + rd.Snssai
 		if val, exist := offlineChargingPDUTypeMap[key]; exist {
 			rd.Usage += val.flowTotalUsage
 			rd.Usage += (rd.TotalVol - val.flowTotalVolum) * val.unitcost

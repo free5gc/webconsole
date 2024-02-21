@@ -13,17 +13,7 @@ export default function ChargingTable() {
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
   const [onlineChargingData, setOnlineChargingData] = useState<ChargingData[]>([]);
-  const [offlineChargingData, setOfflineChargingData] = useState<ChargingData[]>([
-    {
-      snssai: "Test",
-      dnn: "internet",
-      qosRef: 1,
-      filter: "1.2.3.4/32",
-      chargingMethod: "Offline",
-      quota: "unlimited",
-      unitCost: "1",
-    },
-  ]);
+  const [offlineChargingData, setOfflineChargingData] = useState<ChargingData[]>([]);
   const [chargingRecord, setChargingRecord] = useState<FlowChargingRecord[]>([]);
 
   const fetchChargingRecord = () => {

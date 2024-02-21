@@ -1,8 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
 import { ChargingData, FlowChargingRecord } from "../../api/api";
-
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 
 const OfflineChargingList: React.FC<{
   expand: boolean;
@@ -35,15 +33,8 @@ const OfflineChargingList: React.FC<{
         a.Filter! === Props.filter,
     );
 
-    let usage = 0;
-    if (chargingRecordMatch) {
-      usage = chargingRecordMatch.TotalVol ? Number(chargingRecordMatch.TotalVol) : 0;
-      usage = usage * Number(Props.unitcost);
-    }
-
     return (
       <>
-        {/* <TableCell>{chargingRecordMatch ? usage : "-"}</TableCell> */}
         <TableCell>{chargingRecordMatch ? chargingRecordMatch.Usage : "-"}</TableCell>
         <TableCell>{chargingRecordMatch ? chargingRecordMatch.TotalVol : "-"}</TableCell>
         <TableCell>{chargingRecordMatch ? chargingRecordMatch.UlVol : "-"}</TableCell>
@@ -92,7 +83,7 @@ const OfflineChargingList: React.FC<{
       </TableHead>
       <TableBody>
         {props.chargingData
-          .filter((a) => a!.filter === "")
+          .filter((a) => a!.filter === "" && a!.dnn === "")
           .map((cd, idx) => {
             return (
               <>

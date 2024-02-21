@@ -1,11 +1,7 @@
-import React, { useState, useEffect } from "react";
-import axios from "../../axios";
+import React from "react";
 import { FlowChargingRecord, ChargingData } from "../../api/api";
 
-import { Button, Grid, Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
-
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
 
 const OnlineChargingList: React.FC<{
   expand: boolean;
@@ -83,7 +79,7 @@ const OnlineChargingList: React.FC<{
       </TableHead>
       <TableBody>
         {props.chargingData
-          .filter((a) => a!.filter === "")
+          .filter((a) => a!.filter === "" && a!.dnn === "")
           .map((cd, idx) => {
             return (
               <>

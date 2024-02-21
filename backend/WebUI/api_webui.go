@@ -1543,6 +1543,7 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 				}
 
 				if chargingData.Dnn != "" && chargingData.Filter != "" {
+					// Flow-level charging
 					chargingFilter = bson.M{
 						"ueId": ueId, "servingPlmnId": servingPlmnId,
 						"snssai": chargingData.Snssai,
@@ -1551,6 +1552,7 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 						"filter": chargingData.Filter,
 					}
 				} else {
+					// PDU-level charging (DNN-level)
 					chargingFilter = bson.M{
 						"ueId": ueId, "servingPlmnId": servingPlmnId,
 						"snssai": chargingData.Snssai,
