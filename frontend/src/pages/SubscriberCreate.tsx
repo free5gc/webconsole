@@ -204,7 +204,7 @@ export default function SubscriberCreate() {
         qosRef: 1,
       },
       {
-        filter: "1.1.1.1/32",
+        filter: "9.9.9.9/32",
         precedence: 127,
         snssai: "01112233",
         dnn: "internet",
@@ -259,7 +259,7 @@ export default function SubscriberCreate() {
         snssai: "01112233",
         dnn: "internet",
         qosRef: 2,
-        filter: "1.1.1.1/32",
+        filter: "9.9.9.9/32",
         chargingMethod: "Online",
         quota: "2000",
         unitCost: "1",

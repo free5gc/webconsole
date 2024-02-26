@@ -21,7 +21,7 @@ export default function ChargingTable() {
     axios
       .get("/api/charging-record")
       .then((res) => {
-        setChargingRecord(res.data ? res.data : []);
+        setChargingRecord(res.data ? res.data : chargingRecord);
         console.log("Charging Record", chargingRecord);
       })
       .catch((err) => {
@@ -37,8 +37,7 @@ export default function ChargingTable() {
     axios
       .get("/api/charging-data/" + chargingMethod)
       .then((res) => {
-        setChargingData(res.data ? res.data : []);
-        console.log(chargingMethod, "charging-data", res.data);
+        if (res.data) setChargingData(res.data);
       })
       .catch((err) => {
         console.log(MSG_FETCH_ERROR, err);
@@ -53,6 +52,7 @@ export default function ChargingTable() {
   };
 
   useEffect(() => {
+    onRefresh();
     const id = setInterval(() => {
       onRefresh();
     }, 10000);
