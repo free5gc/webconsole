@@ -144,7 +144,7 @@ func GetChargingRecord(c *gin.Context) {
 	uesBsonA := toBsonA(uesJsonData)
 	chargingRecordsBsonA := make([]interface{}, 0, len(uesBsonA))
 
-	type OfflinePDUTypeMap struct {
+	type OfflineSliceTypeMap struct {
 		supi           string
 		snssai         string
 		dnn            string
@@ -152,8 +152,8 @@ func GetChargingRecord(c *gin.Context) {
 		flowTotalVolum int64
 		flowTotalUsage int64
 	}
-	// Use for sum all the flow-based charging, and add to the PDU-based at the end.
-	offlineChargingPDUTypeMap := make(map[string]OfflinePDUTypeMap)
+	// Use for sum all the flow-based charging, and add to the slice at the end.
+	offlineChargingSliceTypeMap := make(map[string]OfflineSliceTypeMap)
 
 	for _, ueData := range uesBsonA {
 		ueBsonM := toBsonM(ueData)
@@ -193,9 +193,9 @@ func GetChargingRecord(c *gin.Context) {
 				}
 
 				key := chargingData.UeId + chargingData.Snssai
-				pdu_level, exist := offlineChargingPDUTypeMap[key]
+				pdu_level, exist := offlineChargingSliceTypeMap[key]
 				if !exist {
-					pdu_level = OfflinePDUTypeMap{}
+					pdu_level = OfflineSliceTypeMap{}
 				}
 				if chargingData.Filter != "" {
 					// Flow-based charging
@@ -203,13 +203,13 @@ func GetChargingRecord(c *gin.Context) {
 					pdu_level.flowTotalUsage += du.Usage
 					pdu_level.flowTotalVolum += du.TotalVol
 				} else {
-					// PDU-Session Based charging (DNN-Based)
+					// Slice-level charging
 					pdu_level.snssai = chargingData.Snssai
 					pdu_level.dnn = chargingData.Dnn
 					pdu_level.supi = chargingData.UeId
 					pdu_level.unitcost = unitcost
 				}
-				offlineChargingPDUTypeMap[key] = pdu_level
+				offlineChargingSliceTypeMap[key] = pdu_level
 			case "Online":
 				tmpInt, err1 := strconv.Atoi(chargingData.Quota)
 				if err1 != nil {
@@ -247,7 +247,7 @@ func GetChargingRecord(c *gin.Context) {
 		}
 
 		key := rd.Supi + rd.Snssai
-		if val, exist := offlineChargingPDUTypeMap[key]; exist {
+		if val, exist := offlineChargingSliceTypeMap[key]; exist {
 			rd.Usage += val.flowTotalUsage
 			rd.Usage += (rd.TotalVol - val.flowTotalVolum) * val.unitcost
 			chargingRecordsBsonA[idx] = toBsonM(rd)

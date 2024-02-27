@@ -1552,7 +1552,7 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 						"filter": chargingData.Filter,
 					}
 				} else {
-					// PDU-level charging (DNN-level)
+					// Slice-level charging
 					chargingFilter = bson.M{
 						"ueId": ueId, "servingPlmnId": servingPlmnId,
 						"snssai": chargingData.Snssai,
