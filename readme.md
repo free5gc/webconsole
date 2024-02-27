@@ -7,7 +7,7 @@ curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt update
 sudo apt install nodejs -y
 node -v # check that version is 20.x
-corepack enable
+sudo corepack enable
 ```
 
 ### Build the Server
