@@ -9,8 +9,6 @@ import (
 
 var PublicPath = "public"
 
-// var PublicPath = "frontend/build"
-
 func ReturnPublic() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		method := context.Request.Method
@@ -33,7 +31,7 @@ func verifyDestPath(requestedURI string) string {
 		"analysis",
 		"subscriber",
 		"tenant",
-		"charging-record",
+		"charging",
 		"login",
 	}
 

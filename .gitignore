@@ -13,7 +13,6 @@ bin/
 log/
 vendor/
 public/
-build.sh
 
 node_modules/
 yarn.lock

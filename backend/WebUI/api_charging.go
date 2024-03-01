@@ -80,11 +80,13 @@ func GetChargingData(c *gin.Context) {
 	chargingMethod, exist := c.Params.Get("chargingMethod")
 	if !exist {
 		c.JSON(http.StatusBadRequest, gin.H{"cause": "chargingMethod not provided"})
+		return
 	}
 	logger.BillingLog.Traceln(chargingMethod)
 
 	if chargingMethod != "Offline" && chargingMethod != "Online" {
 		c.JSON(http.StatusBadRequest, gin.H{"cause": "not support chargingMethod" + chargingMethod})
+		return
 	}
 
 	filter := bson.M{"chargingMethod": chargingMethod}

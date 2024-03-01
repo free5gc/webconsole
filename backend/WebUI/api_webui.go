@@ -41,8 +41,6 @@ const (
 	userDataColl     = "userData"
 	tenantDataColl   = "tenantData"
 	identityDataColl = "subscriptionData.identityData"
-
-	// queryStrength = 2
 )
 
 var jwtKey = "" // for generating JWT

@@ -111,6 +111,9 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 	wg.Add(1)
 
 	self.BillingServer = billing.OpenServer(&wg)
+	if self.BillingServer == nil {
+		logger.InitLog.Errorln("Billing Server open error.")
+	}
 
 	router.NoRoute(ReturnPublic())
 
