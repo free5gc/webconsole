@@ -1,23 +1,19 @@
 # free5GC Web Console
 
-### Install yarn:
-```bash
-sudo apt remove cmdtest yarn
-curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
-echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
-sudo apt-get update
-sudo apt-get install -y nodejs yarn
-```
-
 ### Install Node.js
 ```bash
 sudo apt remove nodejs -y
-curl -s https://deb.nodesource.com/setup_16.x | sudo bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt update
 sudo apt install nodejs -y
-node -v # check version is 16.x
+node -v # check that version is 20.x
+sudo corepack enable
 ```
 
-To run free5GC webconsole server. The following steps are to be considered.
+### Build the Server
+
+To be able to run free5gc's webconsole server, consider building its source through the following steps:
+
 ```bash
 # (In directory: ~/free5gc/webconsole)
 cd frontend
@@ -28,6 +24,9 @@ cp -R build ../public
 ```
 
 ### Run the Server
+
+To run free5gc's webconsole server, use:
+
 ```bash
 # (In directory: ~/free5gc/webconsole)
 go run server.go
@@ -35,7 +34,8 @@ go run server.go
 
 ### Connect to WebConsole
 
-Enter <WebConsole server's IP>:5000 in URL bar.
+Enter `<WebConsole server's IP>:5000` in an internet browser URL bar
 
-Username: admin
-Password: free5gc
+Then use the credentials below:
+- Username: admin
+- Password: free5gc
