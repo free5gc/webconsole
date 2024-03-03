@@ -38,7 +38,7 @@ export default function SubscriberCreate() {
     plmn: string;
   }>();
 
-  isNewSubscriber = id === undefined && plmn === undefined ? true : false;
+  isNewSubscriber = id === undefined && plmn === undefined;
   const navigation = useNavigate();
 
   const [data, setData] = useState<Subscription>({

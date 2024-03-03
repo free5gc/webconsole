@@ -3,8 +3,7 @@ import axios from "../../axios";
 import { FlowChargingRecord, ChargingData } from "../../api/api";
 import Dashboard from "../../Dashboard";
 
-import OnlineChargingList from "./OnlineChargingList";
-import OfflineChargingList from "./OfflineChargingList";
+import ChargingList from "./ChargingList";
 
 import { Button, Grid } from "@mui/material";
 
@@ -92,18 +91,19 @@ export default function ChargingTable() {
           </Button>
         </Grid>
       </Grid>
-
       <br />
-      <OnlineChargingList
-        expand={expand}
-        chargingData={onlineChargingData}
-        chargingRecord={chargingRecord}
-      />
-      <br />
-      <OfflineChargingList
+      <ChargingList
         expand={expand}
         chargingData={offlineChargingData}
         chargingRecord={chargingRecord}
+        chargingMethod="Offline"
+      />
+      <br />
+      <ChargingList
+        expand={expand}
+        chargingData={onlineChargingData}
+        chargingRecord={chargingRecord}
+        chargingMethod="Online"
       />
     </Dashboard>
   );

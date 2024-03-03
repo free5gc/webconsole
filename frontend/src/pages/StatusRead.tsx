@@ -25,10 +25,7 @@ export default function StatusRead() {
     }
     const fetchData = endpoints.map((endpoint) => axios.get(endpoint));
     Promise.all([...fetchData]).then((res) => {
-      const pdus: PduSessionInfo[] = [];
-      for (let i = 0; i < res.length; i++) {
-        pdus.push(res[i].data);
-      }
+      const pdus: PduSessionInfo[] = res.map((item) => item.data);
       setData(pdus);
     });
   }, [id]);

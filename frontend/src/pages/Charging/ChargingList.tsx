@@ -1,27 +1,30 @@
 import React from "react";
-import { FlowChargingRecord, ChargingData } from "../../api/api";
-
 import { Table, TableBody, TableCell, TableHead, TableRow } from "@mui/material";
+import { ChargingData, FlowChargingRecord } from "../../api/api";
 
-const OnlineChargingList: React.FC<{
+const ChargingList: React.FC<{
   expand: boolean;
   chargingData: ChargingData[];
   chargingRecord: FlowChargingRecord[];
+  chargingMethod: string;
 }> = (props) => {
   const tableColumnNames = [
     "SUPI",
     "S-NSSAI",
     "DNN",
     "IP Filter",
-    "Quota Left",
+    props.chargingMethod === "Online" ? "Quota" : "Usage",
     "Data Total Volume",
     "Data Volume UL",
     "Data Volume DL",
   ];
 
-  const FlowUsageCell: React.FC<{ supi: string; dnn: string; snssai: string; filter: string }> = (
-    Props,
-  ) => {
+  const FlowUsageCell: React.FC<{
+    supi: string;
+    dnn: string;
+    snssai: string;
+    filter: string;
+  }> = (Props) => {
     const chargingRecordMatch = props.chargingRecord.find(
       (a) =>
         a.Supi === Props.supi! &&
@@ -32,7 +35,7 @@ const OnlineChargingList: React.FC<{
 
     return (
       <>
-        <TableCell>{chargingRecordMatch ? chargingRecordMatch.QuotaLeft : "-"}</TableCell>
+        <TableCell>{chargingRecordMatch ? chargingRecordMatch.Usage : "-"}</TableCell>
         <TableCell>{chargingRecordMatch ? chargingRecordMatch.TotalVol : "-"}</TableCell>
         <TableCell>{chargingRecordMatch ? chargingRecordMatch.UlVol : "-"}</TableCell>
         <TableCell>{chargingRecordMatch ? chargingRecordMatch.DlVol : "-"}</TableCell>
@@ -40,10 +43,12 @@ const OnlineChargingList: React.FC<{
     );
   };
 
-  const PerFlowTableView: React.FC<{ Supi: string; Snssai: string }> = (Props) => (
-    <>
-      {props.expand === true ? (
-        props.chargingData
+  const PerFlowTableView: React.FC<{ Supi: string; Snssai: string }> = (Props) => {
+    if (!props.expand) return <></>;
+
+    return (
+      <>
+        {props.chargingData
           .filter((a) => a!.filter !== "" && a!.ueId === Props.Supi && a!.snssai === Props.Snssai)
           .map((cd, idx) => (
             <TableRow key={idx}>
@@ -60,17 +65,15 @@ const OnlineChargingList: React.FC<{
                 />
               }
             </TableRow>
-          ))
-      ) : (
-        <></>
-      )}
-    </>
-  );
+          ))}
+      </>
+    );
+  };
 
-  const tableView = (
+  return (
     <Table>
       <TableHead>
-        <h3>Online Charging</h3>
+        <h3>Offline Charging</h3>
         <TableRow>
           {tableColumnNames.map((colName, idx) => {
             return <TableCell key={idx}>{colName}</TableCell>;
@@ -88,14 +91,12 @@ const OnlineChargingList: React.FC<{
                   <TableCell>{cd.snssai}</TableCell>
                   <TableCell>{cd.dnn}</TableCell>
                   <TableCell>{cd.filter}</TableCell>
-                  {
-                    <FlowUsageCell
-                      supi={cd.ueId!}
-                      dnn={cd.dnn!}
-                      snssai={cd.snssai!}
-                      filter={cd.filter!}
-                    />
-                  }
+                  <FlowUsageCell
+                    supi={cd.ueId!}
+                    dnn={cd.dnn!}
+                    snssai={cd.snssai!}
+                    filter={cd.filter!}
+                  />
                 </TableRow>
                 {<PerFlowTableView Supi={cd.ueId!} Snssai={cd.snssai!} />}
               </>
@@ -104,8 +105,6 @@ const OnlineChargingList: React.FC<{
       </TableBody>
     </Table>
   );
-
-  return <>{tableView}</>;
 };
 
-export default OnlineChargingList;
+export default ChargingList;
