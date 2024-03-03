@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -17,6 +19,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/free5gc/openapi/models"
@@ -34,6 +37,7 @@ const (
 	smPolicyDataColl = "policyData.ues.smData"
 	flowRuleDataColl = "policyData.ues.flowRule"
 	qosFlowDataColl  = "policyData.ues.qosFlow"
+	chargingDataColl = "policyData.ues.chargingData"
 	userDataColl     = "userData"
 	tenantDataColl   = "tenantData"
 	identityDataColl = "subscriptionData.identityData"
@@ -129,6 +133,18 @@ func sliceToByte(data []map[string]interface{}) (ret []byte) {
 }
 
 func toBsonM(data interface{}) (ret bson.M) {
+	tmp, err := json.Marshal(data)
+	if err != nil {
+		logger.ProcLog.Errorf("toBsonM err: %+v", err)
+	}
+	err = json.Unmarshal(tmp, &ret)
+	if err != nil {
+		logger.ProcLog.Errorf("toBsonM err: %+v", err)
+	}
+	return
+}
+
+func toBsonA(data interface{}) (ret bson.A) {
 	tmp, err := json.Marshal(data)
 	if err != nil {
 		logger.ProcLog.Errorf("toBsonM err: %+v", err)
@@ -480,16 +496,6 @@ func JWT(email, userId, tenantId string) string {
 	return tokenString
 }
 
-func generateHash(password string) error {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
-	if err != nil {
-		logger.ProcLog.Errorf("generateHash err: %+v", err)
-		return err
-	}
-	logger.ProcLog.Warnln("Password hash:", hash)
-	return err
-}
-
 func Login(c *gin.Context) {
 	setCorsHeader(c)
 
@@ -497,13 +503,6 @@ func Login(c *gin.Context) {
 	err := json.NewDecoder(c.Request.Body).Decode(&login)
 	if err != nil {
 		logger.ProcLog.Warnln("JSON decode error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{})
-		return
-	}
-
-	err = generateHash(login.Password)
-	if err != nil {
-		logger.ProcLog.Errorf("Login err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
@@ -534,7 +533,7 @@ func Login(c *gin.Context) {
 	userId := userData["userId"].(string)
 	tenantId := userData["tenantId"].(string)
 
-	logger.ProcLog.Warnln("Login success {",
+	logger.ProcLog.Infoln("Login success {",
 		"username:", login.Username,
 		", userid:", userId,
 		", tenantid:", tenantId,
@@ -543,8 +542,6 @@ func Login(c *gin.Context) {
 	token := JWT(login.Username, userId, tenantId)
 	if token == "" {
 		logger.ProcLog.Errorln("token is empty")
-	} else {
-		logger.ProcLog.Warnln("token", token)
 	}
 
 	oauth := OAuth{}
@@ -567,6 +564,9 @@ type AuthSub struct {
 // Parse JWT
 func ParseJWT(tokenStr string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		// Tolerance for User's Time quicker than Server's time
+		mapClaims := token.Claims.(jwt.MapClaims)
+		delete(mapClaims, "iat")
 		return []byte(jwtKey), nil
 	})
 	if err != nil {
@@ -1132,6 +1132,12 @@ func GetSubscriberByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
+	chargingDatasInterface, err := mongoapi.RestfulAPIGetMany(chargingDataColl, filter)
+	if err != nil {
+		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
 
 	var authSubsData models.AuthenticationSubscription
 	if err := json.Unmarshal(mapToByte(authSubsDataInterface), &authSubsData); err != nil {
@@ -1181,12 +1187,21 @@ func GetSubscriberByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
+	var chargingDatas []ChargingData
+	if err := json.Unmarshal(sliceToByte(chargingDatasInterface), &chargingDatas); err != nil {
+		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
 
 	if flowRules == nil {
 		flowRules = make([]FlowRule, 0)
 	}
 	if qosFlows == nil {
 		qosFlows = make([]QosFlow, 0)
+	}
+	if chargingDatas == nil {
+		chargingDatas = make([]ChargingData, 0)
 	}
 
 	for key, SnssaiData := range smPolicyData.SmPolicySnssaiData {
@@ -1210,6 +1225,7 @@ func GetSubscriberByID(c *gin.Context) {
 		SmPolicyData:                      smPolicyData,
 		FlowRules:                         flowRules,
 		QosFlows:                          qosFlows,
+		ChargingDatas:                     chargingDatas,
 	}
 
 	c.JSON(http.StatusOK, subsData)
@@ -1356,7 +1372,36 @@ func identityDataOperation(supi string, gpsi string, method string) {
 			if err := mongoapi.RestfulAPIDeleteOne(identityDataColl, filter); err != nil {
 				logger.ProcLog.Errorf("DeleteIdentityData err: %+v", err)
 			}
+			if err := mongoapi.RestfulAPIDeleteOne(identityDataColl, filter); err != nil {
+				logger.ProcLog.Errorf("DeleteIdentityData err: %+v", err)
+			}
 		}
+	}
+}
+
+func sendRechargeNotification(ueId string, rg int32) {
+	logger.ProcLog.Infoln("Send Notification to CHF due to quota change")
+	webuiSelf := webui_context.GetSelf()
+	webuiSelf.UpdateNfProfiles()
+
+	requestUri := fmt.Sprintf("%s/nchf-convergedcharging/v3/recharging/%s_%d", "http://127.0.0.113:8000", ueId, rg)
+	req, err := http.NewRequest(http.MethodPut, requestUri, nil)
+	if err != nil {
+		logger.ProcLog.Error(err)
+	}
+	defer func() {
+		if err = req.Body.Close(); err != nil {
+			logger.ProcLog.Error(err)
+		}
+	}()
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err1 := http.DefaultClient.Do(req)
+	if err != nil {
+		logger.ProcLog.Errorf("Send Charging Notification err: %+v", err1)
+	}
+	if err = resp.Body.Close(); err != nil {
+		logger.ProcLog.Error(err)
 	}
 }
 
@@ -1370,6 +1415,9 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
 		}
 		if err := mongoapi.RestfulAPIDeleteMany(qosFlowDataColl, filter); err != nil {
+			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
+		}
+		if err := mongoapi.RestfulAPIDeleteMany(chargingDataColl, filter); err != nil {
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
 		}
 	} else if method == "delete" {
@@ -1395,6 +1443,9 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
 		}
 		if err := mongoapi.RestfulAPIDeleteMany(qosFlowDataColl, filter); err != nil {
+			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
+		}
+		if err := mongoapi.RestfulAPIDeleteMany(chargingDataColl, filter); err != nil {
 			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
 		}
 		if err := mongoapi.RestfulAPIDeleteOne(identityDataColl, filterUeIdOnly); err != nil {
@@ -1473,6 +1524,68 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 			}
 			if err := mongoapi.RestfulAPIPostMany(qosFlowDataColl, filter, qosFlowBsonA); err != nil {
 				logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err)
+			}
+		}
+
+		if len(subsData.ChargingDatas) == 0 {
+			logger.ProcLog.Infoln("No Charging Data")
+		} else {
+			for _, chargingData := range subsData.ChargingDatas {
+				var previousChargingData ChargingData
+				var chargingFilter primitive.M
+
+				chargingDataBsonM := toBsonM(chargingData)
+				// Clear quota for offline charging flow
+				if chargingData.ChargingMethod == "Offline" {
+					chargingDataBsonM["quota"] = "0"
+				}
+
+				if chargingData.Dnn != "" && chargingData.Filter != "" {
+					// Flow-level charging
+					chargingFilter = bson.M{
+						"ueId": ueId, "servingPlmnId": servingPlmnId,
+						"snssai": chargingData.Snssai,
+						"dnn":    chargingData.Dnn,
+						"qosRef": chargingData.QosRef,
+						"filter": chargingData.Filter,
+					}
+				} else {
+					// Slice-level charging
+					chargingFilter = bson.M{
+						"ueId": ueId, "servingPlmnId": servingPlmnId,
+						"snssai": chargingData.Snssai,
+						"qosRef": chargingData.QosRef,
+						"dnn":    "",
+						"filter": "",
+					}
+					chargingDataBsonM["dnn"] = ""
+					chargingDataBsonM["filter"] = ""
+				}
+
+				previousChargingDataInterface, err := mongoapi.RestfulAPIGetOne(chargingDataColl, chargingFilter)
+				if err != nil {
+					logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err)
+				}
+				err = json.Unmarshal(mapToByte(previousChargingDataInterface), &previousChargingData)
+				if err != nil {
+					logger.ProcLog.Error(err)
+				}
+
+				ratingGroup := previousChargingDataInterface["ratingGroup"]
+				if ratingGroup != nil {
+					rg := ratingGroup.(int32)
+					chargingDataBsonM["ratingGroup"] = rg
+					if previousChargingData.Quota != chargingData.Quota {
+						sendRechargeNotification(ueId, rg)
+					}
+				}
+
+				chargingDataBsonM["ueId"] = ueId
+				chargingDataBsonM["servingPlmnId"] = servingPlmnId
+
+				if _, err := mongoapi.RestfulAPIPutOne(chargingDataColl, chargingFilter, chargingDataBsonM); err != nil {
+					logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err)
+				}
 			}
 		}
 
@@ -1615,6 +1728,22 @@ func PatchSubscriberByID(c *gin.Context) {
 	c.JSON(http.StatusNoContent, gin.H{})
 }
 
+func removeCdrFile(CdrFilePath string) {
+	files, err := filepath.Glob(CdrFilePath + "*.cdr")
+	if err != nil {
+		logger.BillingLog.Warnf("CDR file not found in %s", CdrFilePath)
+	}
+
+	for _, file := range files {
+		if _, err := os.Stat(file); err == nil {
+			logger.BillingLog.Infof("Remove CDR file: " + file)
+			if err := os.Remove(file); err != nil {
+				logger.BillingLog.Warnf("Failed to remove CDR file: %s\n", file)
+			}
+		}
+	}
+}
+
 // Delete subscriber by IMSI(ueId) and PlmnID(servingPlmnId)
 func DeleteSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
@@ -1632,6 +1761,10 @@ func DeleteSubscriberByID(c *gin.Context) {
 	}
 	var claims jwt.MapClaims = nil
 	dbOperation(supi, servingPlmnId, "delete", nil, claims)
+
+	CdrFilePath := "/tmp/webconsole/"
+	removeCdrFile(CdrFilePath)
+
 	c.JSON(http.StatusNoContent, gin.H{})
 }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/free5gc/openapi/models"
+	"github.com/free5gc/webconsole/backend/billing"
 	"github.com/free5gc/webconsole/backend/logger"
 )
 
@@ -12,6 +13,7 @@ var webuiContext WEBUIContext
 type WEBUIContext struct {
 	NFProfiles     []models.NfProfile
 	NFOamInstances []NfOamInstance
+	BillingServer  *billing.BillingDomain
 }
 
 type NfOamInstance struct {

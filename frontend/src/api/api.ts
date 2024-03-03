@@ -252,7 +252,7 @@ export interface FlowRules {
      * @type {number}
      * @memberof FlowRules
      */
-    'qfi'?: number;
+    'qosRef'?: number;
 }
 /**
  * 
@@ -575,7 +575,7 @@ export interface QosFlows {
      * @type {number}
      * @memberof QosFlows
      */
-    'qfi'?: number;
+    'qosRef'?: number;
     /**
      * 
      * @type {number}
@@ -845,6 +845,12 @@ export interface Subscription {
      * @memberof Subscription
      */
     'QosFlows'?: Array<QosFlows>;
+    /**
+     * 
+     * @type {Array<ChargingData>}
+     * @memberof Subscription
+     */
+     'ChargingDatas'?: Array<ChargingData>;
 }
 /**
  * 
@@ -867,6 +873,122 @@ export interface Tenant {
 }
 /**
  * 
+ * @export
+ * @interface ChargingData
+ */
+ export interface ChargingData {
+    /**
+     * 
+     * @type {string}
+     * @memberof Tenant
+     */
+     'snssai'?: string;
+     /**
+      * 
+      * @type {string}
+      * @memberof ChargingData
+      */
+     'dnn'?: string;
+     /**
+      * 
+      * @type {number}
+      * @memberof ChargingData
+      */
+     'qosRef'?: number;
+     /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'filter'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'chargingMethod'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+     'quota'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'unitCost'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'ueId'?:string; 
+}
+/**
+ *
+ * @export
+ * @interface FlowChargingRecord
+ */
+export interface FlowChargingRecord {
+    /**
+     *
+     * @type {string}
+     * @memberof flowChargingRecord
+     */
+    'Supi'?: string;
+    /**
+     *
+     * @type {string}
+     * @memberof flowChargingRecord
+     */
+    'Snssai'?: string;
+    /**
+     *
+     * @type {string}
+     * @memberof flowChargingRecord
+     */
+    'Dnn'?: string;
+    /**
+     *
+     * @type {string}
+     * @memberof flowChargingRecord
+     */
+    'Filter'?: string;
+    /**
+    *
+    * @type {string}
+    * @memberof flowChargingRecord
+    */
+   'QuotaLeft'?: string;
+    /**
+    *
+    * @type {string}
+    * @memberof flowChargingRecord
+    */
+    'Usage'?: string;
+   /**
+    *
+    * @type {string}
+    * @memberof flowChargingRecord
+    */
+   'TotalVol'?: string;
+   /**
+    *
+    * @type {string}
+    * @memberof flowChargingRecord
+    */
+   'UlVol'?: string;
+    /**
+    *
+    * @type {string}
+    * @memberof flowChargingRecord
+    */
+   'DlVol'?: string;
+}
+/**
+ *
  * @export
  * @interface Tunnel
  */

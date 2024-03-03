@@ -39,3 +39,16 @@ Enter `<WebConsole server's IP>:5000` in an internet browser URL bar
 Then use the credentials below:
 - Username: admin
 - Password: free5gc
+
+## Run the Frontend Dev Web Server
+Run the frontend development server with file watcher
+```bash
+cd frontend/
+yarn start
+```
+
+To specify backend server api url
+```bash
+cd frontend/
+REACT_APP_HTTP_API_URL=http://127.0.0.1:5000/api PORT=3000 yarn start
+```
