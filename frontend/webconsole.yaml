@@ -424,7 +424,7 @@ components:
           type: string
         dnn:
           type: string
-        qfi:
+        qosRef:
           type: integer
           format: int64
     QosFlows:
@@ -434,7 +434,7 @@ components:
           type: string
         dnn:
           type: string
-        qfi:
+        qosRef:
           type: integer
           format: int64
         5qi:
@@ -481,3 +481,48 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/QosFlows"
+        ChargingDatas:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChargingData"
+    ChargingData:
+      type: object
+      properties:
+        snssai:
+          type: string
+        dnn:
+          type: string
+        qosRef:
+          type: integer
+          format: int64
+        filter:
+          type: string
+        chargingMethod:
+          type: string
+        quota:
+          type: string
+        unitCost:
+          type: string
+        ueId:
+          type: string
+    FlowChargingRecord:
+      type: object
+      properties:
+        Supi:
+          type: string
+        Snssai:
+          type: string
+        Dnn:
+          type: string
+        Filter:
+          type: string
+        QuotaLeft:
+          type: string
+        Usage:
+          type: string
+        TotalVol:
+          type: string
+        UlVol:
+          type: string
+        DlVol:
+          type: string

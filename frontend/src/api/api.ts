@@ -14,14 +14,14 @@
 
 
 import type { Configuration } from './configuration';
-import type { AxiosPromise, AxiosInstance, AxiosRequestConfig } from 'axios';
+import type { AxiosPromise, AxiosInstance, RawAxiosRequestConfig } from 'axios';
 import globalAxios from 'axios';
 // Some imports not used depending on template conditions
 // @ts-ignore
 import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction } from './common';
 import type { RequestArgs } from './base';
 // @ts-ignore
-import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError } from './base';
+import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError, operationServerMap } from './base';
 
 /**
  * 
@@ -151,6 +151,61 @@ export interface AuthenticationSubscription {
 /**
  * 
  * @export
+ * @interface ChargingData
+ */
+export interface ChargingData {
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'snssai'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'dnn'?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ChargingData
+     */
+    'qosRef'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'filter'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'chargingMethod'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'quota'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'unitCost'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'ueId'?: string;
+}
+/**
+ * 
+ * @export
  * @interface DefaultSingleNssais
  */
 export interface DefaultSingleNssais {
@@ -216,6 +271,67 @@ export interface DnnConfiguration {
      * @memberof DnnConfiguration
      */
     'upSecurity'?: UpSecurity;
+}
+/**
+ * 
+ * @export
+ * @interface FlowChargingRecord
+ */
+export interface FlowChargingRecord {
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'Supi'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'Snssai'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'Dnn'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'Filter'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'QuotaLeft'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'Usage'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'TotalVol'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'UlVol'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'DlVol'?: string;
 }
 /**
  * 
@@ -850,7 +966,7 @@ export interface Subscription {
      * @type {Array<ChargingData>}
      * @memberof Subscription
      */
-     'ChargingDatas'?: Array<ChargingData>;
+    'ChargingDatas'?: Array<ChargingData>;
 }
 /**
  * 
@@ -873,122 +989,6 @@ export interface Tenant {
 }
 /**
  * 
- * @export
- * @interface ChargingData
- */
- export interface ChargingData {
-    /**
-     * 
-     * @type {string}
-     * @memberof Tenant
-     */
-     'snssai'?: string;
-     /**
-      * 
-      * @type {string}
-      * @memberof ChargingData
-      */
-     'dnn'?: string;
-     /**
-      * 
-      * @type {number}
-      * @memberof ChargingData
-      */
-     'qosRef'?: number;
-     /**
-     * 
-     * @type {string}
-     * @memberof ChargingData
-     */
-    'filter'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ChargingData
-     */
-    'chargingMethod'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ChargingData
-     */
-     'quota'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ChargingData
-     */
-    'unitCost'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ChargingData
-     */
-    'ueId'?:string; 
-}
-/**
- *
- * @export
- * @interface FlowChargingRecord
- */
-export interface FlowChargingRecord {
-    /**
-     *
-     * @type {string}
-     * @memberof flowChargingRecord
-     */
-    'Supi'?: string;
-    /**
-     *
-     * @type {string}
-     * @memberof flowChargingRecord
-     */
-    'Snssai'?: string;
-    /**
-     *
-     * @type {string}
-     * @memberof flowChargingRecord
-     */
-    'Dnn'?: string;
-    /**
-     *
-     * @type {string}
-     * @memberof flowChargingRecord
-     */
-    'Filter'?: string;
-    /**
-    *
-    * @type {string}
-    * @memberof flowChargingRecord
-    */
-   'QuotaLeft'?: string;
-    /**
-    *
-    * @type {string}
-    * @memberof flowChargingRecord
-    */
-    'Usage'?: string;
-   /**
-    *
-    * @type {string}
-    * @memberof flowChargingRecord
-    */
-   'TotalVol'?: string;
-   /**
-    *
-    * @type {string}
-    * @memberof flowChargingRecord
-    */
-   'UlVol'?: string;
-    /**
-    *
-    * @type {string}
-    * @memberof flowChargingRecord
-    */
-   'DlVol'?: string;
-}
-/**
- *
  * @export
  * @interface Tunnel
  */
@@ -1132,7 +1132,7 @@ export const WebconsoleApiAxiosParamCreator = function (configuration?: Configur
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiSubscriberGet: async (limit?: number, page?: number, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiSubscriberGet: async (limit?: number, page?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/subscriber`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1182,9 +1182,11 @@ export const WebconsoleApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiSubscriberGet(limit?: number, page?: number, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<Subscriber>>> {
+        async apiSubscriberGet(limit?: number, page?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<Subscriber>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiSubscriberGet(limit, page, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WebconsoleApi.apiSubscriberGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
     }
 };
@@ -1226,9 +1228,10 @@ export class WebconsoleApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof WebconsoleApi
      */
-    public apiSubscriberGet(limit?: number, page?: number, options?: AxiosRequestConfig) {
+    public apiSubscriberGet(limit?: number, page?: number, options?: RawAxiosRequestConfig) {
         return WebconsoleApiFp(this.configuration).apiSubscriberGet(limit, page, options).then((request) => request(this.axios, this.basePath));
     }
 }
+
 
 
