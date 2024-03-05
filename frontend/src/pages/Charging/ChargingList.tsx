@@ -35,7 +35,13 @@ const ChargingList: React.FC<{
 
     return (
       <>
-        <TableCell>{chargingRecordMatch ? chargingRecordMatch.Usage : "-"}</TableCell>
+        <TableCell>
+          {chargingRecordMatch
+            ? props.chargingMethod === "Online"
+              ? chargingRecordMatch.QuotaLeft
+              : chargingRecordMatch.Usage
+            : "-"}
+        </TableCell>
         <TableCell>{chargingRecordMatch ? chargingRecordMatch.TotalVol : "-"}</TableCell>
         <TableCell>{chargingRecordMatch ? chargingRecordMatch.UlVol : "-"}</TableCell>
         <TableCell>{chargingRecordMatch ? chargingRecordMatch.DlVol : "-"}</TableCell>
@@ -73,7 +79,7 @@ const ChargingList: React.FC<{
   return (
     <Table>
       <TableHead>
-        <h3>Offline Charging</h3>
+        <h3>{props.chargingMethod} Charging</h3>
         <TableRow>
           {tableColumnNames.map((colName, idx) => {
             return <TableCell key={idx}>{colName}</TableCell>;

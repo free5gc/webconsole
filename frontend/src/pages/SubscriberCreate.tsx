@@ -472,11 +472,21 @@ export default function SubscriberCreate() {
     }
   };
 
-  const onDnnDelete = (index: number, dnn: string) => {
+  const onDnnDelete = (index: number, dnn: string, slice: string) => {
     if (data.SessionManagementSubscriptionData !== undefined) {
       delete data.SessionManagementSubscriptionData![index].dnnConfigurations![dnn];
       setData({ ...data });
     }
+    // Remove all flow-based charging rule in this DNN
+    if (data.ChargingDatas !== undefined) {
+      for (let i = 0; i < data.ChargingDatas!.length; i++) {
+        if (data.ChargingDatas![i].dnn === dnn && data.ChargingDatas![i].snssai === slice) {
+          data.ChargingDatas!.splice(i, 1);
+          i--;
+        }
+      }
+    }
+    setData({ ...data });
   };
 
   const onFlowRulesDelete = (dnn: string, flowKey: string, qosRef: number | undefined) => {
@@ -500,6 +510,14 @@ export default function SubscriberCreate() {
           data.QosFlows![i].qosRef === qosRef
         ) {
           data.QosFlows!.splice(i, 1);
+          i--;
+        }
+      }
+    }
+    if (data.ChargingDatas !== undefined) {
+      for (let i = 0; i < data.ChargingDatas!.length; i++) {
+        if (data.ChargingDatas![i].qosRef === qosRef) {
+          data.ChargingDatas!.splice(i, 1);
           i--;
         }
       }
@@ -1722,7 +1740,13 @@ export default function SubscriberCreate() {
                           <Button
                             color="secondary"
                             variant="contained"
-                            onClick={() => onDnnDelete(index, dnn)}
+                            onClick={() =>
+                              onDnnDelete(
+                                index,
+                                dnn,
+                                toHex(row.singleNssai!.sst!) + row.singleNssai!.sd!,
+                              )
+                            }
                             sx={{
                               m: 2,
                               backgroundColor: "red",
