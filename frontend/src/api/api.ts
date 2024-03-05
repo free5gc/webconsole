@@ -151,6 +151,61 @@ export interface AuthenticationSubscription {
 /**
  * 
  * @export
+ * @interface ChargingData
+ */
+export interface ChargingData {
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'snssai'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'dnn'?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ChargingData
+     */
+    'qosRef'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'filter'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'chargingMethod'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'quota'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'unitCost'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'ueId'?: string;
+}
+/**
+ * 
+ * @export
  * @interface DefaultSingleNssais
  */
 export interface DefaultSingleNssais {
@@ -226,6 +281,67 @@ export interface DnnConfiguration {
 /**
  * 
  * @export
+ * @interface FlowChargingRecord
+ */
+export interface FlowChargingRecord {
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'Supi'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'Snssai'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'Dnn'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'Filter'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'QuotaLeft'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'Usage'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'TotalVol'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'UlVol'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'DlVol'?: string;
+}
+/**
+ * 
+ * @export
  * @interface FlowRules
  */
 export interface FlowRules {
@@ -258,7 +374,7 @@ export interface FlowRules {
      * @type {number}
      * @memberof FlowRules
      */
-    'qfi'?: number;
+    'qosRef'?: number;
 }
 /**
  * 
@@ -606,7 +722,7 @@ export interface QosFlows {
      * @type {number}
      * @memberof QosFlows
      */
-    'qfi': number;
+    'qosRef'?: number;
     /**
      * 
      * @type {number}
@@ -882,6 +998,12 @@ export interface Subscription {
      * @memberof Subscription
      */
     'QosFlows': Array<QosFlows>;
+    /**
+     * 
+     * @type {Array<ChargingData>}
+     * @memberof Subscription
+     */
+    'ChargingDatas'?: Array<ChargingData>;
 }
 /**
  * 
@@ -1099,9 +1221,9 @@ export const WebconsoleApiFp = function(configuration?: Configuration) {
          */
         async apiSubscriberGet(limit?: number, page?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<Subscriber>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiSubscriberGet(limit, page, options);
-            const index = configuration?.serverIndex ?? 0;
-            const operationBasePath = operationServerMap['WebconsoleApi.apiSubscriberGet']?.[index]?.url;
-            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, operationBasePath || basePath);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WebconsoleApi.apiSubscriberGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
     }
 };

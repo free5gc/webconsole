@@ -4,7 +4,6 @@ import StatusList from "./pages/StatusList";
 import StatusRead from "./pages/StatusRead";
 import SubscriberList from "./pages/SubscriberList";
 import SubscriberCreate from "./pages/SubscriberCreate";
-import SubscriberUpdate from "./pages/SubscriberUpdate";
 import SubscriberRead from "./pages/SubscriberRead";
 import AnalysisList from "./pages/AnalysisList";
 import TenantList from "./pages/TenantList";
@@ -23,7 +22,7 @@ export default function Top() {
         <Route path="/status/:id" element={<StatusRead />} />
         <Route path="/subscriber" element={<SubscriberList />} />
         <Route path="/subscriber/create" element={<SubscriberCreate />} />
-        <Route path="/subscriber/update/:id/:plmn" element={<SubscriberUpdate />} />
+        <Route path="/subscriber/create/:id/:plmn" element={<SubscriberCreate />} />
         <Route path="/subscriber/:id/:plmn" element={<SubscriberRead />} />
         <Route path="/analysis" element={<AnalysisList />} />
         <Route path="/tenant" element={<TenantList />} />

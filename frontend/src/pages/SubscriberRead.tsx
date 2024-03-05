@@ -35,6 +35,10 @@ export default function SubscriberRead() {
   const [data, setData] = useState<Subscription | null>(null);
   // const [update, setUpdate] = useState<boolean>(false);
 
+  function toHex(v: number | undefined): string {
+    return ("00" + v?.toString(16).toUpperCase()).substr(-2);
+  }
+
   useEffect(() => {
     axios.get("/api/subscriber/" + id + "/" + plmn).then((res) => {
       setData(res.data);
@@ -42,7 +46,7 @@ export default function SubscriberRead() {
   }, [id]);
 
   const handleEdit = () => {
-    navigation("/subscriber/update/" + id + "/" + plmn);
+    navigation("/subscriber/create/" + id + "/" + plmn);
   };
 
   const isDefaultNssai = (nssai: Nssai | undefined) => {
@@ -114,81 +118,124 @@ export default function SubscriberRead() {
     return "";
   };
 
-  const qosFlow = (flowKey: string, dnn: string): QosFlows|undefined => {
+  const qosFlow = (
+    sstSd: string,
+    dnn: string,
+    qosRef: number | undefined,
+  ): QosFlows | undefined => {
     if (data != null) {
       for (const qos of data.QosFlows) {
-        if (qos.snssai === flowKey && qos.dnn === dnn) {
+        if (qos.snssai === sstSd && qos.dnn === dnn && qos.qosRef === qosRef) {
           return qos;
         }
       }
     }
-  }
+  };
+
+  const chargingConfig = (dnn: string | undefined, snssai: Nssai, filter: string | undefined) => {
+    const flowKey = toHex(snssai.sst) + snssai.sd;
+    for (const chargingData of data?.ChargingDatas ?? []) {
+      const isOnlineCharging = chargingData.chargingMethod === "Online";
+
+      if (
+        chargingData.snssai === flowKey &&
+        chargingData.dnn === dnn &&
+        chargingData.filter === filter
+      ) {
+        return (
+          <Box sx={{ m: 2 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <h4>Charging Config</h4>
+              </Grid>
+            </Grid>
+            <Table>
+              <TableBody>
+                <TableCell style={{ width: "40%" }}> Charging Method </TableCell>
+                <TableCell>{chargingData.chargingMethod}</TableCell>
+              </TableBody>
+              {isOnlineCharging ? (
+                <TableBody>
+                  <TableCell style={{ width: "40%" }}> Quota </TableCell>
+                  <TableCell>{chargingData.quota}</TableCell>
+                </TableBody>
+              ) : (
+                <></>
+              )}
+              <TableBody>
+                <TableCell style={{ width: "40%" }}> Unit Cost </TableCell>
+                <TableCell>{chargingData.unitCost}</TableCell>
+              </TableBody>
+            </Table>
+          </Box>
+        );
+      }
+    }
+  };
 
   const flowRule = (dnn: string, snssai: Nssai) => {
-    function toHex(v: number | undefined) {
-      return ("00" + v?.toString(16).toUpperCase()).substr(-2);
-    }
+    console.log("in flowRule");
+    console.log(data?.FlowRules);
     const flowKey = toHex(snssai.sst) + snssai.sd;
     if (data?.FlowRules !== undefined) {
-      for (let i = 0; i < data.FlowRules?.length; i++) {
-        const flow = data.FlowRules![i];
-        if (flow.snssai === flowKey && flow.dnn === dnn) {
-          const qos = qosFlow(flowKey, dnn);
-          return (
-            <div key={flow.snssai}>
-              <Box sx={{ m: 2 }}>
-                <h4>Flow Rules</h4>
-                <Card variant="outlined">
-                  <Table>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell style={{ width: "40%" }}>IP Filter</TableCell>
-                        <TableCell>{flow.filter}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell style={{ width: "40%" }}>Precedence</TableCell>
-                        <TableCell>{flow.precedence}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell style={{ width: "40%" }}>5QI</TableCell>
-                        <TableCell>{flow.qfi}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell style={{ width: "40%" }}>Uplink GBR</TableCell>
-                        <TableCell>{qos!.gbrUL}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell style={{ width: "40%" }}>Downlink GBR</TableCell>
-                        <TableCell>{qos!.gbrDL}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell style={{ width: "40%" }}>Uplink MBR</TableCell>
-                        <TableCell>{qos!.mbrUL}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell style={{ width: "40%" }}>Downlink MBR</TableCell>
-                        <TableCell>{qos!.mbrDL}</TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
-                </Card>
-              </Box>
-            </div>
-          );
-        }
-      }
+      return data.FlowRules.filter((flow) => flow.dnn === dnn && flow.snssai === flowKey).map(
+        (flow) => (
+          <div key={flow.snssai}>
+            <Box sx={{ m: 2 }}>
+              <h4>Flow Rules</h4>
+              <Card variant="outlined">
+                <Table>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell style={{ width: "40%" }}>IP Filter</TableCell>
+                      <TableCell>{flow.filter}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell style={{ width: "40%" }}>Precedence</TableCell>
+                      <TableCell>{flow.precedence}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell style={{ width: "40%" }}>5QI</TableCell>
+                      <TableCell>{qosFlow(flowKey, dnn, flow.qosRef)?.["5qi"]}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell style={{ width: "40%" }}>Uplink GBR</TableCell>
+                      <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.gbrUL}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell style={{ width: "40%" }}>Downlink GBR</TableCell>
+                      <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.gbrDL}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell style={{ width: "40%" }}>Uplink MBR</TableCell>
+                      <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.mbrUL}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell style={{ width: "40%" }}>Downlink MBR</TableCell>
+                      <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.mbrDL}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                  <TableBody>
+                    <TableCell>{chargingConfig(dnn, snssai!, flow.filter)}</TableCell>
+                  </TableBody>
+                </Table>
+              </Card>
+            </Box>
+          </div>
+        ),
+      );
     }
     return <div></div>;
   };
@@ -373,6 +420,7 @@ export default function SubscriberRead() {
                       </Table>
                       {flowRule(dnn, row.singleNssai!)}
                       {upSecurity(row.dnnConfigurations![dnn])}
+                      {chargingConfig("", row.singleNssai!, "")}
                     </Card>
                   </Box>
                 </div>

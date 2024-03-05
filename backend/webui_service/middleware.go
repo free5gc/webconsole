@@ -26,10 +26,32 @@ func ReturnPublic() gin.HandlerFunc {
 }
 
 func verifyDestPath(requestedURI string) string {
+	protected_route := []string{
+		"status",
+		"analysis",
+		"subscriber",
+		"tenant",
+		"charging",
+		"login",
+	}
+
 	destPath := filepath.Clean(requestedURI)
+
 	// if destPath contains ".." then it is not a valid path
 	if strings.Contains(destPath, "..") {
 		return PublicPath
+	}
+
+	// If it is in ProtectedRoute, we must return to root
+	for _, r := range protected_route {
+		uri := strings.Split(requestedURI, "/")
+
+		if len(uri) < 2 {
+			continue
+		}
+		if uri[1] == r {
+			return PublicPath
+		}
 	}
 	return destPath
 }

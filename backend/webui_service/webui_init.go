@@ -3,12 +3,14 @@ package webui_service
 import (
 	"io/ioutil"
 	"os"
+	"sync"
 
 	"github.com/gin-contrib/cors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/free5gc/util/mongoapi"
 	"github.com/free5gc/webconsole/backend/WebUI"
+	"github.com/free5gc/webconsole/backend/billing"
 	"github.com/free5gc/webconsole/backend/factory"
 	"github.com/free5gc/webconsole/backend/logger"
 	"github.com/free5gc/webconsole/backend/webui_context"
@@ -105,6 +107,14 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 	self := webui_context.GetSelf()
 	self.UpdateNfProfiles()
 
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+
+	self.BillingServer = billing.OpenServer(&wg)
+	if self.BillingServer == nil {
+		logger.InitLog.Errorln("Billing Server open error.")
+	}
+
 	router.NoRoute(ReturnPublic())
 
 	if webServer != nil {
@@ -112,4 +122,6 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 	} else {
 		logger.InitLog.Infoln(router.Run(":5000"))
 	}
+
+	wg.Wait()
 }

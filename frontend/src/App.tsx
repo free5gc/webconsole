@@ -4,7 +4,6 @@ import StatusList from "./pages/StatusList";
 import StatusRead from "./pages/StatusRead";
 import SubscriberList from "./pages/SubscriberList";
 import SubscriberCreate from "./pages/SubscriberCreate";
-import SubscriberUpdate from "./pages/SubscriberUpdate";
 import SubscriberRead from "./pages/SubscriberRead";
 import AnalysisList from "./pages/AnalysisList";
 import TenantList from "./pages/TenantList";
@@ -15,6 +14,7 @@ import UserCreate from "./pages/UserCreate";
 import UserUpdate from "./pages/UserUpdate";
 import Login from "./pages/Login";
 import ChangePassword from "./pages/ChangePassword";
+import ChargingTable from "./pages/Charging/ChargingTable";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { LoginContext, User } from "./LoginContext";
 
@@ -59,10 +59,10 @@ export default function App() {
             }
           />
           <Route
-            path="/subscriber/update/:id/:plmn"
+            path="/subscriber/create/:id/:plmn"
             element={
               <ProtectedRoute>
-                <SubscriberUpdate />
+                <SubscriberCreate />
               </ProtectedRoute>
             }
           />
@@ -143,6 +143,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <StatusList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/charging"
+            element={
+              <ProtectedRoute>
+                <ChargingTable />
               </ProtectedRoute>
             }
           />

@@ -40,9 +40,10 @@ type Info struct {
 }
 
 type Configuration struct {
-	WebServer *WebServer `yaml:"webServer,omitempty" valid:"optional"`
-	Mongodb   *Mongodb   `yaml:"mongodb" valid:"required"`
-	NrfUri    string     `yaml:"nrfUri" valid:"required"`
+	WebServer     *WebServer     `yaml:"webServer,omitempty" valid:"optional"`
+	Mongodb       *Mongodb       `yaml:"mongodb" valid:"required"`
+	NrfUri        string         `yaml:"nrfUri" valid:"required"`
+	BillingServer *BillingServer `yaml:"billingServer,omitempty" valid:"required"`
 }
 
 type Logger struct {
@@ -53,8 +54,20 @@ type Logger struct {
 
 type WebServer struct {
 	Scheme string `yaml:"scheme" valid:"required"`
-	IP     string `yaml:"ipv4Address" valid:"required"`
+	IP     string `yaml:"ipv4Address,omitempty"`
 	PORT   string `yaml:"port" valid:"required"`
+}
+
+type Tls struct {
+	Pem string `yaml:"pem,omitempty" valid:"type(string),minstringlength(1),required"`
+	Key string `yaml:"key,omitempty" valid:"type(string),minstringlength(1),required"`
+}
+
+type BillingServer struct {
+	HostIPv4   string `yaml:"hostIPv4,omitempty" valid:"required,host"`
+	Port       int    `yaml:"port,omitempty" valid:"optional,port"`
+	ListenPort int    `yaml:"listenPort,omitempty" valid:"required,port"`
+	Tls        *Tls   `yaml:"tls,omitempty" valid:"optional"`
 }
 
 type Mongodb struct {

@@ -23,6 +23,7 @@
     "dayjs": "^1.11.6",
     "js-file-download": "^0.4.12",
     "react": "^18.2.0",
+    "react-bootstrap-table-next": "4.0.3",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.8.1",
     "react-scripts": "5.0.1",
@@ -57,6 +58,7 @@
   },
   "proxy": "http://localhost:9090",
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@typescript-eslint/eslint-plugin": "^5.53.0",
     "@typescript-eslint/parser": "^5.53.0",
     "eslint": "^8.34.0",
