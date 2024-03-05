@@ -165,7 +165,7 @@ export interface ChargingData {
      * @type {string}
      * @memberof ChargingData
      */
-    'dnn'?: string;
+    'dnn': string;
     /**
      * 
      * @type {number}
@@ -177,7 +177,7 @@ export interface ChargingData {
      * @type {string}
      * @memberof ChargingData
      */
-    'filter'?: string;
+    'filter': string;
     /**
      * 
      * @type {string}
@@ -289,55 +289,55 @@ export interface FlowChargingRecord {
      * @type {string}
      * @memberof FlowChargingRecord
      */
-    'Supi'?: string;
+    'Supi': string;
     /**
      * 
      * @type {string}
      * @memberof FlowChargingRecord
      */
-    'Snssai'?: string;
+    'Snssai': string;
     /**
      * 
      * @type {string}
      * @memberof FlowChargingRecord
      */
-    'Dnn'?: string;
+    'Dnn': string;
     /**
      * 
      * @type {string}
      * @memberof FlowChargingRecord
      */
-    'Filter'?: string;
+    'Filter': string;
     /**
      * 
      * @type {string}
      * @memberof FlowChargingRecord
      */
-    'QuotaLeft'?: string;
+    'QuotaLeft': string;
     /**
      * 
      * @type {string}
      * @memberof FlowChargingRecord
      */
-    'Usage'?: string;
+    'Usage': string;
     /**
      * 
      * @type {string}
      * @memberof FlowChargingRecord
      */
-    'TotalVol'?: string;
+    'TotalVol': string;
     /**
      * 
      * @type {string}
      * @memberof FlowChargingRecord
      */
-    'UlVol'?: string;
+    'UlVol': string;
     /**
      * 
      * @type {string}
      * @memberof FlowChargingRecord
      */
-    'DlVol'?: string;
+    'DlVol': string;
 }
 /**
  * 
@@ -722,7 +722,7 @@ export interface QosFlows {
      * @type {number}
      * @memberof QosFlows
      */
-    'qosRef'?: number;
+    'qosRef': number;
     /**
      * 
      * @type {number}
@@ -1003,7 +1003,7 @@ export interface Subscription {
      * @type {Array<ChargingData>}
      * @memberof Subscription
      */
-    'ChargingDatas'?: Array<ChargingData>;
+    'ChargingDatas': Array<ChargingData>;
 }
 /**
  * 

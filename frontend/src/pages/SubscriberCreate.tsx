@@ -240,6 +240,8 @@ export default function SubscriberCreate() {
     ChargingDatas: [
       {
         snssai: "01010203",
+        dnn: "",
+        filter: "",
         chargingMethod: "Offline",
         quota: "100000",
         unitCost: "1",
@@ -255,6 +257,8 @@ export default function SubscriberCreate() {
       },
       {
         snssai: "01112233",
+        dnn: "",
+        filter: "",
         chargingMethod: "Online",
         quota: "100000",
         unitCost: "1",

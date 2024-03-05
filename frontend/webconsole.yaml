@@ -585,7 +585,7 @@ components:
       required:
         - snssai
         - dnn
-        - qfi
+        - qosRef
         - 5qi
       properties:
         snssai:
@@ -621,6 +621,7 @@ components:
         - SmPolicyData
         - FlowRules
         - QosFlows
+        - ChargingDatas
       properties:
         userNumber:
           type: integer
@@ -657,6 +658,9 @@ components:
             $ref: "#/components/schemas/ChargingData"
     ChargingData:
       type: object
+      required:
+        - dnn
+        - filter
       properties:
         snssai:
           type: string
@@ -677,6 +681,16 @@ components:
           type: string
     FlowChargingRecord:
       type: object
+      required:
+        - Supi
+        - Snssai
+        - Dnn
+        - Filter
+        - QuotaLeft
+        - Usage
+        - TotalVol
+        - UlVol
+        - DlVol
       properties:
         Supi:
           type: string
