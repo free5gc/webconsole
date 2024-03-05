@@ -656,6 +656,7 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ChargingData"
+    # github.com/free5gc/webconsole/backend/WebUI/model_charging_data.go:ChargingData
     ChargingData:
       type: object
       required:
@@ -679,6 +680,7 @@ components:
           type: string
         ueId:
           type: string
+    # github.com/free5gc/webconsole/backend/WebUI/model_rating_group_data_usage.go:RatingGroupDataUsage
     FlowChargingRecord:
       type: object
       required:
