@@ -6,8 +6,6 @@ import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
 
-import { config } from "./constants/config";
-import { Auth } from "aws-amplify";
 import { LoginContext } from "./LoginContext";
 
 const options = ["Change Password", "Logout"];
@@ -32,12 +30,8 @@ export default function SimpleListMenu(props: SimpleListMenuProps) {
   }
 
   function onLogout() {
-    if (config.enableCognitoAuth) {
-      Auth.signOut();
-    } else {
-      setUser(null);
-      navigation("/login");
-    }
+    setUser(null);
+    navigation("/login");
   }
 
   const handleMenuItemClick = (event: React.MouseEvent<HTMLElement>, index: number) => {

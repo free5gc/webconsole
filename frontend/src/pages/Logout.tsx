@@ -5,9 +5,6 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import PhoneAndroid from "@mui/icons-material/PhoneAndroid";
 
-import { config } from "../constants/config";
-import { Auth } from "aws-amplify";
-
 import { LoginContext } from "../LoginContext";
 
 export const Logout = () => {
@@ -15,12 +12,8 @@ export const Logout = () => {
   const { setUser } = useContext(LoginContext);
 
   function onLogout() {
-    if (config.enableCognitoAuth) {
-      Auth.signOut();
-    } else {
-      setUser(null);
-      navigation("/login");
-    }
+    setUser(null);
+    navigation("/login");
   }
 
   return (
