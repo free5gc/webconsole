@@ -32,7 +32,7 @@ export default function UserUpdate() {
     uid: string;
   }>();
   const navigation = useNavigate();
-  const [user, setUser] = useState<User>({});
+  const [user, setUser] = useState<User>({email: "", encryptedPassword: ""});
 
   const [password, setPassword] = useState<Password>({});
 

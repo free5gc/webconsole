@@ -10,7 +10,7 @@ import { Button, Grid, TextField, Table, TableBody, TableCell, TableRow } from "
 
 export default function TenantCreate() {
   const navigation = useNavigate();
-  const [tenant, setTenant] = useState<Tenant>({});
+  const [tenant, setTenant] = useState<Tenant>({tenantName: ""});
 
   const handleCreate = () => {
     console.log("Create");

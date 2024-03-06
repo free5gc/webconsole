@@ -32,7 +32,7 @@ export default function SubscriberRead() {
   }>();
   const navigation = useNavigate();
 
-  const [data, setData] = useState<Subscription>({});
+  const [data, setData] = useState<Subscription | null>(null);
   // const [update, setUpdate] = useState<boolean>(false);
 
   function toHex(v: number | undefined): string {
@@ -50,7 +50,7 @@ export default function SubscriberRead() {
   };
 
   const isDefaultNssai = (nssai: Nssai | undefined) => {
-    if (nssai === undefined) {
+    if (nssai === undefined || data == null) {
       return false;
     } else {
       for (
@@ -123,9 +123,8 @@ export default function SubscriberRead() {
     dnn: string,
     qosRef: number | undefined,
   ): QosFlows | undefined => {
-    if (data.QosFlows !== undefined) {
-      for (let i = 0; i < data.QosFlows?.length; i++) {
-        const qos = data.QosFlows![i];
+    if (data != null) {
+      for (const qos of data.QosFlows) {
         if (qos.snssai === sstSd && qos.dnn === dnn && qos.qosRef === qosRef) {
           return qos;
         }
@@ -135,9 +134,8 @@ export default function SubscriberRead() {
 
   const chargingConfig = (dnn: string | undefined, snssai: Nssai, filter: string | undefined) => {
     const flowKey = toHex(snssai.sst) + snssai.sd;
-    for (let i = 0; i < data.ChargingDatas!.length; i++) {
-      const chargingData = data.ChargingDatas![i];
-      const isOnlineCharging = data.ChargingDatas![i].chargingMethod === "Online";
+    for (const chargingData of data?.ChargingDatas ?? []) {
+      const isOnlineCharging = chargingData.chargingMethod === "Online";
 
       if (
         chargingData.snssai === flowKey &&
@@ -177,9 +175,9 @@ export default function SubscriberRead() {
 
   const flowRule = (dnn: string, snssai: Nssai) => {
     console.log("in flowRule");
-    console.log(data.FlowRules);
+    console.log(data?.FlowRules);
     const flowKey = toHex(snssai.sst) + snssai.sd;
-    if (data.FlowRules !== undefined) {
+    if (data?.FlowRules !== undefined) {
       return data.FlowRules.filter((flow) => flow.dnn === dnn && flow.snssai === flowKey).map(
         (flow) => (
           <div key={flow.snssai}>
@@ -280,59 +278,59 @@ export default function SubscriberRead() {
           <TableBody>
             <TableRow>
               <TableCell>PLMN ID</TableCell>
-              <TableCell>{data.plmnID}</TableCell>
+              <TableCell>{data?.plmnID}</TableCell>
             </TableRow>
           </TableBody>
           <TableBody>
             <TableRow>
               <TableCell style={{ width: "40%" }}>SUPI (IMSI)</TableCell>
-              <TableCell>{imsiValue(data.ueId)}</TableCell>
+              <TableCell>{imsiValue(data?.ueId)}</TableCell>
             </TableRow>
           </TableBody>
           <TableBody>
             <TableRow>
               <TableCell style={{ width: "40%" }}>GPSI (MSISDN)</TableCell>
-              <TableCell>{msisdnValue(data.AccessAndMobilitySubscriptionData)}</TableCell>
+              <TableCell>{msisdnValue(data?.AccessAndMobilitySubscriptionData)}</TableCell>
             </TableRow>
           </TableBody>
           <TableBody>
             <TableRow>
               <TableCell style={{ width: "40%" }}>Authentication Management Field (AMF)</TableCell>
               <TableCell>
-                {data.AuthenticationSubscription?.authenticationManagementField}
+                {data?.AuthenticationSubscription?.authenticationManagementField}
               </TableCell>
             </TableRow>
           </TableBody>
           <TableBody>
             <TableRow>
               <TableCell style={{ width: "40%" }}>Authentication Method</TableCell>
-              <TableCell>{data.AuthenticationSubscription?.authenticationMethod}</TableCell>
+              <TableCell>{data?.AuthenticationSubscription?.authenticationMethod}</TableCell>
             </TableRow>
           </TableBody>
           <TableBody>
             <TableRow>
               <TableCell style={{ width: "40%" }}>K</TableCell>
               <TableCell>
-                {data.AuthenticationSubscription?.permanentKey?.permanentKeyValue}
+                {data?.AuthenticationSubscription?.permanentKey?.permanentKeyValue}
               </TableCell>
             </TableRow>
           </TableBody>
           <TableBody>
             <TableRow>
               <TableCell style={{ width: "40%" }}>Operator Code Type</TableCell>
-              <TableCell>{operationCodeType(data.AuthenticationSubscription)}</TableCell>
+              <TableCell>{operationCodeType(data?.AuthenticationSubscription)}</TableCell>
             </TableRow>
           </TableBody>
           <TableBody>
             <TableRow>
               <TableCell style={{ width: "40%" }}>Operator Code Value</TableCell>
-              <TableCell>{operationCodeValue(data.AuthenticationSubscription)}</TableCell>
+              <TableCell>{operationCodeValue(data?.AuthenticationSubscription)}</TableCell>
             </TableRow>
           </TableBody>
           <TableBody>
             <TableRow>
               <TableCell style={{ width: "40%" }}>SQN</TableCell>
-              <TableCell>{data.AuthenticationSubscription?.sequenceNumber}</TableCell>
+              <TableCell>{data?.AuthenticationSubscription?.sequenceNumber}</TableCell>
             </TableRow>
           </TableBody>
         </Table>
@@ -344,7 +342,7 @@ export default function SubscriberRead() {
             <TableRow>
               <TableCell style={{ width: "40%" }}>Uplink</TableCell>
               <TableCell>
-                {data.AccessAndMobilitySubscriptionData?.subscribedUeAmbr?.uplink}
+                {data?.AccessAndMobilitySubscriptionData?.subscribedUeAmbr?.uplink}
               </TableCell>
             </TableRow>
           </TableBody>
@@ -352,13 +350,13 @@ export default function SubscriberRead() {
             <TableRow>
               <TableCell style={{ width: "40%" }}>Downlink</TableCell>
               <TableCell>
-                {data.AccessAndMobilitySubscriptionData?.subscribedUeAmbr?.downlink}
+                {data?.AccessAndMobilitySubscriptionData?.subscribedUeAmbr?.downlink}
               </TableCell>
             </TableRow>
           </TableBody>
         </Table>
       </Card>
-      {data.SessionManagementSubscriptionData?.map((row, index) => (
+      {data?.SessionManagementSubscriptionData?.map((row, index) => (
         <div key={index}>
           <h3>S-NSSAI Configuragtion</h3>
           <Card variant="outlined">

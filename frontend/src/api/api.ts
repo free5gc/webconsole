@@ -14,14 +14,14 @@
 
 
 import type { Configuration } from './configuration';
-import type { AxiosPromise, AxiosInstance, AxiosRequestConfig } from 'axios';
+import type { AxiosPromise, AxiosInstance, RawAxiosRequestConfig } from 'axios';
 import globalAxios from 'axios';
 // Some imports not used depending on template conditions
 // @ts-ignore
 import { DUMMY_BASE_URL, assertParamExists, setApiKeyToObject, setBasicAuthToObject, setBearerAuthToObject, setOAuthToObject, setSearchParams, serializeDataIfNeeded, toPathString, createRequestFunction } from './common';
 import type { RequestArgs } from './base';
 // @ts-ignore
-import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError } from './base';
+import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError, operationServerMap } from './base';
 
 /**
  * 
@@ -34,13 +34,13 @@ export interface ANInformation {
      * @type {string}
      * @memberof ANInformation
      */
-    'IPAddress'?: string;
+    'IPAddress': string;
     /**
      * 
      * @type {number}
      * @memberof ANInformation
      */
-    'TEID'?: number;
+    'TEID': number;
 }
 /**
  * 
@@ -91,19 +91,19 @@ export interface Arp {
      * @type {number}
      * @memberof Arp
      */
-    'priorityLevel'?: number;
+    'priorityLevel': number;
     /**
      * 
      * @type {string}
      * @memberof Arp
      */
-    'preemptCap'?: string;
+    'preemptCap': string;
     /**
      * 
      * @type {string}
      * @memberof Arp
      */
-    'preemptVuln'?: string;
+    'preemptVuln': string;
 }
 /**
  * 
@@ -116,19 +116,19 @@ export interface AuthenticationSubscription {
      * @type {string}
      * @memberof AuthenticationSubscription
      */
-    'authenticationMethod'?: string;
+    'authenticationMethod': string;
     /**
      * 
      * @type {PermanentKey}
      * @memberof AuthenticationSubscription
      */
-    'permanentKey'?: PermanentKey;
+    'permanentKey': PermanentKey;
     /**
      * 
      * @type {string}
      * @memberof AuthenticationSubscription
      */
-    'sequenceNumber'?: string;
+    'sequenceNumber': string;
     /**
      * 
      * @type {string}
@@ -151,6 +151,61 @@ export interface AuthenticationSubscription {
 /**
  * 
  * @export
+ * @interface ChargingData
+ */
+export interface ChargingData {
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'snssai'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'dnn': string;
+    /**
+     * 
+     * @type {number}
+     * @memberof ChargingData
+     */
+    'qosRef'?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'filter': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'chargingMethod'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'quota'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'unitCost'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ChargingData
+     */
+    'ueId'?: string;
+}
+/**
+ * 
+ * @export
  * @interface DefaultSingleNssais
  */
 export interface DefaultSingleNssais {
@@ -159,7 +214,7 @@ export interface DefaultSingleNssais {
      * @type {Array<Nssai>}
      * @memberof DefaultSingleNssais
      */
-    'defaultSingleNssais'?: Array<Nssai>;
+    'defaultSingleNssais': Array<Nssai>;
     /**
      * 
      * @type {Array<Nssai>}
@@ -178,7 +233,7 @@ export interface Dnn {
      * @type {string}
      * @memberof Dnn
      */
-    'dnn'?: string;
+    'dnn': string;
 }
 /**
  * 
@@ -191,13 +246,13 @@ export interface DnnConfiguration {
      * @type {PduSessionTypes}
      * @memberof DnnConfiguration
      */
-    'pduSessionTypes'?: PduSessionTypes;
+    'pduSessionTypes': PduSessionTypes;
     /**
      * 
      * @type {SscModes}
      * @memberof DnnConfiguration
      */
-    'sscModes'?: SscModes;
+    'sscModes': SscModes;
     /**
      * 
      * @type {Model5gQosProfile}
@@ -212,10 +267,77 @@ export interface DnnConfiguration {
     'sessionAmbr'?: SessionAmbr;
     /**
      * 
+     * @type {Array<IpAddress>}
+     * @memberof DnnConfiguration
+     */
+    'staticIpAddress'?: Array<IpAddress>;
+    /**
+     * 
      * @type {UpSecurity}
      * @memberof DnnConfiguration
      */
     'upSecurity'?: UpSecurity;
+}
+/**
+ * 
+ * @export
+ * @interface FlowChargingRecord
+ */
+export interface FlowChargingRecord {
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'Supi': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'Snssai': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'Dnn': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'Filter': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'QuotaLeft': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'Usage': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'TotalVol': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'UlVol': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof FlowChargingRecord
+     */
+    'DlVol': string;
 }
 /**
  * 
@@ -253,6 +375,31 @@ export interface FlowRules {
      * @memberof FlowRules
      */
     'qosRef'?: number;
+}
+/**
+ * 
+ * @export
+ * @interface IpAddress
+ */
+export interface IpAddress {
+    /**
+     * 
+     * @type {string}
+     * @memberof IpAddress
+     */
+    'ipv4Addr'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof IpAddress
+     */
+    'ipv6Addr'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof IpAddress
+     */
+    'ipv6Prefix'?: string;
 }
 /**
  * 
@@ -309,19 +456,19 @@ export interface MilenageOp {
      * @type {string}
      * @memberof MilenageOp
      */
-    'opValue'?: string;
+    'opValue': string;
     /**
      * 
      * @type {number}
      * @memberof MilenageOp
      */
-    'encryptionKey'?: number;
+    'encryptionKey': number;
     /**
      * 
      * @type {number}
      * @memberof MilenageOp
      */
-    'encryptionAlgorithm'?: number;
+    'encryptionAlgorithm': number;
 }
 /**
  * 
@@ -334,13 +481,13 @@ export interface Model5gQosProfile {
      * @type {number}
      * @memberof Model5gQosProfile
      */
-    '5qi'?: number;
+    '5qi': number;
     /**
      * 
      * @type {Arp}
      * @memberof Model5gQosProfile
      */
-    'arp'?: Arp;
+    'arp': Arp;
     /**
      * 
      * @type {number}
@@ -359,7 +506,7 @@ export interface Nssai {
      * @type {number}
      * @memberof Nssai
      */
-    'sst'?: number;
+    'sst': number;
     /**
      * 
      * @type {string}
@@ -378,19 +525,19 @@ export interface Opc {
      * @type {string}
      * @memberof Opc
      */
-    'opcValue'?: string;
+    'opcValue': string;
     /**
      * 
      * @type {number}
      * @memberof Opc
      */
-    'encryptionKey'?: number;
+    'encryptionKey': number;
     /**
      * 
      * @type {number}
      * @memberof Opc
      */
-    'encryptionAlgorithm'?: number;
+    'encryptionAlgorithm': number;
 }
 /**
  * 
@@ -403,31 +550,31 @@ export interface PduSession {
      * @type {string}
      * @memberof PduSession
      */
-    'Dnn'?: string;
+    'Dnn': string;
     /**
      * 
      * @type {string}
      * @memberof PduSession
      */
-    'PduSessionId'?: string;
+    'PduSessionId': string;
     /**
      * 
      * @type {string}
      * @memberof PduSession
      */
-    'Sd'?: string;
+    'Sd': string;
     /**
      * 
      * @type {string}
      * @memberof PduSession
      */
-    'SmContextRef'?: string;
+    'SmContextRef': string;
     /**
      * 
      * @type {string}
      * @memberof PduSession
      */
-    'Sst'?: string;
+    'Sst': string;
 }
 /**
  * 
@@ -440,13 +587,13 @@ export interface PduSessionInfo {
      * @type {string}
      * @memberof PduSessionInfo
      */
-    'AnType'?: string;
+    'AnType': string;
     /**
      * 
      * @type {string}
      * @memberof PduSessionInfo
      */
-    'Dnn'?: string;
+    'Dnn': string;
     /**
      * 
      * @type {string}
@@ -458,13 +605,13 @@ export interface PduSessionInfo {
      * @type {string}
      * @memberof PduSessionInfo
      */
-    'PDUAddress'?: string;
+    'PDUAddress': string;
     /**
      * 
      * @type {string}
      * @memberof PduSessionInfo
      */
-    'PDUSessionID'?: string;
+    'PDUSessionID': string;
     /**
      * 
      * @type {string}
@@ -476,37 +623,37 @@ export interface PduSessionInfo {
      * @type {string}
      * @memberof PduSessionInfo
      */
-    'Sd'?: string;
+    'Sd': string;
     /**
      * 
      * @type {SessionRule}
      * @memberof PduSessionInfo
      */
-    'SessionRule'?: SessionRule;
+    'SessionRule': SessionRule;
     /**
      * 
      * @type {string}
      * @memberof PduSessionInfo
      */
-    'Sst'?: string;
+    'Sst': string;
     /**
      * 
      * @type {string}
      * @memberof PduSessionInfo
      */
-    'Supi'?: string;
+    'Supi': string;
     /**
      * 
      * @type {Tunnel}
      * @memberof PduSessionInfo
      */
-    'Tunnel'?: Tunnel;
+    'Tunnel': Tunnel;
     /**
      * 
      * @type {string}
      * @memberof PduSessionInfo
      */
-    'UpCnxState'?: string;
+    'UpCnxState': string;
 }
 /**
  * 
@@ -519,7 +666,7 @@ export interface PduSessionTypes {
      * @type {string}
      * @memberof PduSessionTypes
      */
-    'defaultSessionType'?: string;
+    'defaultSessionType': string;
     /**
      * 
      * @type {Array<string>}
@@ -538,19 +685,19 @@ export interface PermanentKey {
      * @type {string}
      * @memberof PermanentKey
      */
-    'permanentKeyValue'?: string;
+    'permanentKeyValue': string;
     /**
      * 
      * @type {number}
      * @memberof PermanentKey
      */
-    'encryptionKey'?: number;
+    'encryptionKey': number;
     /**
      * 
      * @type {number}
      * @memberof PermanentKey
      */
-    'encryptionAlgorithm'?: number;
+    'encryptionAlgorithm': number;
 }
 /**
  * 
@@ -563,25 +710,25 @@ export interface QosFlows {
      * @type {string}
      * @memberof QosFlows
      */
-    'snssai'?: string;
+    'snssai': string;
     /**
      * 
      * @type {string}
      * @memberof QosFlows
      */
-    'dnn'?: string;
+    'dnn': string;
     /**
      * 
      * @type {number}
      * @memberof QosFlows
      */
-    'qosRef'?: number;
+    'qosRef': number;
     /**
      * 
      * @type {number}
      * @memberof QosFlows
      */
-    '5qi'?: number;
+    '5qi': number;
     /**
      * 
      * @type {string}
@@ -618,13 +765,13 @@ export interface SessionAmbr {
      * @type {string}
      * @memberof SessionAmbr
      */
-    'uplink'?: string;
+    'uplink': string;
     /**
      * 
      * @type {string}
      * @memberof SessionAmbr
      */
-    'downlink'?: string;
+    'downlink': string;
 }
 /**
  * 
@@ -637,7 +784,7 @@ export interface SessionManagementSubscriptionData {
      * @type {Nssai}
      * @memberof SessionManagementSubscriptionData
      */
-    'singleNssai'?: Nssai;
+    'singleNssai': Nssai;
     /**
      * 
      * @type {{ [key: string]: DnnConfiguration; }}
@@ -656,7 +803,7 @@ export interface SessionRule {
      * @type {string}
      * @memberof SessionRule
      */
-    'sessRuleId'?: string;
+    'sessRuleId': string;
 }
 /**
  * 
@@ -669,7 +816,7 @@ export interface SmPolicyData {
      * @type {{ [key: string]: SmPolicySnssai; }}
      * @memberof SmPolicyData
      */
-    'smPolicySnssaiData'?: { [key: string]: SmPolicySnssai; };
+    'smPolicySnssaiData': { [key: string]: SmPolicySnssai; };
 }
 /**
  * 
@@ -682,7 +829,7 @@ export interface SmPolicySnssai {
      * @type {Nssai}
      * @memberof SmPolicySnssai
      */
-    'snssai'?: Nssai;
+    'snssai': Nssai;
     /**
      * 
      * @type {{ [key: string]: Dnn; }}
@@ -714,7 +861,7 @@ export interface SscModes {
      * @type {string}
      * @memberof SscModes
      */
-    'defaultSscMode'?: string;
+    'defaultSscMode': string;
     /**
      * 
      * @type {Array<string>}
@@ -733,7 +880,7 @@ export interface SubscribedSnssaiInfo {
      * @type {Array<Dnn>}
      * @memberof SubscribedSnssaiInfo
      */
-    'dnnInfos'?: Array<Dnn>;
+    'dnnInfos': Array<Dnn>;
 }
 /**
  * 
@@ -746,13 +893,13 @@ export interface SubscribedUeAmbr {
      * @type {string}
      * @memberof SubscribedUeAmbr
      */
-    'uplink'?: string;
+    'uplink': string;
     /**
      * 
      * @type {string}
      * @memberof SubscribedUeAmbr
      */
-    'downlink'?: string;
+    'downlink': string;
 }
 /**
  * 
@@ -765,13 +912,19 @@ export interface Subscriber {
      * @type {string}
      * @memberof Subscriber
      */
-    'plmnID'?: string;
+    'plmnID': string;
     /**
      * 
      * @type {string}
      * @memberof Subscriber
      */
-    'ueId'?: string;
+    'ueId': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Subscriber
+     */
+    'gpsi': string;
 }
 /**
  * 
@@ -790,67 +943,67 @@ export interface Subscription {
      * @type {string}
      * @memberof Subscription
      */
-    'plmnID'?: string;
+    'plmnID': string;
     /**
      * 
      * @type {string}
      * @memberof Subscription
      */
-    'ueId'?: string;
+    'ueId': string;
     /**
      * 
      * @type {AuthenticationSubscription}
      * @memberof Subscription
      */
-    'AuthenticationSubscription'?: AuthenticationSubscription;
+    'AuthenticationSubscription': AuthenticationSubscription;
     /**
      * 
      * @type {AccessAndMobilitySubscriptionData}
      * @memberof Subscription
      */
-    'AccessAndMobilitySubscriptionData'?: AccessAndMobilitySubscriptionData;
+    'AccessAndMobilitySubscriptionData': AccessAndMobilitySubscriptionData;
     /**
      * 
      * @type {Array<SessionManagementSubscriptionData>}
      * @memberof Subscription
      */
-    'SessionManagementSubscriptionData'?: Array<SessionManagementSubscriptionData>;
+    'SessionManagementSubscriptionData': Array<SessionManagementSubscriptionData>;
     /**
      * 
      * @type {SmfSelectionSubscriptionData}
      * @memberof Subscription
      */
-    'SmfSelectionSubscriptionData'?: SmfSelectionSubscriptionData;
+    'SmfSelectionSubscriptionData': SmfSelectionSubscriptionData;
     /**
      * 
      * @type {AmPolicyData}
      * @memberof Subscription
      */
-    'AmPolicyData'?: AmPolicyData;
+    'AmPolicyData': AmPolicyData;
     /**
      * 
      * @type {SmPolicyData}
      * @memberof Subscription
      */
-    'SmPolicyData'?: SmPolicyData;
+    'SmPolicyData': SmPolicyData;
     /**
      * 
      * @type {Array<FlowRules>}
      * @memberof Subscription
      */
-    'FlowRules'?: Array<FlowRules>;
+    'FlowRules': Array<FlowRules>;
     /**
      * 
      * @type {Array<QosFlows>}
      * @memberof Subscription
      */
-    'QosFlows'?: Array<QosFlows>;
+    'QosFlows': Array<QosFlows>;
     /**
      * 
      * @type {Array<ChargingData>}
      * @memberof Subscription
      */
-     'ChargingDatas'?: Array<ChargingData>;
+    'ChargingDatas': Array<ChargingData>;
 }
 /**
  * 
@@ -869,126 +1022,10 @@ export interface Tenant {
      * @type {string}
      * @memberof Tenant
      */
-    'tenantName'?: string;
+    'tenantName': string;
 }
 /**
  * 
- * @export
- * @interface ChargingData
- */
- export interface ChargingData {
-    /**
-     * 
-     * @type {string}
-     * @memberof Tenant
-     */
-     'snssai'?: string;
-     /**
-      * 
-      * @type {string}
-      * @memberof ChargingData
-      */
-     'dnn'?: string;
-     /**
-      * 
-      * @type {number}
-      * @memberof ChargingData
-      */
-     'qosRef'?: number;
-     /**
-     * 
-     * @type {string}
-     * @memberof ChargingData
-     */
-    'filter'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ChargingData
-     */
-    'chargingMethod'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ChargingData
-     */
-     'quota'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ChargingData
-     */
-    'unitCost'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ChargingData
-     */
-    'ueId'?:string; 
-}
-/**
- *
- * @export
- * @interface FlowChargingRecord
- */
-export interface FlowChargingRecord {
-    /**
-     *
-     * @type {string}
-     * @memberof flowChargingRecord
-     */
-    'Supi'?: string;
-    /**
-     *
-     * @type {string}
-     * @memberof flowChargingRecord
-     */
-    'Snssai'?: string;
-    /**
-     *
-     * @type {string}
-     * @memberof flowChargingRecord
-     */
-    'Dnn'?: string;
-    /**
-     *
-     * @type {string}
-     * @memberof flowChargingRecord
-     */
-    'Filter'?: string;
-    /**
-    *
-    * @type {string}
-    * @memberof flowChargingRecord
-    */
-   'QuotaLeft'?: string;
-    /**
-    *
-    * @type {string}
-    * @memberof flowChargingRecord
-    */
-    'Usage'?: string;
-   /**
-    *
-    * @type {string}
-    * @memberof flowChargingRecord
-    */
-   'TotalVol'?: string;
-   /**
-    *
-    * @type {string}
-    * @memberof flowChargingRecord
-    */
-   'UlVol'?: string;
-    /**
-    *
-    * @type {string}
-    * @memberof flowChargingRecord
-    */
-   'DlVol'?: string;
-}
-/**
- *
  * @export
  * @interface Tunnel
  */
@@ -998,19 +1035,19 @@ export interface Tunnel {
      * @type {ANInformation}
      * @memberof Tunnel
      */
-    'ANInformation'?: ANInformation;
+    'ANInformation': ANInformation;
     /**
-     * 
-     * @type {string}
+     * github.com/free5gc/smf/internal/context/datapath.go:DataPathPool
+     * @type {any}
      * @memberof Tunnel
      */
-    'DataPathPool'?: string;
+    'DataPathPool': any;
     /**
-     * 
-     * @type {string}
+     * github.com/free5gc/util/idgenerator/idgenerator.go:IDGenerator
+     * @type {any}
      * @memberof Tunnel
      */
-    'PathIDGenerator'?: string;
+    'PathIDGenerator': any;
 }
 /**
  * 
@@ -1023,49 +1060,49 @@ export interface UeContext {
      * @type {string}
      * @memberof UeContext
      */
-    'AccessType'?: string;
+    'AccessType': string;
     /**
      * 
      * @type {string}
      * @memberof UeContext
      */
-    'CmState'?: string;
+    'CmState': string;
     /**
      * 
      * @type {string}
      * @memberof UeContext
      */
-    'Guti'?: string;
+    'Guti': string;
     /**
      * 
      * @type {string}
      * @memberof UeContext
      */
-    'Mcc'?: string;
+    'Mcc': string;
     /**
      * 
      * @type {string}
      * @memberof UeContext
      */
-    'Mnc'?: string;
+    'Mnc': string;
     /**
      * 
      * @type {Array<PduSession>}
      * @memberof UeContext
      */
-    'PduSessions'?: Array<PduSession>;
+    'PduSessions': Array<PduSession>;
     /**
      * 
      * @type {string}
      * @memberof UeContext
      */
-    'Supi'?: string;
+    'Supi': string;
     /**
      * 
      * @type {string}
      * @memberof UeContext
      */
-    'Tac'?: string;
+    'Tac': string;
 }
 /**
  * 
@@ -1078,13 +1115,13 @@ export interface UpSecurity {
      * @type {string}
      * @memberof UpSecurity
      */
-    'upIntegr'?: string;
+    'upIntegr': string;
     /**
      * 
      * @type {string}
      * @memberof UpSecurity
      */
-    'upConfid'?: string;
+    'upConfid': string;
 }
 /**
  * 
@@ -1109,13 +1146,13 @@ export interface User {
      * @type {string}
      * @memberof User
      */
-    'email'?: string;
+    'email': string;
     /**
      * 
      * @type {string}
      * @memberof User
      */
-    'encryptedPassword'?: string;
+    'encryptedPassword': string;
 }
 
 /**
@@ -1132,7 +1169,7 @@ export const WebconsoleApiAxiosParamCreator = function (configuration?: Configur
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiSubscriberGet: async (limit?: number, page?: number, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiSubscriberGet: async (limit?: number, page?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/subscriber`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -1182,9 +1219,11 @@ export const WebconsoleApiFp = function(configuration?: Configuration) {
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiSubscriberGet(limit?: number, page?: number, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<Subscriber>>> {
+        async apiSubscriberGet(limit?: number, page?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<Subscriber>>> {
             const localVarAxiosArgs = await localVarAxiosParamCreator.apiSubscriberGet(limit, page, options);
-            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WebconsoleApi.apiSubscriberGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
     }
 };
@@ -1226,9 +1265,10 @@ export class WebconsoleApi extends BaseAPI {
      * @throws {RequiredError}
      * @memberof WebconsoleApi
      */
-    public apiSubscriberGet(limit?: number, page?: number, options?: AxiosRequestConfig) {
+    public apiSubscriberGet(limit?: number, page?: number, options?: RawAxiosRequestConfig) {
         return WebconsoleApiFp(this.configuration).apiSubscriberGet(limit, page, options).then((request) => request(this.axios, this.basePath));
     }
 }
+
 
 
