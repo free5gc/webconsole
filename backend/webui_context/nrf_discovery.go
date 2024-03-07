@@ -1,12 +1,9 @@
 package webui_context
 
 import (
-	"context"
-	"crypto/tls"
-	"encoding/json"
-	"io"
 	"net/http"
 
+	"github.com/free5gc/openapi/Nnrf_NFDiscovery"
 	"github.com/free5gc/openapi/models"
 	"github.com/free5gc/webconsole/backend/logger"
 )
@@ -16,39 +13,34 @@ type NfInstance struct {
 	NfInstances    []models.NfProfile `json:"nfInstances"`
 }
 
-func NrfGetNfProfiles(requestUri string) ([]models.NfProfile, error) {
+func SendSearchNFInstances(targetNfType models.NfType) ([]models.NfProfile, error) {
 	var nfProfiles []models.NfProfile
 
-	httpsClient := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
+	ctx, _, err := GetSelf().GetTokenCtx(models.ServiceName_NNRF_DISC, models.NfType_NRF)
+	if err != nil {
+		logger.ConsumerLog.Errorln(err.Error())
+		return nfProfiles, err
 	}
 
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, requestUri, nil)
+	client := GetSelf().NFDiscoveryClient
+	localVarOptionals := Nnrf_NFDiscovery.SearchNFInstancesParamOpts{}
+
+	result, res, err := client.
+		NFInstancesStoreApi.SearchNFInstances(ctx, targetNfType, models.NfType_AF, &localVarOptionals)
 	if err != nil {
-		return nfProfiles, err
-	}
-	resp, err := httpsClient.Do(req)
-	if err != nil {
-		return nfProfiles, err
+		logger.ConsumerLog.Errorf("SearchNFInstances failed: %+v", err)
 	}
 	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			logger.CtxLog.Error(err)
+		if resCloseErr := res.Body.Close(); resCloseErr != nil {
+			logger.ConsumerLog.Errorf("NFInstancesStoreApi response body cannot close: %+v", resCloseErr)
 		}
 	}()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
+	if res != nil && res.StatusCode == http.StatusTemporaryRedirect {
+		logger.ConsumerLog.Errorln("Temporary Redirect For Non NRF Consumer")
 		return nfProfiles, err
 	}
+	nfProfiles = result.NfInstances
 
-	var nfInstance NfInstance
-	err = json.Unmarshal(body, &nfInstance)
-	if err != nil {
-		return nfProfiles, err
-	}
-
-	return nfInstance.NfInstances, nil
+	return nfProfiles, nil
 }

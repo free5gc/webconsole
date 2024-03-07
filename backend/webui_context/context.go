@@ -1,14 +1,18 @@
 package webui_context
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/google/uuid"
+
+	"github.com/free5gc/openapi/Nnrf_NFDiscovery"
 	"github.com/free5gc/openapi/Nnrf_NFManagement"
 	"github.com/free5gc/openapi/models"
+	"github.com/free5gc/openapi/oauth"
 	"github.com/free5gc/webconsole/backend/billing"
 	"github.com/free5gc/webconsole/backend/factory"
 	"github.com/free5gc/webconsole/backend/logger"
-	"github.com/google/uuid"
 )
 
 var webuiContext WEBUIContext
@@ -19,10 +23,12 @@ type WEBUIContext struct {
 	NFOamInstances []NfOamInstance
 	BillingServer  *billing.BillingDomain
 
-	NrfUri             string
-	NrfCertPem         string
+	NrfUri         string
+	NrfCertPem     string
+	OAuth2Required bool
+
 	NFManagementClient *Nnrf_NFManagement.APIClient
-	OAuth2Required     bool
+	NFDiscoveryClient  *Nnrf_NFDiscovery.APIClient
 }
 
 type NfOamInstance struct {
@@ -39,27 +45,23 @@ func Init() {
 	ManagementConfig := Nnrf_NFManagement.NewConfiguration()
 	ManagementConfig.SetBasePath(GetSelf().NrfUri)
 	webuiContext.NFManagementClient = Nnrf_NFManagement.NewAPIClient(ManagementConfig)
-}
 
-func NrfAmfUri() string {
-	return GetSelf().NrfUri + "/nnrf-disc/v1/nf-instances?target-nf-type=AMF&requester-nf-type=AMF"
-}
-
-func NrfSmfUri() string {
-	return GetSelf().NrfUri + "/nnrf-disc/v1/nf-instances?target-nf-type=SMF&requester-nf-type=AMF"
+	NFDiscovryConfig := Nnrf_NFDiscovery.NewConfiguration()
+	NFDiscovryConfig.SetBasePath(GetSelf().NrfUri)
+	webuiContext.NFDiscoveryClient = Nnrf_NFDiscovery.NewAPIClient(NFDiscovryConfig)
 }
 
 func (context *WEBUIContext) UpdateNfProfiles() {
 	var nfProfiles []models.NfProfile
 
-	nfProfiles, err := NrfGetNfProfiles(NrfAmfUri())
+	nfProfiles, err := SendSearchNFInstances(models.NfType_AMF)
 	if err != nil {
 		logger.CtxLog.Error(err)
 		return
 	}
 	context.NFProfiles = append(context.NFProfiles, nfProfiles...)
 
-	nfProfiles, err = NrfGetNfProfiles(NrfSmfUri())
+	nfProfiles, err = SendSearchNFInstances(models.NfType_SMF)
 	if err != nil {
 		logger.CtxLog.Error(err)
 		return
@@ -148,4 +150,16 @@ func getSbiUri(scheme models.UriScheme, ipv4Address string, port int32) (uri str
 		}
 	}
 	return
+}
+
+func (c *WEBUIContext) GetTokenCtx(serviceName models.ServiceName, targetNF models.NfType) (
+	context.Context, *models.ProblemDetails, error,
+) {
+	if !c.OAuth2Required {
+		return context.TODO(), nil, nil
+	}
+
+	logger.ConsumerLog.Infoln("GetTokenCtx:", targetNF, serviceName)
+	return oauth.GetTokenCtx(models.NfType_AF, targetNF,
+		c.NfInstanceID, c.NrfUri, string(serviceName))
 }

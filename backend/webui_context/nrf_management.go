@@ -87,17 +87,17 @@ func RetrySendNFRegistration(MaxRetry int) error {
 func SendDeregisterNFInstance() (*models.ProblemDetails, error) {
 	logger.ConsumerLog.Infof("Send Deregister NFInstance")
 
-	// ctx, pd, err := GetSelf().GetTokenCtx(models.ServiceName_NNRF_NFM, models.NfType_NRF)
-	// if err != nil {
-	// 	return pd, err
-	// }
+	ctx, pd, err := GetSelf().GetTokenCtx(models.ServiceName_NNRF_NFM, models.NfType_NRF)
+	if err != nil {
+		return pd, err
+	}
 
 	afSelf := GetSelf()
 
 	res, err := afSelf.
 		NFManagementClient.
 		NFInstanceIDDocumentApi.
-		DeregisterNFInstance(context.Background(), afSelf.NfInstanceID)
+		DeregisterNFInstance(ctx, afSelf.NfInstanceID)
 	if err == nil {
 		return nil, err
 	} else if res != nil {
