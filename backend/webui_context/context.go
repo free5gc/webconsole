@@ -3,17 +3,26 @@ package webui_context
 import (
 	"fmt"
 
+	"github.com/free5gc/openapi/Nnrf_NFManagement"
 	"github.com/free5gc/openapi/models"
 	"github.com/free5gc/webconsole/backend/billing"
+	"github.com/free5gc/webconsole/backend/factory"
 	"github.com/free5gc/webconsole/backend/logger"
+	"github.com/google/uuid"
 )
 
 var webuiContext WEBUIContext
 
 type WEBUIContext struct {
+	NfInstanceID   string
 	NFProfiles     []models.NfProfile
 	NFOamInstances []NfOamInstance
 	BillingServer  *billing.BillingDomain
+
+	NrfUri             string
+	NrfCertPem         string
+	NFManagementClient *Nnrf_NFManagement.APIClient
+	OAuth2Required     bool
 }
 
 type NfOamInstance struct {
@@ -22,14 +31,22 @@ type NfOamInstance struct {
 	Uri    string
 }
 
-var NrfUri string
+func Init() {
+	webuiContext.NfInstanceID = uuid.New().String()
+	webuiContext.NrfUri = factory.WebuiConfig.Configuration.NrfUri
+	webuiContext.NrfCertPem = factory.WebuiConfig.Configuration.NrfCertPem
+
+	ManagementConfig := Nnrf_NFManagement.NewConfiguration()
+	ManagementConfig.SetBasePath(GetSelf().NrfUri)
+	webuiContext.NFManagementClient = Nnrf_NFManagement.NewAPIClient(ManagementConfig)
+}
 
 func NrfAmfUri() string {
-	return NrfUri + "/nnrf-disc/v1/nf-instances?target-nf-type=AMF&requester-nf-type=AMF"
+	return GetSelf().NrfUri + "/nnrf-disc/v1/nf-instances?target-nf-type=AMF&requester-nf-type=AMF"
 }
 
 func NrfSmfUri() string {
-	return NrfUri + "/nnrf-disc/v1/nf-instances?target-nf-type=SMF&requester-nf-type=AMF"
+	return GetSelf().NrfUri + "/nnrf-disc/v1/nf-instances?target-nf-type=SMF&requester-nf-type=AMF"
 }
 
 func (context *WEBUIContext) UpdateNfProfiles() {
