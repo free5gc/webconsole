@@ -17,6 +17,9 @@ func SendNFRegistration() error {
 		NfInstanceId: GetSelf().NfInstanceID,
 		NfType:       models.NfType_AF,
 		NfStatus:     models.NfStatus_REGISTERED,
+		CustomInfo: map[string]interface{}{
+			"AfType": "webconsole",
+		},
 	}
 
 	var nf models.NfProfile
@@ -57,9 +60,6 @@ func SendNFRegistration() error {
 				}
 			}
 			GetSelf().OAuth2Required = oauth2
-			if oauth2 && GetSelf().NrfCertPem == "" {
-				logger.CfgLog.Error("OAuth2 enable but no nrfCertPem provided in config.")
-			}
 			break
 		} else {
 			logger.ConsumerLog.Infof("handler returned wrong status code %d", status)

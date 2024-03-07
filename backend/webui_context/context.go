@@ -24,7 +24,6 @@ type WEBUIContext struct {
 	BillingServer  *billing.BillingDomain
 
 	NrfUri         string
-	NrfCertPem     string
 	OAuth2Required bool
 
 	NFManagementClient *Nnrf_NFManagement.APIClient
@@ -40,7 +39,6 @@ type NfOamInstance struct {
 func Init() {
 	webuiContext.NfInstanceID = uuid.New().String()
 	webuiContext.NrfUri = factory.WebuiConfig.Configuration.NrfUri
-	webuiContext.NrfCertPem = factory.WebuiConfig.Configuration.NrfCertPem
 
 	ManagementConfig := Nnrf_NFManagement.NewConfiguration()
 	ManagementConfig.SetBasePath(GetSelf().NrfUri)
