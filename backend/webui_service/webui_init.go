@@ -101,14 +101,16 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 		os.Exit(0)
 	}()
 
-	err := webui_context.SendNFRegistration()
-	if err != nil {
-		retry_err := webui_context.RetrySendNFRegistration(10)
-		if retry_err != nil {
-			logger.InitLog.Errorln(retry_err)
-			return
+	go func() {
+		err := webui_context.SendNFRegistration()
+		if err != nil {
+			retry_err := webui_context.RetrySendNFRegistration(1)
+			if retry_err != nil {
+				logger.InitLog.Errorln(retry_err)
+				logger.InitLog.Warningln("The registration to NRF failed, resulting in limited functionalities.")
+			}
 		}
-	}
+	}()
 
 	router := WebUI.NewRouter()
 	WebUI.SetAdmin()

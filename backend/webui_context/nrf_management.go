@@ -26,6 +26,7 @@ func SendNFRegistration() error {
 	var res *http.Response
 	var err error
 
+	retryTime := 0
 	for {
 		nf, res, err = GetSelf().
 			NFManagementClient.
@@ -34,6 +35,10 @@ func SendNFRegistration() error {
 		if err != nil || res == nil {
 			logger.ConsumerLog.Infof("Webconsole-AF register to NRF Error[%s]", err.Error())
 			time.Sleep(2 * time.Second)
+			retryTime += 1
+			if retryTime == 10 {
+				return fmt.Errorf("NF Register retry failed %+v times.", retryTime)
+			}
 			continue
 		}
 		defer func() {
@@ -80,7 +85,6 @@ func RetrySendNFRegistration(MaxRetry int) error {
 		logger.ConsumerLog.Warnf("Send NFRegistration Failed by %v", err)
 		retryCount++
 	}
-	logger.ConsumerLog.Errorln("[AF] Retry NF Registration has meet maximum")
 	return fmt.Errorf("[AF] Retry NF Registration has meet maximum")
 }
 
