@@ -73,6 +73,7 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 	// get config file info from WebUIConfig
 	mongodb := factory.WebuiConfig.Configuration.Mongodb
 	webServer := factory.WebuiConfig.Configuration.WebServer
+	billingServer := factory.WebuiConfig.Configuration.BillingServer
 
 	// Connect to MongoDB
 	if err := mongoapi.SetMongoDB(mongodb.Name, mongodb.Url); err != nil {
@@ -108,11 +109,13 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 	self.UpdateNfProfiles()
 
 	wg := sync.WaitGroup{}
-	wg.Add(1)
 
-	self.BillingServer = billing.OpenServer(&wg)
-	if self.BillingServer == nil {
-		logger.InitLog.Errorln("Billing Server open error.")
+	if billingServer.Enabled {
+		wg.Add(1)
+		self.BillingServer = billing.OpenServer(&wg)
+		if self.BillingServer == nil {
+			logger.InitLog.Errorln("Billing Server open error.")
+		}
 	}
 
 	router.NoRoute(ReturnPublic())
