@@ -110,7 +110,7 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 
 	wg := sync.WaitGroup{}
 
-	if billingServer.Enabled {
+	if billingServer.Enable {
 		wg.Add(1)
 		self.BillingServer = billing.OpenServer(&wg)
 		if self.BillingServer == nil {
