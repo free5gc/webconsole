@@ -64,6 +64,7 @@ type Tls struct {
 }
 
 type BillingServer struct {
+	Enable     bool   `yaml:"enable" valid:"type(bool), default(true)"`
 	HostIPv4   string `yaml:"hostIPv4,omitempty" valid:"required,host"`
 	Port       int    `yaml:"port,omitempty" valid:"optional,port"`
 	ListenPort int    `yaml:"listenPort,omitempty" valid:"required,port"`
