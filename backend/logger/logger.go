@@ -19,6 +19,7 @@ var (
 	GinLog       *logrus.Entry
 	BillingLog   *logrus.Entry
 	FtpServerLog golog.Logger
+	ConsumerLog  *logrus.Entry
 )
 
 func init() {
@@ -36,4 +37,5 @@ func init() {
 	GinLog = NfLog.WithField(logger_util.FieldCategory, "GIN")
 	BillingLog = NfLog.WithField(logger_util.FieldCategory, "BillingLog")
 	FtpServerLog = adapter.NewWrap(BillingLog.Logger).With("component", "Billing", "category", "FTPServer")
+	ConsumerLog = NfLog.WithField(logger_util.FieldCategory, "Consumer")
 }

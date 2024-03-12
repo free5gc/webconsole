@@ -1,19 +1,33 @@
 package webui_context
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/google/uuid"
+
+	"github.com/free5gc/openapi/Nnrf_NFDiscovery"
+	"github.com/free5gc/openapi/Nnrf_NFManagement"
 	"github.com/free5gc/openapi/models"
+	"github.com/free5gc/openapi/oauth"
 	"github.com/free5gc/webconsole/backend/billing"
+	"github.com/free5gc/webconsole/backend/factory"
 	"github.com/free5gc/webconsole/backend/logger"
 )
 
 var webuiContext WEBUIContext
 
 type WEBUIContext struct {
+	NfInstanceID   string
 	NFProfiles     []models.NfProfile
 	NFOamInstances []NfOamInstance
 	BillingServer  *billing.BillingDomain
+
+	NrfUri         string
+	OAuth2Required bool
+
+	NFManagementClient *Nnrf_NFManagement.APIClient
+	NFDiscoveryClient  *Nnrf_NFDiscovery.APIClient
 }
 
 type NfOamInstance struct {
@@ -22,27 +36,30 @@ type NfOamInstance struct {
 	Uri    string
 }
 
-var NrfUri string
+func Init() {
+	webuiContext.NfInstanceID = uuid.New().String()
+	webuiContext.NrfUri = factory.WebuiConfig.Configuration.NrfUri
 
-func NrfAmfUri() string {
-	return NrfUri + "/nnrf-disc/v1/nf-instances?target-nf-type=AMF&requester-nf-type=AMF"
-}
+	ManagementConfig := Nnrf_NFManagement.NewConfiguration()
+	ManagementConfig.SetBasePath(GetSelf().NrfUri)
+	webuiContext.NFManagementClient = Nnrf_NFManagement.NewAPIClient(ManagementConfig)
 
-func NrfSmfUri() string {
-	return NrfUri + "/nnrf-disc/v1/nf-instances?target-nf-type=SMF&requester-nf-type=AMF"
+	NFDiscovryConfig := Nnrf_NFDiscovery.NewConfiguration()
+	NFDiscovryConfig.SetBasePath(GetSelf().NrfUri)
+	webuiContext.NFDiscoveryClient = Nnrf_NFDiscovery.NewAPIClient(NFDiscovryConfig)
 }
 
 func (context *WEBUIContext) UpdateNfProfiles() {
 	var nfProfiles []models.NfProfile
 
-	nfProfiles, err := NrfGetNfProfiles(NrfAmfUri())
+	nfProfiles, err := SendSearchNFInstances(models.NfType_AMF)
 	if err != nil {
 		logger.CtxLog.Error(err)
 		return
 	}
 	context.NFProfiles = append(context.NFProfiles, nfProfiles...)
 
-	nfProfiles, err = NrfGetNfProfiles(NrfSmfUri())
+	nfProfiles, err = SendSearchNFInstances(models.NfType_SMF)
 	if err != nil {
 		logger.CtxLog.Error(err)
 		return
@@ -131,4 +148,16 @@ func getSbiUri(scheme models.UriScheme, ipv4Address string, port int32) (uri str
 		}
 	}
 	return
+}
+
+func (c *WEBUIContext) GetTokenCtx(serviceName models.ServiceName, targetNF models.NfType) (
+	context.Context, *models.ProblemDetails, error,
+) {
+	if !c.OAuth2Required {
+		return context.TODO(), nil, nil
+	}
+
+	logger.ConsumerLog.Infoln("GetTokenCtx:", targetNF, serviceName)
+	return oauth.GetTokenCtx(models.NfType_AF, targetNF,
+		c.NfInstanceID, c.NrfUri, string(serviceName))
 }

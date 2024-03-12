@@ -3,7 +3,10 @@ package webui_service
 import (
 	"io/ioutil"
 	"os"
+	"os/signal"
+	"runtime/debug"
 	"sync"
+	"syscall"
 
 	"github.com/gin-contrib/cors"
 	"github.com/sirupsen/logrus"
@@ -27,6 +30,7 @@ func NewApp(cfg *factory.Config) (*WebuiApp, error) {
 	webui.SetLogLevel(cfg.GetLogLevel())
 	webui.SetReportCaller(cfg.GetLogReportCaller())
 
+	webui_context.Init()
 	webui.webuiCtx = webui_context.GetSelf()
 	return webui, nil
 }
@@ -80,10 +84,33 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 		return
 	}
 
-	nrfUri := factory.WebuiConfig.Configuration.NrfUri
-	webui_context.NrfUri = nrfUri
-
 	logger.InitLog.Infoln("Server started")
+
+	signalChannel := make(chan os.Signal, 1)
+	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		defer func() {
+			if p := recover(); p != nil {
+				// Print stack for panic to log. Fatalf() will let program exit.
+				logger.InitLog.Fatalf("panic: %v\n%s", p, string(debug.Stack()))
+			}
+		}()
+
+		<-signalChannel
+		a.Terminate()
+		os.Exit(0)
+	}()
+
+	go func() {
+		err := webui_context.SendNFRegistration()
+		if err != nil {
+			retry_err := webui_context.RetrySendNFRegistration(1)
+			if retry_err != nil {
+				logger.InitLog.Errorln(retry_err)
+				logger.InitLog.Warningln("The registration to NRF failed, resulting in limited functionalities.")
+			}
+		}
+	}()
 
 	router := WebUI.NewRouter()
 	WebUI.SetAdmin()
@@ -124,4 +151,18 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 	}
 
 	wg.Wait()
+}
+
+func (a *WebuiApp) Terminate() {
+	logger.InitLog.Infoln("Terminating WebUI-AF...")
+
+	// Deregister with NRF
+	problemDetails, err := webui_context.SendDeregisterNFInstance()
+	if problemDetails != nil {
+		logger.InitLog.Errorf("Deregister NF instance Failed Problem[%+v]", problemDetails)
+	} else if err != nil {
+		logger.InitLog.Errorf("Deregister NF instance Error[%+v]", err)
+	} else {
+		logger.InitLog.Infof("Deregister from NRF successfully")
+	}
 }
