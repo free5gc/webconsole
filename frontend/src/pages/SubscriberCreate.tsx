@@ -1757,7 +1757,7 @@ export default function SubscriberCreate() {
                 </TableRow>
               </TableBody>
             </Table>
-            {chargingConfig(undefined, row.singleNssai!, undefined)}
+            {chargingConfig("", row.singleNssai!, "")}
             {row.dnnConfigurations &&
               Object.keys(row.dnnConfigurations!).map((dnn) => (
                 <div
