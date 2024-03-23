@@ -89,7 +89,10 @@ func GetChargingData(c *gin.Context) {
 		return
 	}
 
-	filter := bson.M{"chargingMethod": chargingMethod}
+	filter := bson.M{
+		"chargingMethod": chargingMethod,
+		"ratingGroup":    nil,
+	}
 	chargingDataInterface, err := mongoapi.RestfulAPIGetMany(chargingDataColl, filter)
 	if err != nil {
 		logger.BillingLog.Errorf("mongoapi error: %+v", err)
