@@ -5,9 +5,9 @@ go 1.17
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/fclairamb/go-log v0.4.1
-	github.com/free5gc/chf v0.0.0-20240217030741-1e8270d61b7b
-	github.com/free5gc/openapi v1.0.7
-	github.com/free5gc/util v1.0.5
+	github.com/free5gc/chf v1.0.1
+	github.com/free5gc/openapi v1.0.8
+	github.com/free5gc/util v1.0.6
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/golang-jwt/jwt v3.2.1+incompatible
