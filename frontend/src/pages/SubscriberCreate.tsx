@@ -9,6 +9,7 @@ import {
   DnnConfiguration,
   AccessAndMobilitySubscriptionData,
   QosFlows,
+  IpAddress,
 } from "../api/api";
 
 import Dashboard from "../Dashboard";
@@ -28,7 +29,10 @@ import {
   TableCell,
   TableRow,
   TextField,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
+import { RawOff } from "@mui/icons-material";
 
 let isNewSubscriber = false;
 
@@ -117,6 +121,7 @@ export default function SubscriberCreate() {
               uplink: "1000 Mbps",
               downlink: "1000 Mbps",
             },
+            staticIpAddress: [],
           },
         },
       },
@@ -148,6 +153,7 @@ export default function SubscriberCreate() {
               uplink: "1000 Mbps",
               downlink: "1000 Mbps",
             },
+            staticIpAddress: [],
           },
         },
       },
@@ -994,6 +1000,17 @@ export default function SubscriberCreate() {
         "5qi"
       ] = Number(event.target.value);
     }
+    setData({ ...data });
+  };
+
+  const handleChangeStaticIp = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    index: number,
+    dnn: string,
+  ): void => {
+    data.SessionManagementSubscriptionData![index].dnnConfigurations![dnn][
+      "staticIpAddress"
+    ]![0].ipv4Addr = event.target.value;
     setData({ ...data });
   };
 
@@ -1849,6 +1866,52 @@ export default function SubscriberCreate() {
                                 type="number"
                                 value={row.dnnConfigurations![dnn]["5gQosProfile"]?.["5qi"]}
                                 onChange={(ev) => handleChangeDefault5QI(ev, index, dnn)}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                      <Table>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell style={{ width: "33%" }}>
+                              <FormControlLabel
+                                style={{ justifyItems: "end" }}
+                                control=<Switch
+                                  checked={
+                                    row.dnnConfigurations![dnn]["staticIpAddress"]?.length != 0
+                                  }
+                                  onChange={(event) => {
+                                    if (event.target.checked) {
+                                      var ipaddr: IpAddress = { ipv4Addr: "10.60.0.1" };
+                                      data.SessionManagementSubscriptionData![
+                                        index
+                                      ].dnnConfigurations![dnn]["staticIpAddress"] = [ipaddr];
+                                    } else {
+                                      data.SessionManagementSubscriptionData![
+                                        index
+                                      ].dnnConfigurations![dnn]["staticIpAddress"] = [];
+                                    }
+                                    setData({ ...data });
+                                  }}
+                                />
+                                label="Static IPv4 Address"
+                              />
+                            </TableCell>
+                            <TableCell style={{ width: "66%" }}>
+                              <TextField
+                                label="StaticIpv4"
+                                variant="outlined"
+                                fullWidth
+                                disabled={
+                                  row.dnnConfigurations![dnn]["staticIpAddress"]?.length == 0
+                                }
+                                value={
+                                  row.dnnConfigurations![dnn]["staticIpAddress"]?.length != 0
+                                    ? row.dnnConfigurations![dnn]["staticIpAddress"]![0].ipv4Addr!
+                                    : ""
+                                }
+                                onChange={(ev) => handleChangeStaticIp(ev, index, dnn)}
                               />
                             </TableCell>
                           </TableRow>
