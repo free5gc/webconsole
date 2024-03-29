@@ -417,6 +417,18 @@ export default function SubscriberRead() {
                             </TableCell>
                           </TableRow>
                         </TableBody>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell style={{ width: "40%" }}>StaticIpv4</TableCell>
+                            <TableCell>
+                              {row.dnnConfigurations![dnn]["staticIpAddress"] == null
+                                ? "Not Set"
+                                : row.dnnConfigurations![dnn]["staticIpAddress"]?.length == 0
+                                  ? ""
+                                  : row.dnnConfigurations![dnn]["staticIpAddress"]![0].ipv4Addr!}
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
                       </Table>
                       {flowRule(dnn, row.singleNssai!)}
                       {upSecurity(row.dnnConfigurations![dnn])}
