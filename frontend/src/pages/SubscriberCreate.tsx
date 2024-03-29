@@ -1904,12 +1904,14 @@ export default function SubscriberCreate() {
                                 variant="outlined"
                                 fullWidth
                                 disabled={
+                                  row.dnnConfigurations![dnn]["staticIpAddress"] == null ||
                                   row.dnnConfigurations![dnn]["staticIpAddress"]?.length == 0
                                 }
                                 value={
-                                  row.dnnConfigurations![dnn]["staticIpAddress"]?.length != 0
-                                    ? row.dnnConfigurations![dnn]["staticIpAddress"]![0].ipv4Addr!
-                                    : ""
+                                  row.dnnConfigurations![dnn]["staticIpAddress"] == null ||
+                                  row.dnnConfigurations![dnn]["staticIpAddress"]?.length == 0
+                                    ? ""
+                                    : row.dnnConfigurations![dnn]["staticIpAddress"]![0].ipv4Addr!
                                 }
                                 onChange={(ev) => handleChangeStaticIp(ev, index, dnn)}
                               />
