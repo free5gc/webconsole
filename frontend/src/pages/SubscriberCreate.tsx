@@ -1879,11 +1879,12 @@ export default function SubscriberCreate() {
                                 style={{ justifyItems: "end" }}
                                 control=<Switch
                                   checked={
+                                    row.dnnConfigurations![dnn]["staticIpAddress"] &&
                                     row.dnnConfigurations![dnn]["staticIpAddress"]?.length != 0
                                   }
                                   onChange={(event) => {
                                     if (event.target.checked) {
-                                      var ipaddr: IpAddress = { ipv4Addr: "10.60.0.1" };
+                                      var ipaddr: IpAddress = { ipv4Addr: "10.60.100.1" };
                                       data.SessionManagementSubscriptionData![
                                         index
                                       ].dnnConfigurations![dnn]["staticIpAddress"] = [ipaddr];
@@ -1900,7 +1901,7 @@ export default function SubscriberCreate() {
                             </TableCell>
                             <TableCell style={{ width: "66%" }}>
                               <TextField
-                                label="StaticIpv4"
+                                label="IPv4 Address"
                                 variant="outlined"
                                 fullWidth
                                 disabled={

@@ -419,7 +419,7 @@ export default function SubscriberRead() {
                         </TableBody>
                         <TableBody>
                           <TableRow>
-                            <TableCell style={{ width: "40%" }}>StaticIpv4</TableCell>
+                            <TableCell style={{ width: "40%" }}>Static IPv4 Address</TableCell>
                             <TableCell>
                               {row.dnnConfigurations![dnn]["staticIpAddress"] == null
                                 ? "Not Set"
