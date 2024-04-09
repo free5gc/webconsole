@@ -32,6 +32,21 @@ import {
   FormControlLabel,
   Switch,
 } from "@mui/material";
+
+interface VerifyScope {
+  supi: string;
+  sd: string;
+  sst: number;
+  dnn: string;
+  ipaddr: string;
+}
+
+interface VerifyResult {
+  ipaddr: string;
+  valid: boolean;
+  cause: string;
+}
+
 import { RawOff } from "@mui/icons-material";
 
 let isNewSubscriber = false;
@@ -1542,6 +1557,25 @@ export default function SubscriberCreate() {
     }
   };
 
+  const handleVerifyStaticIp = (sd: string, sst: number, dnn: string, ipaddr: string) => {
+    const scope: VerifyScope = {
+      supi: "",
+      sd: sd,
+      sst: sst,
+      dnn: dnn,
+      ipaddr: ipaddr,
+    };
+    axios.post("/api/verify-staticip", scope).then((res) => {
+      const result = res.data as VerifyResult;
+      console.log(result);
+      if (result["valid"] === true) {
+        alert("OK");
+      } else {
+        alert("NO!\nCause: " + result["cause"]);
+      }
+    });
+  };
+
   return (
     <Dashboard title="Subscription">
       <Card variant="outlined">
@@ -1874,7 +1908,7 @@ export default function SubscriberCreate() {
                       <Table>
                         <TableBody>
                           <TableRow>
-                            <TableCell style={{ width: "33%" }}>
+                            <TableCell style={{ width: "20%" }}>
                               <FormControlLabel
                                 style={{ justifyItems: "end" }}
                                 control=<Switch
@@ -1899,7 +1933,7 @@ export default function SubscriberCreate() {
                                 label="Static IPv4 Address"
                               />
                             </TableCell>
-                            <TableCell style={{ width: "66%" }}>
+                            <TableCell style={{ width: "68%" }}>
                               <TextField
                                 label="IPv4 Address"
                                 variant="outlined"
@@ -1916,6 +1950,32 @@ export default function SubscriberCreate() {
                                 }
                                 onChange={(ev) => handleChangeStaticIp(ev, index, dnn)}
                               />
+                            </TableCell>
+                            <TableCell style={{ width: "12%" }}>
+                              <Button
+                                color="secondary"
+                                variant="contained"
+                                // handleVerifyStaticIp = (sd: string, sst: number, dnn: string, ipaddr: string)
+                                onClick={() =>
+                                  handleVerifyStaticIp(
+                                    row.singleNssai!.sd!,
+                                    row.singleNssai!.sst!,
+                                    dnn,
+                                    row.dnnConfigurations![dnn]["staticIpAddress"]![0].ipv4Addr!,
+                                  )
+                                }
+                                sx={{
+                                  m: 2,
+                                  backgroundColor: "blue",
+                                  "&:hover": { backgroundColor: "#7496c2" },
+                                }}
+                                disabled={
+                                  row.dnnConfigurations![dnn]["staticIpAddress"] == null ||
+                                  row.dnnConfigurations![dnn]["staticIpAddress"]?.length == 0
+                                }
+                              >
+                                Verify
+                              </Button>
                             </TableCell>
                           </TableRow>
                         </TableBody>
