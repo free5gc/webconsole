@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/free5gc/openapi/models"
 	smf_factory "github.com/free5gc/smf/pkg/factory"
@@ -80,6 +81,8 @@ func getDnnStaticIpPool(snssai models.Snssai, dnn string) (netip.Prefix, error) 
 	if err != nil {
 		logger.ProcLog.Errorf("Marshal err: %+v", err)
 	}
+	logger.ProcLog.Warningln(raw_info)
+
 	unmarshal_err := json.Unmarshal(tmp, &userplaneinfo)
 	if unmarshal_err != nil {
 		logger.ProcLog.Errorf("Unmarshal err: %+v", unmarshal_err)
@@ -174,7 +177,7 @@ func VerifyStaticIP(c *gin.Context) {
 		"ueId":        bson.D{{Key: "$ne", Value: checkData.Supi}}, // not this UE
 	}
 	smDataDataInterface, mongo_err := mongoapi.RestfulAPIGetMany(smDataColl, filter)
-	if mongo_err != nil {
+	if mongo_err != nil && mongo_err != mongo.ErrNoDocuments {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"ipaddr": staticIp,
 			"valid":  false,

@@ -1569,7 +1569,7 @@ export default function SubscriberCreate() {
       const result = res.data as VerifyResult;
       console.log(result);
       if (result["valid"] === true) {
-        alert("OK");
+        alert("OK\n" + result.ipaddr);
       } else {
         alert("NO!\nCause: " + result["cause"]);
       }
