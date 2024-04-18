@@ -81,8 +81,6 @@ func getDnnStaticIpPool(snssai models.Snssai, dnn string) (netip.Prefix, error) 
 	if err != nil {
 		logger.ProcLog.Errorf("Marshal err: %+v", err)
 	}
-	logger.ProcLog.Warningln(raw_info)
-
 	unmarshal_err := json.Unmarshal(tmp, &userplaneinfo)
 	if unmarshal_err != nil {
 		logger.ProcLog.Errorf("Unmarshal err: %+v", unmarshal_err)
