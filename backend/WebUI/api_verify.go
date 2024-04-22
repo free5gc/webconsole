@@ -8,7 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/free5gc/openapi/models"
 	smf_factory "github.com/free5gc/smf/pkg/factory"
@@ -175,12 +174,14 @@ func VerifyStaticIP(c *gin.Context) {
 		"ueId":        bson.D{{Key: "$ne", Value: checkData.Supi}}, // not this UE
 	}
 	smDataDataInterface, mongo_err := mongoapi.RestfulAPIGetMany(smDataColl, filter)
-	if mongo_err != nil && mongo_err != mongo.ErrNoDocuments {
+	if mongo_err != nil {
+		logger.ProcLog.Warningln(smDataColl, "mongo error: ", mongo_err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"ipaddr": staticIp,
 			"valid":  false,
 			"cause":  mongo_err.Error(),
 		})
+		return
 	}
 	var smDatas []models.SessionManagementSubscriptionData
 	if err := json.Unmarshal(sliceToByte(smDataDataInterface), &smDatas); err != nil {
