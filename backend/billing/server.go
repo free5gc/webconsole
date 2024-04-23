@@ -3,7 +3,6 @@ package billing
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"sync"
@@ -79,7 +78,7 @@ func OpenServer(wg *sync.WaitGroup) *BillingDomain {
 		return nil
 	}
 
-	if err := ioutil.WriteFile(confFile, file, 0o600); err != nil { //nolint: gomnd
+	if err := os.WriteFile(confFile, file, 0o600); err != nil { //nolint: gomnd
 		logger.BillingLog.Errorf("Couldn't create conf file %v", confFile)
 		return nil
 	}

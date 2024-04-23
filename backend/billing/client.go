@@ -1,7 +1,7 @@
 package billing
 
 import (
-	"io/ioutil"
+	"io"
 	"strconv"
 	"time"
 
@@ -52,7 +52,7 @@ func PullCDRFile(c *ftp.ServerConn, fileName string) ([]byte, error) {
 		return nil, err
 	}
 
-	cdr, err1 := ioutil.ReadAll(r)
+	cdr, err1 := io.ReadAll(r)
 
 	return cdr, err1
 }
