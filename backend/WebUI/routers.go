@@ -243,4 +243,11 @@ var routes = Routes{
 		"/charging-data/:chargingMethod",
 		GetChargingData,
 	},
+
+	{
+		"Verify StaticIP",
+		http.MethodPost,
+		"/verify-staticip",
+		VerifyStaticIP,
+	},
 }

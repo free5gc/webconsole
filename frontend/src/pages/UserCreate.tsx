@@ -15,7 +15,7 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableRow
+  TableRow,
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
@@ -27,7 +27,7 @@ export interface Password {
 
 export default function UserCreate() {
   const navigation = useNavigate();
-  const [user, setUser] = useState<User>({email: "", encryptedPassword: ""});
+  const [user, setUser] = useState<User>({ email: "", encryptedPassword: "" });
 
   const [password, setPassword] = useState<Password>({});
 
@@ -121,7 +121,7 @@ export default function UserCreate() {
                         onClick={handleClickShowPassword}
                         onMouseDown={handleMouseDownPassword}
                       >
-				    {showPassword ? <Visibility /> : <VisibilityOff />}
+                        {showPassword ? <Visibility /> : <VisibilityOff />}
                       </IconButton>
                     </InputAdornment>
                   ),
@@ -148,7 +148,7 @@ export default function UserCreate() {
                         onClick={handleClickShowPasswordConfirm}
                         onMouseDown={handleMouseDownPasswordConfirm}
                       >
-				    {showPasswordConfirm ? <Visibility /> : <VisibilityOff />}
+                        {showPasswordConfirm ? <Visibility /> : <VisibilityOff />}
                       </IconButton>
                     </InputAdornment>
                   ),
