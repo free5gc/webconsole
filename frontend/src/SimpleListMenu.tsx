@@ -19,6 +19,37 @@ export default function SimpleListMenu(props: SimpleListMenuProps) {
     setAnchorEl(event.currentTarget);
   };
 
+  const navigation = useNavigate();
+  const context = useContext(LoginContext);
+  if (context === undefined) {
+    throw new Error("LoginContext must be used within a LoginContext.Provider");
+  }
+  const { setUser } = context;
+
+  function onChangePassword() {
+    navigation("/password");
+  }
+
+  function onLogout() {
+    setUser(null);
+    navigation("/login");
+  }
+
+  const handleMenuItemClick = (event: React.MouseEvent<HTMLElement>, index: number) => {
+    setSelectedIndex(index);
+    setAnchorEl(null);
+    switch (index) {
+      case 0:
+        onChangePassword();
+        break;
+      case 1:
+        onLogout();
+        break;
+      default:
+        break;
+    }
+  };
+
   const handleClose = () => {
     setAnchorEl(null);
   };

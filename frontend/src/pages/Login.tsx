@@ -17,7 +17,11 @@ const theme = createTheme();
 export default function SignIn() {
   const navigation = useNavigate();
   const [error, setError] = useState<string>("");
-  const { setUser } = useContext(LoginContext);
+  const context = useContext(LoginContext);
+  if (context === undefined) {
+    throw new Error("LoginContext must be used within a LoginContext.Provider");
+  }
+  const { setUser } = context;
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -28,12 +32,11 @@ export default function SignIn() {
         if (data.get("email") !== null) {
           setUser({ username: data.get("email")!.toString(), token: res.data.access_token });
         }
-        axios.defaults.headers.common.Token = res.data.access_token;
         setError("");
         navigation("/");
       })
       .catch((err) => {
-        console.log(err);
+        console.log(err.message);
         setError("Wrong credentials");
       });
   };
