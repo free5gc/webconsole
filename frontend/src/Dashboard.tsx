@@ -80,7 +80,11 @@ function Dashboard(props: DashboardProps) {
   const toggleDrawer = () => {
     setOpen(!open);
   };
-  const { user } = useContext(LoginContext);
+  const context = useContext(LoginContext);
+  if (context === undefined) {
+    throw new Error("LoginContext must be used within a LoginContext.Provider");
+  }
+  const { user } = context;
 
   return (
     <ThemeProvider theme={mdTheme}>
