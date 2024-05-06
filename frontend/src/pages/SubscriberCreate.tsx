@@ -302,6 +302,7 @@ export default function SubscriberCreate() {
   if (!isNewSubscriber) {
     useEffect(() => {
       axios.get("/api/subscriber/" + id + "/" + plmn).then((res) => {
+        console.log('loaded existing subscriber', res.data);
         setData(res.data);
       });
     }, [id]);
@@ -1577,7 +1578,7 @@ export default function SubscriberCreate() {
   };
 
   return (
-    <Dashboard title="Subscription">
+    <Dashboard title="Subscription" refreshAction={() => {}}>
       <Card variant="outlined">
         <Table>
           <TableBody id="Subscriber Data Number">

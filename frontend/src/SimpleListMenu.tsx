@@ -1,52 +1,22 @@
-import React, { useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
 
-import { LoginContext } from "./LoginContext";
-
-const options = ["Change Password", "Logout"];
-
 export interface SimpleListMenuProps {
   title: string | undefined;
+  options: string[];
+  handleMenuItemClick: (event: React.MouseEvent<HTMLElement>, index: number) => void;
 }
 
 export default function SimpleListMenu(props: SimpleListMenuProps) {
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [selectedIndex, setSelectedIndex] = React.useState(1);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const open = Boolean(anchorEl);
   const handleClickListItem = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
-  };
-
-  const navigation = useNavigate();
-  const { setUser } = useContext(LoginContext);
-
-  function onChangePassword() {
-    navigation("/password");
-  }
-
-  function onLogout() {
-    setUser(null);
-    navigation("/login");
-  }
-
-  const handleMenuItemClick = (event: React.MouseEvent<HTMLElement>, index: number) => {
-    setSelectedIndex(index);
-    setAnchorEl(null);
-    switch (index) {
-      case 0:
-        onChangePassword();
-        break;
-      case 1:
-        onLogout();
-        break;
-      default:
-        break;
-    }
   };
 
   const handleClose = () => {
@@ -78,11 +48,15 @@ export default function SimpleListMenu(props: SimpleListMenuProps) {
           role: "listbox",
         }}
       >
-        {options.map((option, index) => (
+        {props.options.map((option, index) => (
           <MenuItem
             key={option}
             selected={index === selectedIndex}
-            onClick={(event) => handleMenuItemClick(event, index)}
+            onClick={(event) => {
+              setSelectedIndex(index);
+              setAnchorEl(null);
+              props.handleMenuItemClick(event, index);
+            }}
           >
             {option}
           </MenuItem>

@@ -79,7 +79,7 @@ export default function ChangePassword() {
   };
 
   return (
-    <Dashboard title="Change Password">
+    <Dashboard title="Change Password" refreshAction={() => {}}>
       <Table>
         <TableBody>
           <TableRow>

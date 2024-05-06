@@ -272,7 +272,7 @@ export default function SubscriberRead() {
   };
 
   return (
-    <Dashboard title="Subscription">
+    <Dashboard title="Subscription" refreshAction={() => {}}>
       <Card variant="outlined">
         <Table>
           <TableBody>

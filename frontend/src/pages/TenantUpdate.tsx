@@ -36,7 +36,7 @@ export default function TenantUpdate() {
   };
 
   return (
-    <Dashboard title="Tenant">
+    <Dashboard title="Tenant" refreshAction={() => {}}>
       <Table>
         <TableBody>
           <TableRow>

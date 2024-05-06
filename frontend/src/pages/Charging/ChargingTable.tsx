@@ -9,7 +9,7 @@ import { Button, Grid } from "@mui/material";
 
 export default function ChargingTable() {
   const [expand, setExpand] = useState(true);
-  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [refresh, setRefresh] = useState<boolean>(false);
 
   const [onlineChargingData, setOnlineChargingData] = useState<ChargingData[]>([]);
   const [offlineChargingData, setOfflineChargingData] = useState<ChargingData[]>([]);
@@ -44,37 +44,23 @@ export default function ChargingTable() {
   };
 
   const onRefresh = () => {
+    console.log("refreshing charging data");
     fetchChargingData("Online", setOnlineChargingData);
     fetchChargingData("Offline", setOfflineChargingData);
     fetchChargingRecord();
-    setCurrentTime(new Date());
   };
 
   useEffect(() => {
     onRefresh();
-    const id = setInterval(() => {
-      onRefresh();
-    }, 10000);
-    return () => clearInterval(id);
-  }, []);
+  }, [refresh]);
 
   const onExpand = () => {
     setExpand(!expand);
   };
 
   return (
-    <Dashboard title="UE CHARGING">
+    <Dashboard title="UE CHARGING" refreshAction={() => onRefresh()}>
       <Grid container spacing="2">
-        <Grid item>
-          <Button
-            color="secondary"
-            variant="contained"
-            onClick={() => onRefresh()}
-            sx={{ m: 2, backgroundColor: "blue", "&:hover": { backgroundColor: "blue" } }}
-          >
-            Refresh
-          </Button>
-        </Grid>
         <Grid item>
           <Button
             color="secondary"
@@ -83,11 +69,6 @@ export default function ChargingTable() {
             sx={{ m: 2, backgroundColor: "blue", "&:hover": { backgroundColor: "blue" } }}
           >
             {expand ? "Fold" : "Expand"}
-          </Button>
-        </Grid>
-        <Grid item>
-          <Button color="success" variant="contained" sx={{ m: 2 }} disabled>
-            Last update: {currentTime.toISOString().slice(0, 19).replace("T", " ")}
           </Button>
         </Grid>
       </Grid>

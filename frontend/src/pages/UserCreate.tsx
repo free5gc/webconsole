@@ -87,7 +87,7 @@ export default function UserCreate() {
   };
 
   return (
-    <Dashboard title="User">
+    <Dashboard title="User" refreshAction={() => {}}>
       <Table>
         <TableBody>
           <TableRow>

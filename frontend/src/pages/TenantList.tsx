@@ -31,7 +31,7 @@ export default function TenantList() {
         setData(res.data);
       })
       .catch((e) => {
-        console.log(e);
+        console.log(e.message);
       });
   }, [limit, page, refresh]);
 
@@ -142,7 +142,7 @@ export default function TenantList() {
   );
 
   return (
-    <Dashboard title="Tenants">
+    <Dashboard title="Tenants" refreshAction={() => setRefresh(!refresh)}>
       <br />
       {data == null || data.length === 0 ? (
         <div>
