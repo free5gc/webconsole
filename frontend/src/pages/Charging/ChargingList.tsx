@@ -79,7 +79,11 @@ const ChargingList: React.FC<{
   return (
     <Table>
       <TableHead>
-        <h3>{props.chargingMethod} Charging</h3>
+        <TableRow>
+          <TableCell colSpan={tableColumnNames.length}>
+            <h3>{props.chargingMethod} Charging</h3>
+          </TableCell>
+        </TableRow>
         <TableRow>
           {tableColumnNames.map((colName, idx) => {
             return <TableCell key={idx}>{colName}</TableCell>;
@@ -91,8 +95,8 @@ const ChargingList: React.FC<{
           .filter((a) => a!.filter === "" && a!.dnn === "")
           .map((cd, idx) => {
             return (
-              <>
-                <TableRow key={idx}>
+              <React.Fragment key={idx}>
+                <TableRow>
                   <TableCell>{cd.ueId}</TableCell>
                   <TableCell>{cd.snssai}</TableCell>
                   <TableCell>{cd.dnn}</TableCell>
@@ -105,7 +109,7 @@ const ChargingList: React.FC<{
                   />
                 </TableRow>
                 {<PerFlowTableView Supi={cd.ueId!} Snssai={cd.snssai!} />}
-              </>
+              </React.Fragment>
             );
           })}
       </TableBody>
