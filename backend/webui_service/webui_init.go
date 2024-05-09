@@ -1,12 +1,15 @@
 package webui_service
 
 import (
+	"context"
 	"io"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime/debug"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/sirupsen/logrus"
@@ -23,8 +26,8 @@ type WebuiApp struct {
 	cfg      *factory.Config
 	webuiCtx *webui_context.WEBUIContext
 
-	wg *sync.WaitGroup
-
+	wg            *sync.WaitGroup
+	server        *http.Server
 	billingServer *billing.BillingDomain
 }
 
@@ -155,21 +158,43 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 
 	router.NoRoute(ReturnPublic())
 
+	var addr string
 	if webServer != nil {
-		logger.InitLog.Infoln(router.Run(webServer.IP + ":" + webServer.PORT))
+		addr = webServer.IP + ":" + webServer.PORT
 	} else {
-		logger.InitLog.Infoln(router.Run(":5000"))
+		addr = ":5000"
 	}
+
+	a.server = &http.Server{
+		Addr:    addr,
+		Handler: router,
+	}
+	go func() {
+		logger.MainLog.Infof("Http server listening on %+v", addr)
+		if err := a.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.MainLog.Fatalf("listen: %s\n", err)
+		}
+	}()
 
 	logger.MainLog.Infoln("wait all routine stopped")
 	a.wg.Wait()
 }
 
 func (a *WebuiApp) Terminate() {
-	logger.InitLog.Infoln("Terminating WebUI-AF...")
+	logger.MainLog.Infoln("Terminating WebUI-AF...")
 
 	if a.billingServer != nil {
 		a.billingServer.Stop()
+	}
+
+	if a.server != nil {
+		logger.MainLog.Infoln("stopping HTTP server")
+
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		if err := a.server.Shutdown(ctx); err != nil {
+			logger.MainLog.Fatal("HTTP server forced to shutdown: ", err)
+		}
 	}
 
 	// Deregister with NRF
@@ -184,5 +209,5 @@ func (a *WebuiApp) Terminate() {
 		}
 	}
 
-	logger.InitLog.Infoln("WebUI-AF Terminated")
+	logger.MainLog.Infoln("WebUI-AF Terminated")
 }
