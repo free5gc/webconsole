@@ -22,10 +22,17 @@ import (
 type WebuiApp struct {
 	cfg      *factory.Config
 	webuiCtx *webui_context.WEBUIContext
+
+	wg *sync.WaitGroup
+
+	billingServer *billing.BillingDomain
 }
 
 func NewApp(cfg *factory.Config) (*WebuiApp, error) {
-	webui := &WebuiApp{cfg: cfg}
+	webui := &WebuiApp{
+		cfg: cfg,
+		wg:  &sync.WaitGroup{},
+	}
 	webui.SetLogEnable(cfg.GetLogEnable())
 	webui.SetLogLevel(cfg.GetLogLevel())
 	webui.SetReportCaller(cfg.GetLogReportCaller())
@@ -87,6 +94,7 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 
 	logger.InitLog.Infoln("Server started")
 
+	a.wg.Add(1)
 	signalChannel := make(chan os.Signal, 1)
 	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM)
 	go func() {
@@ -99,7 +107,7 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 
 		<-signalChannel
 		a.Terminate()
-		os.Exit(0)
+		a.wg.Done()
 	}()
 
 	go func() {
@@ -110,6 +118,8 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 				logger.InitLog.Errorln(retry_err)
 				logger.InitLog.Warningln("The registration to NRF failed, resulting in limited functionalities.")
 			}
+		} else {
+			a.webuiCtx.IsRegistered = true
 		}
 	}()
 
@@ -135,12 +145,10 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 	self := webui_context.GetSelf()
 	self.UpdateNfProfiles()
 
-	wg := sync.WaitGroup{}
-
 	if billingServer.Enable {
-		wg.Add(1)
-		self.BillingServer = billing.OpenServer(&wg)
-		if self.BillingServer == nil {
+		a.wg.Add(1)
+		a.billingServer = billing.OpenServer(a.wg)
+		if a.billingServer == nil {
 			logger.InitLog.Errorln("Billing Server open error.")
 		}
 	}
@@ -153,19 +161,28 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 		logger.InitLog.Infoln(router.Run(":5000"))
 	}
 
-	wg.Wait()
+	logger.MainLog.Infoln("wait all routine stopped")
+	a.wg.Wait()
 }
 
 func (a *WebuiApp) Terminate() {
 	logger.InitLog.Infoln("Terminating WebUI-AF...")
 
-	// Deregister with NRF
-	problemDetails, err := webui_context.SendDeregisterNFInstance()
-	if problemDetails != nil {
-		logger.InitLog.Errorf("Deregister NF instance Failed Problem[%+v]", problemDetails)
-	} else if err != nil {
-		logger.InitLog.Errorf("Deregister NF instance Error[%+v]", err)
-	} else {
-		logger.InitLog.Infof("Deregister from NRF successfully")
+	if a.billingServer != nil {
+		a.billingServer.Stop()
 	}
+
+	// Deregister with NRF
+	if a.webuiCtx.IsRegistered {
+		problemDetails, err := webui_context.SendDeregisterNFInstance()
+		if problemDetails != nil {
+			logger.InitLog.Errorf("Deregister NF instance Failed Problem[%+v]", problemDetails)
+		} else if err != nil {
+			logger.InitLog.Errorf("Deregister NF instance Error[%+v]", err)
+		} else {
+			logger.InitLog.Infof("Deregister from NRF successfully")
+		}
+	}
+
+	logger.InitLog.Infoln("WebUI-AF Terminated")
 }

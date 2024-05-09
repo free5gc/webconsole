@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/fclairamb/ftpserver/config"
 	"github.com/fclairamb/ftpserver/server"
@@ -19,6 +18,7 @@ import (
 type BillingDomain struct {
 	ftpServer *ftpserver.FtpServer
 	driver    *server.Server
+	wg        *sync.WaitGroup
 }
 
 type Access struct {
@@ -39,7 +39,9 @@ func OpenServer(wg *sync.WaitGroup) *BillingDomain {
 	// Arguments vars
 	confFile := "/tmp/webconsole/ftpserver.json"
 
-	b := &BillingDomain{}
+	b := &BillingDomain{
+		wg: wg,
+	}
 	if _, err := os.Stat("/tmp/webconsole"); err != nil {
 		if err := os.Mkdir("/tmp/webconsole", os.ModePerm); err != nil {
 			logger.BillingLog.Error(err)
@@ -105,33 +107,26 @@ func OpenServer(wg *sync.WaitGroup) *BillingDomain {
 	// Setting up the ftpserver logger
 	b.ftpServer.Logger = logger.FtpServerLog
 
-	go b.Serve(wg)
+	go b.Serve()
 	logger.BillingLog.Info("Billing server Start")
 
 	return b
 }
 
-func (b *BillingDomain) Serve(wg *sync.WaitGroup) {
-	defer func() {
-		logger.BillingLog.Error("Billing server stopped")
-		b.Stop()
-		wg.Done()
-	}()
-
+func (b *BillingDomain) Serve() {
 	if err := b.ftpServer.ListenAndServe(); err != nil {
 		logger.BillingLog.Error("Problem listening ", "err", err)
-	}
-
-	// We wait at most 1 minutes for all clients to disconnect
-	if err := b.driver.WaitGracefully(time.Minute); err != nil {
-		logger.BillingLog.Warn("Problem stopping server", "Err", err)
 	}
 }
 
 func (b *BillingDomain) Stop() {
-	b.driver.Stop()
+	logger.BillingLog.Infoln("Stop BillingDomain server")
 
+	b.driver.Stop()
 	if err := b.ftpServer.Stop(); err != nil {
 		logger.BillingLog.Error("Problem stopping server", "Err", err)
 	}
+
+	logger.BillingLog.Infoln("BillingDomain server stopped")
+	b.wg.Done()
 }
