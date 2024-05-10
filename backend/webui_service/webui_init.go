@@ -124,7 +124,7 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 		AllowMethods: []string{"GET", "POST", "OPTIONS", "PUT", "PATCH", "DELETE"},
 		AllowHeaders: []string{
 			"Origin", "Content-Length", "Content-Type", "User-Agent",
-			"Referrer", "Host", "Token", "X-Requested-With",
+			"Referrer", "Host", "Authorization", "Token", "X-Requested-With",
 		},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,

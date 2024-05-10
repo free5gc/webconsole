@@ -9,7 +9,27 @@ if (process.env.NODE_ENV === "development") {
 } else {
   apiConfig.API_URL = process.env.REACT_APP_HTTP_API_URL ? process.env.REACT_APP_HTTP_API_URL : "";
 }
+
 const instance = axios.create({
   baseURL: apiConfig.API_URL,
 });
+
+// attach the token to every request
+instance.interceptors.request.use(
+  config => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      // add the token to the header
+      console.log('adding token to axios header');
+      config.headers.Token = `${token}`;
+    } else {
+      console.warn('no token in local storage!');
+    }
+    return config;
+  },
+  error => {
+    return Promise.reject(error);
+  }
+);
+
 export default instance;

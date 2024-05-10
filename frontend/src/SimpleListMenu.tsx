@@ -23,7 +23,11 @@ export default function SimpleListMenu(props: SimpleListMenuProps) {
   };
 
   const navigation = useNavigate();
-  const { setUser } = useContext(LoginContext);
+  const context = useContext(LoginContext);
+  if (context === undefined) {
+    throw new Error("LoginContext must be used within a LoginContext.Provider");
+  }
+  const { setUser } = context;
 
   function onChangePassword() {
     navigation("/password");
