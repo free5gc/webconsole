@@ -25,13 +25,14 @@ export default function SubscriberList() {
   const [page, setPage] = useState(0);
 
   useEffect(() => {
+    console.log("get subscribers");
     axios
       .get("/api/subscriber")
       .then((res) => {
         setData(res.data);
       })
       .catch((e) => {
-        console.log(e);
+        console.log(e.message);
       });
   }, [refresh, limit, page]);
 
@@ -138,7 +139,7 @@ export default function SubscriberList() {
   );
 
   return (
-    <Dashboard title="SUBSCRIBER">
+    <Dashboard title="SUBSCRIBER" refreshAction={() => setRefresh(!refresh)}>
       <br />
       {data == null || data.length === 0 ? (
         <div>

@@ -21,6 +21,7 @@ export default function AnalysisList() {
   const [data, setData] = useState<UeContext[]>([]);
   const [limit, setLimit] = useState(50);
   const [page, setPage] = useState(0);
+  const [refresh, setRefresh] = useState<boolean>(false);
 
   useEffect(() => {
     axios
@@ -29,9 +30,9 @@ export default function AnalysisList() {
         setData(res.data);
       })
       .catch((e) => {
-        console.log(e);
+        console.log(e.message);
       });
-  }, [limit, page]);
+  }, [refresh, limit, page]);
 
   const handlePageChange = (
     _event: React.MouseEvent<HTMLButtonElement> | null,
@@ -103,7 +104,7 @@ export default function AnalysisList() {
   );
 
   return (
-    <Dashboard title="Analysis">
+    <Dashboard title="Analysis" refreshAction={() => setRefresh(!refresh)}>
       <br />
       {data == null || data.length === 0 ? <div>No App Data</div> : tableView}
     </Dashboard>

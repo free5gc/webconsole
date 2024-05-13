@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { styled, createTheme, ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import MuiDrawer from "@mui/material/Drawer";
@@ -17,6 +17,7 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import { MainListItems } from "./ListItems";
 import { LoginContext } from "./LoginContext";
 import SimpleListMenu from "./SimpleListMenu";
+import { useNavigate } from "react-router-dom";
 
 const drawerWidth = 300;
 
@@ -73,6 +74,7 @@ const mdTheme = createTheme();
 export interface DashboardProps {
   children: React.ReactNode;
   title: string;
+  refreshAction: () => void;
 }
 
 function Dashboard(props: DashboardProps) {
@@ -80,7 +82,75 @@ function Dashboard(props: DashboardProps) {
   const toggleDrawer = () => {
     setOpen(!open);
   };
-  const { user } = useContext(LoginContext);
+  const { user, setUser } = useContext(LoginContext);
+  const navigation = useNavigate();
+
+  const [time, setTime] = useState<Date>(new Date());
+  const [refreshInterval, setRefreshInterval] = useState(0);
+  const [refreshString, setRefreshString] = useState("manual");
+
+  // execute every time the refreshInterval changes to set the interval correctly
+  // update the time value every x ms, which triggers refresh (see below)
+  useEffect(() => {
+    if (refreshInterval === 0) {
+      console.log("refreshInterval is 0");
+      return;
+    }
+    const interval = setInterval(() => setTime(new Date()), refreshInterval);
+    return () => {
+      console.log("clear refreshInterval");
+      clearInterval(interval);
+    };
+  }, [refreshInterval]);
+
+  // refresh every time the 'time' value changes
+  useEffect(() => {
+    console.log("reload page at", time.toISOString());
+    props.refreshAction();
+  }, [time]);
+
+  const handleUserNameClick = (event: React.MouseEvent<HTMLElement>, index: number) => {
+    switch (index) {
+      case 0:
+        navigation("/password");
+        break;
+      case 1:
+        setUser(null);
+        navigation("/login");
+        break;
+      default:
+        break;
+    }
+  };
+
+  const refreshStrings = ["manual", "1s", "5s", "10s", "30s"];
+
+  const handleRefreshClick = (event: React.MouseEvent<HTMLElement>, index: number) => {
+    switch (index) {
+      case 0: // manual
+        setRefreshInterval(0);
+        setRefreshString(refreshStrings.at(index)!);
+        break;
+      case 1: // 1s
+        setRefreshInterval(1000);
+        setRefreshString(refreshStrings.at(index)!);
+        break;
+      case 2: // 5s
+        setRefreshInterval(5000);
+        setRefreshString(refreshStrings.at(index)!);
+        break;
+      case 3: // 10s
+        setRefreshInterval(10000);
+        setRefreshString(refreshStrings.at(index)!);
+        break;
+      case 4: // 30s
+        setRefreshInterval(30000);
+        setRefreshString(refreshStrings.at(index)!);
+        break;
+      default:
+        break;
+    }
+  };
 
   return (
     <ThemeProvider theme={mdTheme}>
@@ -104,10 +174,31 @@ function Dashboard(props: DashboardProps) {
             >
               <MenuIcon />
             </IconButton>
-            <Typography component="h1" variant="h6" color="inherit" noWrap sx={{ flexGrow: 1 }}>
-              {props.title}
-            </Typography>
-            <SimpleListMenu title={user?.username} />
+            <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
+              <Typography component="h1" variant="h6" color="inherit" noWrap>
+                {props.title}
+              </Typography>
+              <Divider
+                orientation="vertical"
+                flexItem
+                sx={{
+                  //height: "100%",
+                  //alignSelf: "center",
+                  mx: 2,
+                  borderColor: "white",
+                }}
+              />
+              <SimpleListMenu
+                title={`Refresh: ${refreshString}`}
+                options={refreshStrings}
+                handleMenuItemClick={handleRefreshClick}
+              />
+            </Box>
+            <SimpleListMenu
+              title={user?.username}
+              options={["Change Password", "Logout"]}
+              handleMenuItemClick={handleUserNameClick}
+            />
           </Toolbar>
         </AppBar>
         <Drawer variant="permanent" open={open}>

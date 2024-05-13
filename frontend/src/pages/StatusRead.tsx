@@ -11,6 +11,7 @@ import { Card, Table, TableBody, TableCell, TableRow } from "@mui/material";
 export default function StatusRead() {
   const location = useLocation();
   const ueContext = location.state as UeContext;
+  const [refresh, setRefresh] = useState<boolean>(false);
 
   const { id } = useParams<{
     id: string;
@@ -28,10 +29,10 @@ export default function StatusRead() {
       const pdus: PduSessionInfo[] = res.map((item) => item.data);
       setData(pdus);
     });
-  }, [id]);
+  }, [id, refresh]);
 
   return (
-    <Dashboard title="Registered UEs">
+    <Dashboard title="Registered UEs" refreshAction={() => setRefresh(!refresh)}>
       <h3>AMF Information [SUPI:{ueContext.Supi}]</h3>
       <Card variant="outlined">
         <Table>

@@ -89,7 +89,7 @@ export default function UserUpdate() {
   };
 
   return (
-    <Dashboard title="User">
+    <Dashboard title="User" refreshAction={() => {}}>
       <Table>
         <TableBody>
           <TableRow>

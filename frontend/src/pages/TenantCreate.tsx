@@ -32,7 +32,7 @@ export default function TenantCreate() {
   };
 
   return (
-    <Dashboard title="Tenant">
+    <Dashboard title="Tenant" refreshAction={() => {}}>
       <Table>
         <TableBody>
           <TableRow>

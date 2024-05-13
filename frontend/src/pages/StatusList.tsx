@@ -19,6 +19,7 @@ import {
 export default function StatusList() {
   const navigation = useNavigate();
   const [data, setData] = useState<UeContext[]>([]);
+  const [refresh, setRefresh] = useState<boolean>(false);
   const [limit, setLimit] = useState(50);
   const [page, setPage] = useState(0);
 
@@ -33,9 +34,9 @@ export default function StatusList() {
         }
       })
       .catch((e) => {
-        console.log(e);
+        console.log(e.message);
       });
-  }, [limit, page]);
+  }, [refresh, limit, page]);
 
   const handlePageChange = (
     _event: React.MouseEvent<HTMLButtonElement> | null,
@@ -109,7 +110,7 @@ export default function StatusList() {
   );
 
   return (
-    <Dashboard title="Registered UEs">
+    <Dashboard title="Registered UEs" refreshAction={() => setRefresh(!refresh)}>
       <br />
       {data == null || data.length === 0 ? <div>No App Data</div> : tableView}
     </Dashboard>

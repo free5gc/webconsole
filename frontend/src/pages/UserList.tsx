@@ -35,7 +35,7 @@ export default function UserList() {
         setData(res.data);
       })
       .catch((e) => {
-        console.log(e);
+        console.log(e.message);
       });
   }, [limit, page, refresh]);
 
@@ -144,7 +144,7 @@ export default function UserList() {
   );
 
   return (
-    <Dashboard title="Users">
+    <Dashboard title="Users" refreshAction={() => {}}>
       <br />
       {data == null || data.length === 0 ? (
         <div>
