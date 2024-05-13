@@ -85,7 +85,7 @@ function Dashboard(props: DashboardProps) {
   const { user, setUser } = useContext(LoginContext);
   const navigation = useNavigate();
 
-  const [time, setTime] = useState(Date.now());
+  const [time, setTime] = useState<Date>(new Date());
   const [refreshInterval, setRefreshInterval] = useState(0);
   const [refreshString, setRefreshString] = useState("manual");
 
@@ -93,20 +93,19 @@ function Dashboard(props: DashboardProps) {
   // update the time value every x ms, which triggers refresh (see below)
   useEffect(() => {
     if (refreshInterval === 0) {
-      console.log("refreshInterval is 0")
+      console.log("refreshInterval is 0");
       return;
     }
-    const interval = setInterval(() => setTime(Date.now()), refreshInterval);
+    const interval = setInterval(() => setTime(new Date()), refreshInterval);
     return () => {
-      console.log("clear refreshInterval")
+      console.log("clear refreshInterval");
       clearInterval(interval);
     };
   }, [refreshInterval]);
 
   // refresh every time the 'time' value changes
   useEffect(() => {
-    console.log("reload page at", time);
-    //setChildKey(prev => prev + 1);
+    console.log("reload page at", time.toISOString());
     props.refreshAction();
   }, [time]);
 
@@ -189,9 +188,17 @@ function Dashboard(props: DashboardProps) {
                   borderColor: "white",
                 }}
               />
-              <SimpleListMenu title={`Refresh: ${refreshString}`} options={refreshStrings} handleMenuItemClick={handleRefreshClick} />
+              <SimpleListMenu
+                title={`Refresh: ${refreshString}`}
+                options={refreshStrings}
+                handleMenuItemClick={handleRefreshClick}
+              />
             </Box>
-            <SimpleListMenu title={user?.username} options={["Change Password", "Logout"]} handleMenuItemClick={handleUserNameClick} />
+            <SimpleListMenu
+              title={user?.username}
+              options={["Change Password", "Logout"]}
+              handleMenuItemClick={handleUserNameClick}
+            />
           </Toolbar>
         </AppBar>
         <Drawer variant="permanent" open={open}>
