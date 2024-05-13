@@ -95,10 +95,6 @@ export default function SubscriberList() {
     navigation("/subscriber/" + subscriber.ueId + "/" + subscriber.plmnID);
   };
 
-  const handleDuplicate = (subscriber: Subscriber) => {
-    navigation("/subscriber/create/" + subscriber.ueId + "/" + subscriber.plmnID)
-  };
-
   const tableView = (
     <React.Fragment>
       <Table>
@@ -108,7 +104,6 @@ export default function SubscriberList() {
             <TableCell>UE ID</TableCell>
             <TableCell>Delete</TableCell>
             <TableCell>View</TableCell>
-            <TableCell>Duplicate</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -128,11 +123,6 @@ export default function SubscriberList() {
               <TableCell>
                 <Button color="primary" variant="contained" onClick={() => handleModify(row)}>
                   VIEW
-                </Button>
-              </TableCell>
-              <TableCell>
-                <Button color="primary" variant="contained" onClick={() => handleDuplicate(row)}>
-                  DUPLICATE
                 </Button>
               </TableCell>
             </TableRow>
