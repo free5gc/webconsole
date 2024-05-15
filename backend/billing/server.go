@@ -28,10 +28,17 @@ type Access struct {
 	Params map[string]string `json:"params"`
 }
 
+type PortRange struct {
+	Start int `json:"start"`
+	End   int `json:"end"`
+}
+
 type FtpConfig struct {
 	Version        int      `json:"version"`
 	Accesses       []Access `json:"accesses"`
 	Listen_address string   `json:"listen_address"`
+
+	Passive_transfer_port_range PortRange `json:"passive_transfer_port_range"`
 }
 
 // The ftp server is for CDR Push method, that is the CHF will send the CDR file to the FTP server
@@ -70,7 +77,10 @@ func OpenServer(wg *sync.WaitGroup) *BillingDomain {
 				Params: params,
 			},
 		},
-
+		Passive_transfer_port_range: PortRange{
+			Start: 2123,
+			End:   2130,
+		},
 		Listen_address: addr,
 	}
 
