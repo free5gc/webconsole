@@ -50,8 +50,8 @@ func OpenServer(wg *sync.WaitGroup) *BillingDomain {
 		wg: wg,
 	}
 	if _, err := os.Stat("/tmp/webconsole"); err != nil {
-		if err := os.Mkdir("/tmp/webconsole", os.ModePerm); err != nil {
-			logger.BillingLog.Error(err)
+		if err_mk := os.Mkdir("/tmp/webconsole", os.ModePerm); err_mk != nil {
+			logger.BillingLog.Error(err_mk)
 		}
 	}
 
@@ -90,8 +90,8 @@ func OpenServer(wg *sync.WaitGroup) *BillingDomain {
 		return nil
 	}
 
-	if err := os.WriteFile(confFile, file, 0o600); err != nil { //nolint: gomnd
-		logger.BillingLog.Errorf("Couldn't create conf file %v", confFile)
+	if err = os.WriteFile(confFile, file, 0o600); err != nil {
+		logger.BillingLog.Errorf("Couldn't create conf file %v, err: %+v", confFile, err)
 		return nil
 	}
 

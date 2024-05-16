@@ -713,7 +713,7 @@ func PutTenantByID(c *gin.Context) {
 	}
 
 	var tenantData Tenant
-	if err := c.ShouldBindJSON(&tenantData); err != nil {
+	if err = c.ShouldBindJSON(&tenantData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{})
 		return
 	}
@@ -721,8 +721,8 @@ func PutTenantByID(c *gin.Context) {
 
 	tenantBsonM := toBsonM(tenantData)
 	filterTenantIdOnly = bson.M{"tenantId": tenantId}
-	if _, err := mongoapi.RestfulAPIPost(tenantDataColl, filterTenantIdOnly, tenantBsonM); err != nil {
-		logger.ProcLog.Errorf("PutTenantByID err: %+v", err)
+	if _, err_post := mongoapi.RestfulAPIPost(tenantDataColl, filterTenantIdOnly, tenantBsonM); err_post != nil {
+		logger.ProcLog.Errorf("PutTenantByID err: %+v", err_post)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
@@ -894,8 +894,8 @@ func PostUserByID(c *gin.Context) {
 
 	userBsonM := toBsonM(userData)
 	filterUserIdOnly := bson.M{"tenantId": userData.TenantId, "userId": userData.UserId}
-	if _, err := mongoapi.RestfulAPIPost(userDataColl, filterUserIdOnly, userBsonM); err != nil {
-		logger.ProcLog.Errorf("PostUserByID err: %+v", err)
+	if _, err_post := mongoapi.RestfulAPIPost(userDataColl, filterUserIdOnly, userBsonM); err_post != nil {
+		logger.ProcLog.Errorf("PostUserByID err: %+v", err_post)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
@@ -946,9 +946,9 @@ func PutUserByID(c *gin.Context) {
 
 	if newUserData.Email != "" && newUserData.Email != userData.Email {
 		filterEmail := bson.M{"email": newUserData.Email}
-		sameEmailInterface, err := mongoapi.RestfulAPIGetOne(userDataColl, filterEmail)
-		if err != nil {
-			logger.ProcLog.Errorf("PutUserByID err: %+v", err)
+		sameEmailInterface, err_get := mongoapi.RestfulAPIGetOne(userDataColl, filterEmail)
+		if err_get != nil {
+			logger.ProcLog.Errorf("PutUserByID err: %+v", err_get)
 			c.JSON(http.StatusInternalServerError, gin.H{})
 			return
 		}
@@ -960,9 +960,9 @@ func PutUserByID(c *gin.Context) {
 	}
 
 	if newUserData.EncryptedPassword != "" {
-		hash, err := bcrypt.GenerateFromPassword([]byte(newUserData.EncryptedPassword), 12)
-		if err != nil {
-			logger.ProcLog.Errorf("PutUserByID err: %+v", err)
+		hash, err_gen := bcrypt.GenerateFromPassword([]byte(newUserData.EncryptedPassword), 12)
+		if err_gen != nil {
+			logger.ProcLog.Errorf("PutUserByID err: %+v", err_gen)
 			c.JSON(http.StatusInternalServerError, gin.H{})
 			return
 		}
@@ -970,8 +970,8 @@ func PutUserByID(c *gin.Context) {
 	}
 
 	userBsonM := toBsonM(userData)
-	if _, err := mongoapi.RestfulAPIPost(userDataColl, filterUserIdOnly, userBsonM); err != nil {
-		logger.ProcLog.Errorf("PutUserByID err: %+v", err)
+	if _, err_post := mongoapi.RestfulAPIPost(userDataColl, filterUserIdOnly, userBsonM); err_post != nil {
+		logger.ProcLog.Errorf("PutUserByID err: %+v", err_post)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
@@ -1035,16 +1035,15 @@ func GetSubscribers(c *gin.Context) {
 		tenantId := amData["tenantId"]
 
 		filterUeIdOnly := bson.M{"ueId": ueId}
-		authSubsDataInterface, err := mongoapi.RestfulAPIGetOne(authSubsDataColl, filterUeIdOnly)
-		if err != nil {
-			logger.ProcLog.Errorf("GetSubscribers err: %+v", err)
+		authSubsDataInterface, err_get := mongoapi.RestfulAPIGetOne(authSubsDataColl, filterUeIdOnly)
+		if err_get != nil {
+			logger.ProcLog.Errorf("GetSubscribers err: %+v", err_get)
 			c.JSON(http.StatusInternalServerError, gin.H{})
 			return
 		}
 
 		var authSubsData AuthSub
-		err = json.Unmarshal(mapToByte(authSubsDataInterface), &authSubsData)
-		if err != nil {
+		if err = json.Unmarshal(mapToByte(authSubsDataInterface), &authSubsData); err != nil {
 			logger.ProcLog.Errorf("GetSubscribers err: %+v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{})
 			return
@@ -1140,55 +1139,55 @@ func GetSubscriberByID(c *gin.Context) {
 	}
 
 	var authSubsData models.AuthenticationSubscription
-	if err := json.Unmarshal(mapToByte(authSubsDataInterface), &authSubsData); err != nil {
+	if err = json.Unmarshal(mapToByte(authSubsDataInterface), &authSubsData); err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
 	var amDataData models.AccessAndMobilitySubscriptionData
-	if err := json.Unmarshal(mapToByte(amDataDataInterface), &amDataData); err != nil {
+	if err = json.Unmarshal(mapToByte(amDataDataInterface), &amDataData); err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
 	var smDataData []models.SessionManagementSubscriptionData
-	if err := json.Unmarshal(sliceToByte(smDataDataInterface), &smDataData); err != nil {
+	if err = json.Unmarshal(sliceToByte(smDataDataInterface), &smDataData); err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
 	var smfSelData models.SmfSelectionSubscriptionData
-	if err := json.Unmarshal(mapToByte(smfSelDataInterface), &smfSelData); err != nil {
+	if err = json.Unmarshal(mapToByte(smfSelDataInterface), &smfSelData); err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
 	var amPolicyData models.AmPolicyData
-	if err := json.Unmarshal(mapToByte(amPolicyDataInterface), &amPolicyData); err != nil {
+	if err = json.Unmarshal(mapToByte(amPolicyDataInterface), &amPolicyData); err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
 	var smPolicyData models.SmPolicyData
-	if err := json.Unmarshal(mapToByte(smPolicyDataInterface), &smPolicyData); err != nil {
+	if err = json.Unmarshal(mapToByte(smPolicyDataInterface), &smPolicyData); err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
 	var flowRules []FlowRule
-	if err := json.Unmarshal(sliceToByte(flowRuleDataInterface), &flowRules); err != nil {
+	if err = json.Unmarshal(sliceToByte(flowRuleDataInterface), &flowRules); err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
 	var qosFlows []QosFlow
-	if err := json.Unmarshal(sliceToByte(qosFlowInterface), &qosFlows); err != nil {
+	if err = json.Unmarshal(sliceToByte(qosFlowInterface), &qosFlows); err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
 	var chargingDatas []ChargingData
-	if err := json.Unmarshal(sliceToByte(chargingDatasInterface), &chargingDatas); err != nil {
+	if err = json.Unmarshal(sliceToByte(chargingDatasInterface), &chargingDatas); err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
@@ -1327,9 +1326,9 @@ func PostSubscriberByID(c *gin.Context) {
 
 		// Lookup same UE ID of other tenant's subscription.
 		if claims != nil {
-			authSubsDataInterface, err := mongoapi.RestfulAPIGetOne(authSubsDataColl, filterUeIdOnly)
-			if err != nil {
-				logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err)
+			authSubsDataInterface, err_get := mongoapi.RestfulAPIGetOne(authSubsDataColl, filterUeIdOnly)
+			if err_get != nil {
+				logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err_get)
 				c.JSON(http.StatusInternalServerError, gin.H{})
 				return
 			}
@@ -1536,7 +1535,7 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 
 				chargingDataBsonM := toBsonM(chargingData)
 				// Clear quota for offline charging flow
-				if chargingData.ChargingMethod == "Offline" {
+				if chargingData.ChargingMethod == ChargingOffline {
 					chargingDataBsonM["quota"] = "0"
 				}
 
@@ -1583,8 +1582,8 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 				chargingDataBsonM["ueId"] = ueId
 				chargingDataBsonM["servingPlmnId"] = servingPlmnId
 
-				if _, err := mongoapi.RestfulAPIPutOne(chargingDataColl, chargingFilter, chargingDataBsonM); err != nil {
-					logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err)
+				if _, err_put := mongoapi.RestfulAPIPutOne(chargingDataColl, chargingFilter, chargingDataBsonM); err != nil {
+					logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err_put)
 				}
 			}
 		}
@@ -1728,16 +1727,16 @@ func PatchSubscriberByID(c *gin.Context) {
 	c.JSON(http.StatusNoContent, gin.H{})
 }
 
-func removeCdrFile(CdrFilePath string) {
-	files, err := filepath.Glob(CdrFilePath + "*.cdr")
+func removeCdrFile(cdrFilePath string) {
+	files, err := filepath.Glob(cdrFilePath + "*.cdr")
 	if err != nil {
-		logger.BillingLog.Warnf("CDR file not found in %s", CdrFilePath)
+		logger.BillingLog.Warnf("CDR file not found in %s", cdrFilePath)
 	}
 
 	for _, file := range files {
-		if _, err := os.Stat(file); err == nil {
+		if _, err = os.Stat(file); err == nil {
 			logger.BillingLog.Infof("Remove CDR file: " + file)
-			if err := os.Remove(file); err != nil {
+			if err = os.Remove(file); err != nil {
 				logger.BillingLog.Warnf("Failed to remove CDR file: %s\n", file)
 			}
 		}
@@ -1907,16 +1906,16 @@ func ChangePasswordInfo(c *gin.Context) {
 	}
 
 	if newUserData.EncryptedPassword != "" {
-		hash, err := bcrypt.GenerateFromPassword([]byte(newUserData.EncryptedPassword), 12)
-		if err != nil {
-			logger.ProcLog.Errorf("GenerateFromPassword err: %+v", err)
+		hash, err_gen := bcrypt.GenerateFromPassword([]byte(newUserData.EncryptedPassword), 12)
+		if err_gen != nil {
+			logger.ProcLog.Errorf("GenerateFromPassword err: %+v", err_gen)
 		}
 		userData.EncryptedPassword = string(hash)
 	}
 
 	userBsonM := toBsonM(userData)
-	if _, err := mongoapi.RestfulAPIPost(userDataColl, filterEmailOnly, userBsonM); err != nil {
-		logger.ProcLog.Errorf("PutUserByID err: %+v", err)
+	if _, err_put := mongoapi.RestfulAPIPost(userDataColl, filterEmailOnly, userBsonM); err_put != nil {
+		logger.ProcLog.Errorf("PutUserByID err: %+v", err_put)
 	}
 
 	c.JSON(http.StatusOK, userData)

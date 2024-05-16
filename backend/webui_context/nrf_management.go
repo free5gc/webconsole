@@ -75,9 +75,9 @@ func SendNFRegistration() error {
 	return nil
 }
 
-func RetrySendNFRegistration(MaxRetry int) error {
+func RetrySendNFRegistration(maxRetry int) error {
 	retryCount := 0
-	for retryCount < MaxRetry {
+	for retryCount < maxRetry {
 		err := SendNFRegistration()
 		if err == nil {
 			return nil
