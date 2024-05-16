@@ -10,7 +10,6 @@ import (
 	"github.com/free5gc/openapi/Nnrf_NFManagement"
 	"github.com/free5gc/openapi/models"
 	"github.com/free5gc/openapi/oauth"
-	"github.com/free5gc/webconsole/backend/billing"
 	"github.com/free5gc/webconsole/backend/factory"
 	"github.com/free5gc/webconsole/backend/logger"
 )
@@ -21,7 +20,9 @@ type WEBUIContext struct {
 	NfInstanceID   string
 	NFProfiles     []models.NfProfile
 	NFOamInstances []NfOamInstance
-	BillingServer  *billing.BillingDomain
+
+	// is registered to NRF as AF
+	IsRegistered bool
 
 	NrfUri         string
 	OAuth2Required bool
@@ -39,6 +40,8 @@ type NfOamInstance struct {
 func Init() {
 	webuiContext.NfInstanceID = uuid.New().String()
 	webuiContext.NrfUri = factory.WebuiConfig.Configuration.NrfUri
+
+	webuiContext.IsRegistered = false
 
 	ManagementConfig := Nnrf_NFManagement.NewConfiguration()
 	ManagementConfig.SetBasePath(GetSelf().NrfUri)

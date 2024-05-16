@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/fclairamb/ftpserver/config"
 	"github.com/fclairamb/ftpserver/server"
@@ -19,6 +18,7 @@ import (
 type BillingDomain struct {
 	ftpServer *ftpserver.FtpServer
 	driver    *server.Server
+	wg        *sync.WaitGroup
 }
 
 type Access struct {
@@ -28,10 +28,17 @@ type Access struct {
 	Params map[string]string `json:"params"`
 }
 
+type PortRange struct {
+	Start int `json:"start"`
+	End   int `json:"end"`
+}
+
 type FtpConfig struct {
 	Version        int      `json:"version"`
 	Accesses       []Access `json:"accesses"`
 	Listen_address string   `json:"listen_address"`
+
+	Passive_transfer_port_range PortRange `json:"passive_transfer_port_range"`
 }
 
 // The ftp server is for CDR Push method, that is the CHF will send the CDR file to the FTP server
@@ -39,7 +46,9 @@ func OpenServer(wg *sync.WaitGroup) *BillingDomain {
 	// Arguments vars
 	confFile := "/tmp/webconsole/ftpserver.json"
 
-	b := &BillingDomain{}
+	b := &BillingDomain{
+		wg: wg,
+	}
 	if _, err := os.Stat("/tmp/webconsole"); err != nil {
 		if err := os.Mkdir("/tmp/webconsole", os.ModePerm); err != nil {
 			logger.BillingLog.Error(err)
@@ -68,7 +77,10 @@ func OpenServer(wg *sync.WaitGroup) *BillingDomain {
 				Params: params,
 			},
 		},
-
+		Passive_transfer_port_range: PortRange{
+			Start: 2123,
+			End:   2130,
+		},
 		Listen_address: addr,
 	}
 
@@ -105,33 +117,26 @@ func OpenServer(wg *sync.WaitGroup) *BillingDomain {
 	// Setting up the ftpserver logger
 	b.ftpServer.Logger = logger.FtpServerLog
 
-	go b.Serve(wg)
+	go b.Serve()
 	logger.BillingLog.Info("Billing server Start")
 
 	return b
 }
 
-func (b *BillingDomain) Serve(wg *sync.WaitGroup) {
-	defer func() {
-		logger.BillingLog.Error("Billing server stopped")
-		b.Stop()
-		wg.Done()
-	}()
-
+func (b *BillingDomain) Serve() {
 	if err := b.ftpServer.ListenAndServe(); err != nil {
 		logger.BillingLog.Error("Problem listening ", "err", err)
-	}
-
-	// We wait at most 1 minutes for all clients to disconnect
-	if err := b.driver.WaitGracefully(time.Minute); err != nil {
-		logger.BillingLog.Warn("Problem stopping server", "Err", err)
 	}
 }
 
 func (b *BillingDomain) Stop() {
-	b.driver.Stop()
+	logger.BillingLog.Infoln("Stop BillingDomain server")
 
+	b.driver.Stop()
 	if err := b.ftpServer.Stop(); err != nil {
 		logger.BillingLog.Error("Problem stopping server", "Err", err)
 	}
+
+	logger.BillingLog.Infoln("BillingDomain server stopped")
+	b.wg.Done()
 }

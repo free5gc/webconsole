@@ -172,7 +172,10 @@ func GetChargingRecord(c *gin.Context) {
 		}
 
 		for rg, du := range ratingGroupDataUsages {
-			filter := bson.M{"ratingGroup": rg}
+			filter := bson.M{
+				"ueId":        supi,
+				"ratingGroup": rg,
+			}
 			chargingDataInterface, err := mongoapi.RestfulAPIGetOne(chargingDataColl, filter)
 			if err != nil {
 				logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err)

@@ -33,7 +33,7 @@ func SendNFRegistration() error {
 			NFInstanceIDDocumentApi.
 			RegisterNFInstance(context.TODO(), GetSelf().NfInstanceID, profile)
 		if err != nil || res == nil {
-			logger.ConsumerLog.Infof("Webconsole-AF register to NRF Error[%s]", err.Error())
+			logger.ConsumerLog.Warnf("Webconsole-AF register to NRF Error[%s]", err.Error())
 			time.Sleep(2 * time.Second)
 			retryTime += 1
 			if retryTime == 10 {
