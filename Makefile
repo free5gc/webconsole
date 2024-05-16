@@ -22,3 +22,7 @@ $(WEBCONSOLE_FRONTEND): $(WEBCONSOLE_JS_FILES)
 	yarn build && \
 	rm -rf ../public && \
 	cp -R build ../public
+
+clean:
+	rm -rf $(GO_BIN_PATH)/$(WEBCONSOLE)
+	rm -rf public
