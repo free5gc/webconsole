@@ -241,6 +241,37 @@ linters-settings:
     locale: US
     ignore-words: []
   
+  gomnd:
+    # !important in golangci-lint v1.58.0, gomnd is replaced by mnd
+    # List of enabled checks, see https://github.com/tommy-muehle/go-mnd/#checks for description.
+    # Default: ["argument", "case", "condition", "operation", "return", "assign"]
+    checks:
+      # - argument
+      - case
+      # - condition
+      - operation
+      - return
+      # - assign
+    # List of numbers to exclude from analysis.
+    # The numbers should be written as string.
+    # Values always ignored: "1", "1.0", "0" and "0.0"
+    # Default: []
+    ignored-numbers: []
+    # List of file patterns to exclude from analysis.
+    # Values always ignored: `.+_test.go`
+    # Default: []
+    ignored-files: []
+    # List of function patterns to exclude from analysis.
+    # Following functions are always ignored: `time.Date`,
+    # `strconv.FormatInt`, `strconv.FormatUint`, `strconv.FormatFloat`,
+    # `strconv.ParseInt`, `strconv.ParseUint`, `strconv.ParseFloat`.
+    # Default: []
+    ignored-functions:
+      - 'os\.Mkdir'
+      - 'os\.MkdirAll'
+      - '^math\.'
+      - '^http\.StatusText$'
+
   # custom:
     # Each custom linter should have a unique name.
 
@@ -262,7 +293,7 @@ linters:
     - gci
     - misspell
     - gosimple
-    
+    - gomnd
     - ineffassign
     - typecheck
     - gofumpt
@@ -346,5 +377,5 @@ severity:
   # Default: []
   rules:
     - linters:
-      - dupl
+      - gomnd
       severity: info
