@@ -35,7 +35,7 @@ func (c *Config) Validate() (bool, error) {
 }
 
 type Info struct {
-	Version     string `yaml:"version,omitempty" valid:"required,in(1.0.2)"`
+	Version     string `yaml:"version,omitempty" valid:"required,in(1.0.3)"`
 	Description string `yaml:"description,omitempty" valid:"type(string)"`
 }
 
@@ -58,17 +58,24 @@ type WebServer struct {
 	PORT   string `yaml:"port" valid:"required"`
 }
 
-type Tls struct {
+type Cert struct {
 	Pem string `yaml:"pem,omitempty" valid:"type(string),minstringlength(1),required"`
 	Key string `yaml:"key,omitempty" valid:"type(string),minstringlength(1),required"`
 }
 
+type PortRange struct {
+	Start int `yaml:"start,omitempty" valid:"required" json:"start"`
+	End   int `yaml:"end,omitempty" valid:"required" json:"end"`
+}
+
 type BillingServer struct {
-	Enable     bool   `yaml:"enable,omitempty" valid:"required,type(bool)"`
-	HostIPv4   string `yaml:"hostIPv4,omitempty" valid:"required,host"`
-	Port       int    `yaml:"port,omitempty" valid:"optional,port"`
-	ListenPort int    `yaml:"listenPort,omitempty" valid:"required,port"`
-	Tls        *Tls   `yaml:"tls,omitempty" valid:"optional"`
+	Enable     bool      `yaml:"enable,omitempty" valid:"required,type(bool)"`
+	HostIPv4   string    `yaml:"hostIPv4,omitempty" valid:"required,host"`
+	ListenPort int       `yaml:"listenPort,omitempty" valid:"required,port"`
+	PortRange  PortRange `yaml:"portRange,omitempty" valid:"required"`
+	BastPath   string    `yaml:"basePath,omitempty" valid:"type(string),required"`
+	Cert       *Cert     `yaml:"cert,omitempty" valid:"optional"`
+	Port       int       `yaml:"port,omitempty" valid:"optional,port"`
 }
 
 type Mongodb struct {

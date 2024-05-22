@@ -4,10 +4,12 @@ package billing
 import (
 	"encoding/json"
 	"os"
+	"path"
 	"strconv"
 	"sync"
 
 	"github.com/fclairamb/ftpserver/config"
+	ftpconf "github.com/fclairamb/ftpserver/config/confpar"
 	"github.com/fclairamb/ftpserver/server"
 	ftpserver "github.com/fclairamb/ftpserverlib"
 
@@ -21,55 +23,40 @@ type BillingDomain struct {
 	wg        *sync.WaitGroup
 }
 
-type Access struct {
-	User   string            `json:"user"`
-	Pass   string            `json:"pass"`
-	Fs     string            `json:"fs"`
-	Params map[string]string `json:"params"`
-}
-
-type PortRange struct {
-	Start int `json:"start"`
-	End   int `json:"end"`
-}
-
-type FtpConfig struct {
-	Version        int      `json:"version"`
-	Accesses       []Access `json:"accesses"`
-	Listen_address string   `json:"listen_address"`
-
-	Passive_transfer_port_range PortRange `json:"passive_transfer_port_range"`
-}
-
 // The ftp server is for CDR Push method, that is the CHF will send the CDR file to the FTP server
 func OpenServer(wg *sync.WaitGroup) *BillingDomain {
-	// Arguments vars
-	confFile := "/tmp/webconsole/ftpserver.json"
-
 	b := &BillingDomain{
 		wg: wg,
 	}
-	if _, err := os.Stat("/tmp/webconsole"); err != nil {
-		if err_mk := os.Mkdir("/tmp/webconsole", os.ModePerm); err_mk != nil {
+
+	billingConfig := factory.WebuiConfig.Configuration.BillingServer
+
+	basePath := billingConfig.BastPath
+	confFile := path.Join(basePath, "ftpserver.json")
+
+	if _, err := os.Stat(basePath); err != nil {
+		if err_mk := os.Mkdir(basePath, os.ModePerm); err_mk != nil {
 			logger.BillingLog.Error(err_mk)
 		}
 	}
 
-	billingConfig := factory.WebuiConfig.Configuration.BillingServer
 	addr := billingConfig.HostIPv4 + ":" + strconv.Itoa(billingConfig.ListenPort)
 
 	params := map[string]string{
-		"basePath": "/tmp/webconsole",
+		"basePath": basePath,
 	}
 
-	if billingConfig.Tls != nil {
-		params["cert"] = billingConfig.Tls.Pem
-		params["key"] = billingConfig.Tls.Key
+	logger.BillingLog.Infof("Open BillingServer on %+v", basePath)
+
+	if billingConfig.Cert != nil {
+		params["cert"] = billingConfig.Cert.Pem
+		params["key"] = billingConfig.Cert.Key
+		logger.BillingLog.Infof("Use tls: %+v, %+v", params["cert"], params["key"])
 	}
 
-	ftpConfig := FtpConfig{
+	ftpConfig := ftpconf.Content{
 		Version: 1,
-		Accesses: []Access{
+		Accesses: []*ftpconf.Access{
 			{
 				User:   "admin",
 				Pass:   "free5gc",
@@ -77,11 +64,11 @@ func OpenServer(wg *sync.WaitGroup) *BillingDomain {
 				Params: params,
 			},
 		},
-		Passive_transfer_port_range: PortRange{
-			Start: 2123,
-			End:   2130,
+		PassiveTransferPortRange: &ftpconf.PortRange{
+			Start: billingConfig.PortRange.Start,
+			End:   billingConfig.PortRange.End,
 		},
-		Listen_address: addr,
+		ListenAddress: addr,
 	}
 
 	file, err := json.MarshalIndent(ftpConfig, "", " ")
@@ -100,7 +87,7 @@ func OpenServer(wg *sync.WaitGroup) *BillingDomain {
 		logger.BillingLog.Error("Can't load conf", "Err", errConfig)
 		return nil
 	}
-	logger.BillingLog.Warnf("conf %+v", conf.Content.Accesses[0].Params)
+
 	// Loading the driver
 	var errNewServer error
 	b.driver, errNewServer = server.NewServer(conf, logger.FtpServerLog)
@@ -118,7 +105,7 @@ func OpenServer(wg *sync.WaitGroup) *BillingDomain {
 	b.ftpServer.Logger = logger.FtpServerLog
 
 	go b.Serve()
-	logger.BillingLog.Info("Billing server Start")
+	logger.BillingLog.Info("Billing server started")
 
 	return b
 }
