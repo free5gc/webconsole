@@ -41,18 +41,18 @@ func PullCDRFile(c *ftp.ServerConn, fileName string) ([]byte, error) {
 	}
 
 	defer func() {
-		if err := r.Close(); err != nil {
+		if err = r.Close(); err != nil {
 			logger.BillingLog.Error(err)
 		}
 	}()
 
 	logger.BillingLog.Info("Pull CDR file success")
 
-	if err := c.Quit(); err != nil {
+	if err = c.Quit(); err != nil {
 		return nil, err
 	}
 
-	cdr, err1 := io.ReadAll(r)
+	cdr, err_read := io.ReadAll(r)
 
-	return cdr, err1
+	return cdr, err_read
 }

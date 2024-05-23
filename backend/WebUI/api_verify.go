@@ -40,15 +40,15 @@ func GetSmfUserPlaneInfo() (interface{}, error) {
 	// TODO: support fetching data from multiple SMF
 	if smfUris := webuiSelf.GetOamUris(models.NfType_SMF); smfUris != nil {
 		requestUri := fmt.Sprintf("%s/nsmf-oam/v1/user-plane-info/", smfUris[0])
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestUri, nil)
-		if err != nil {
-			logger.ProcLog.Error(err)
-			return jsonData, err
+		req, err_req := http.NewRequestWithContext(ctx, http.MethodGet, requestUri, nil)
+		if err_req != nil {
+			logger.ProcLog.Error(err_req)
+			return jsonData, err_req
 		}
-		resp, err := httpsClient.Do(req)
-		if err != nil {
-			logger.ProcLog.Error(err)
-			return jsonData, err
+		resp, err_rsp := httpsClient.Do(req)
+		if err_rsp != nil {
+			logger.ProcLog.Error(err_rsp)
+			return jsonData, err_rsp
 		}
 		defer func() {
 			if closeErr := resp.Body.Close(); closeErr != nil {

@@ -21,6 +21,11 @@ import (
 	"github.com/free5gc/webconsole/backend/webui_context"
 )
 
+const (
+	ChargingOffline = "Offline"
+	ChargingOnline  = "Online"
+)
+
 // Get vol from CDR
 // TS 32.297: Charging Data Record (CDR) file format and transfer
 func parseCDR(supi string) (map[int64]RatingGroupDataUsage, error) {
@@ -84,7 +89,7 @@ func GetChargingData(c *gin.Context) {
 	}
 	logger.BillingLog.Traceln(chargingMethod)
 
-	if chargingMethod != "Offline" && chargingMethod != "Online" {
+	if chargingMethod != ChargingOffline && chargingMethod != ChargingOnline {
 		c.JSON(http.StatusBadRequest, gin.H{"cause": "not support chargingMethod" + chargingMethod})
 		return
 	}
@@ -176,9 +181,9 @@ func GetChargingRecord(c *gin.Context) {
 				"ueId":        supi,
 				"ratingGroup": rg,
 			}
-			chargingDataInterface, err := mongoapi.RestfulAPIGetOne(chargingDataColl, filter)
-			if err != nil {
-				logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err)
+			chargingDataInterface, err_get := mongoapi.RestfulAPIGetOne(chargingDataColl, filter)
+			if err_get != nil {
+				logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err_get)
 			}
 			if len(chargingDataInterface) == 0 {
 				logger.BillingLog.Warningf("ratingGroup: %d not found in mongoapi, may change the rg id", rg)
@@ -193,10 +198,10 @@ func GetChargingRecord(c *gin.Context) {
 			logger.BillingLog.Debugf("add ratingGroup: %d, supi: %s, method: %s", rg, supi, chargingData.ChargingMethod)
 
 			switch chargingData.ChargingMethod {
-			case "Offline":
-				unitcost, err := strconv.ParseInt(chargingData.UnitCost, 10, 64)
-				if err != nil {
-					logger.BillingLog.Error("Offline unitCost strconv: ", err.Error())
+			case ChargingOffline:
+				unitcost, err_parse := strconv.ParseInt(chargingData.UnitCost, 10, 64)
+				if err_parse != nil {
+					logger.BillingLog.Error("Offline unitCost strconv: ", err_parse.Error())
 					unitcost = 1
 				}
 
@@ -218,7 +223,7 @@ func GetChargingRecord(c *gin.Context) {
 					pdu_level.unitcost = unitcost
 				}
 				offlineChargingSliceTypeMap[key] = pdu_level
-			case "Online":
+			case ChargingOnline:
 				tmpInt, err1 := strconv.Atoi(chargingData.Quota)
 				if err1 != nil {
 					logger.BillingLog.Error("Quota strconv: ", err1, rg, du, chargingData)
