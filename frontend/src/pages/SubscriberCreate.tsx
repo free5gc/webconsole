@@ -1,16 +1,9 @@
 import React from "react";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import axios from "../axios";
-import {
-  Subscription,
-  Nssai,
-  DnnConfiguration,
-  AccessAndMobilitySubscriptionData,
-  QosFlows,
-  IpAddress,
-} from "../api/api";
+import type { Nssai, AccessAndMobilitySubscriptionData, QosFlows, IpAddress } from "../api/api";
 
 import Dashboard from "../Dashboard";
 import {
@@ -32,6 +25,7 @@ import {
   FormControlLabel,
   Switch,
 } from "@mui/material";
+import { useSubscriptionForm } from "../hooks/subscription-form";
 
 interface VerifyScope {
   supi: string;
@@ -47,6 +41,25 @@ interface VerifyResult {
   cause: string;
 }
 
+const handleVerifyStaticIp = (sd: string, sst: number, dnn: string, ipaddr: string) => {
+  const scope: VerifyScope = {
+    supi: "",
+    sd: sd,
+    sst: sst,
+    dnn: dnn,
+    ipaddr: ipaddr,
+  };
+  axios.post("/api/verify-staticip", scope).then((res) => {
+    const result = res.data as VerifyResult;
+    console.log(result);
+    if (result["valid"] === true) {
+      alert("OK\n" + result.ipaddr);
+    } else {
+      alert("NO!\nCause: " + result["cause"]);
+    }
+  });
+};
+
 import { RawOff } from "@mui/icons-material";
 
 let isNewSubscriber = false;
@@ -60,253 +73,40 @@ export default function SubscriberCreate() {
   isNewSubscriber = id === undefined && plmn === undefined;
   const navigation = useNavigate();
 
-  const [data, setData] = useState<Subscription>({
-    userNumber: 1,
-    plmnID: "20893",
-    ueId: "imsi-208930000000001",
-    AuthenticationSubscription: {
-      authenticationMethod: "5G_AKA",
-      sequenceNumber: "000000000023",
-      authenticationManagementField: "8000",
-      permanentKey: {
-        permanentKeyValue: "8baf473f2f8fd09487cccbd7097c6862",
-        encryptionKey: 0,
-        encryptionAlgorithm: 0,
-      },
-      milenage: {
-        op: {
-          opValue: "",
-          encryptionKey: 0,
-          encryptionAlgorithm: 0,
-        },
-      },
-      opc: {
-        opcValue: "8e27b6af0e692e750f32667a3b14605d",
-        encryptionKey: 0,
-        encryptionAlgorithm: 0,
-      },
-    },
-    AccessAndMobilitySubscriptionData: {
-      gpsis: ["msisdn-"],
-      subscribedUeAmbr: {
-        uplink: "1 Gbps",
-        downlink: "2 Gbps",
-      },
-      nssai: {
-        defaultSingleNssais: [
-          {
-            sst: 1,
-            sd: "010203",
-          },
-        ],
-        singleNssais: [
-          {
-            sst: 1,
-            sd: "112233",
-          },
-        ],
-      },
-    },
-    SessionManagementSubscriptionData: [
-      {
-        singleNssai: {
-          sst: 1,
-          sd: "010203",
-        },
-        dnnConfigurations: {
-          internet: {
-            pduSessionTypes: {
-              defaultSessionType: "IPV4",
-              allowedSessionTypes: ["IPV4"],
-            },
-            sscModes: {
-              defaultSscMode: "SSC_MODE_1",
-              allowedSscModes: ["SSC_MODE_2", "SSC_MODE_3"],
-            },
-            "5gQosProfile": {
-              "5qi": 9,
-              arp: {
-                priorityLevel: 8,
-                preemptCap: "",
-                preemptVuln: "",
-              },
-              priorityLevel: 8,
-            },
-            sessionAmbr: {
-              uplink: "1000 Mbps",
-              downlink: "1000 Mbps",
-            },
-            staticIpAddress: [],
-          },
-        },
-      },
-      {
-        singleNssai: {
-          sst: 1,
-          sd: "112233",
-        },
-        dnnConfigurations: {
-          internet: {
-            pduSessionTypes: {
-              defaultSessionType: "IPV4",
-              allowedSessionTypes: ["IPV4"],
-            },
-            sscModes: {
-              defaultSscMode: "SSC_MODE_1",
-              allowedSscModes: ["SSC_MODE_2", "SSC_MODE_3"],
-            },
-            "5gQosProfile": {
-              "5qi": 8,
-              arp: {
-                priorityLevel: 8,
-                preemptCap: "",
-                preemptVuln: "",
-              },
-              priorityLevel: 8,
-            },
-            sessionAmbr: {
-              uplink: "1000 Mbps",
-              downlink: "1000 Mbps",
-            },
-            staticIpAddress: [],
-          },
-        },
-      },
-    ],
-    SmfSelectionSubscriptionData: {
-      subscribedSnssaiInfos: {
-        "01010203": {
-          dnnInfos: [
-            {
-              dnn: "internet",
-            },
-          ],
-        },
-        "01112233": {
-          dnnInfos: [
-            {
-              dnn: "internet",
-            },
-          ],
-        },
-      },
-    },
-    AmPolicyData: {
-      subscCats: ["free5gc"],
-    },
-    SmPolicyData: {
-      smPolicySnssaiData: {
-        "01010203": {
-          snssai: {
-            sst: 1,
-            sd: "010203",
-          },
-          smPolicyDnnData: {
-            internet: {
-              dnn: "internet",
-            },
-          },
-        },
-        "01112233": {
-          snssai: {
-            sst: 1,
-            sd: "112233",
-          },
-          smPolicyDnnData: {
-            internet: {
-              dnn: "internet",
-            },
-          },
-        },
-      },
-    },
-    FlowRules: [
-      {
-        filter: "1.1.1.1/32",
-        precedence: 128,
-        snssai: "01010203",
-        dnn: "internet",
-        qosRef: 1,
-      },
-      {
-        filter: "1.1.1.1/32",
-        precedence: 127,
-        snssai: "01112233",
-        dnn: "internet",
-        qosRef: 2,
-      },
-    ],
-    QosFlows: [
-      {
-        snssai: "01010203",
-        dnn: "internet",
-        qosRef: 1,
-        "5qi": 8,
-        mbrUL: "208 Mbps",
-        mbrDL: "208 Mbps",
-        gbrUL: "108 Mbps",
-        gbrDL: "108 Mbps",
-      },
-      {
-        snssai: "01112233",
-        dnn: "internet",
-        qosRef: 2,
-        "5qi": 7,
-        mbrUL: "407 Mbps",
-        mbrDL: "407 Mbps",
-        gbrUL: "207 Mbps",
-        gbrDL: "207 Mbps",
-      },
-    ],
-    ChargingDatas: [
-      {
-        snssai: "01010203",
-        dnn: "",
-        filter: "",
-        chargingMethod: "Offline",
-        quota: "100000",
-        unitCost: "1",
-      },
-      {
-        snssai: "01010203",
-        dnn: "internet",
-        qosRef: 1,
-        filter: "1.1.1.1/32",
-        chargingMethod: "Offline",
-        quota: "100000",
-        unitCost: "1",
-      },
-      {
-        snssai: "01112233",
-        dnn: "",
-        filter: "",
-        chargingMethod: "Online",
-        quota: "100000",
-        unitCost: "1",
-      },
-      {
-        snssai: "01112233",
-        dnn: "internet",
-        qosRef: 2,
-        filter: "1.1.1.1/32",
-        chargingMethod: "Online",
-        quota: "5000",
-        unitCost: "1",
-      },
-    ],
-  });
-  const [opcType, setOpcType] = useState<string>("OPc");
-  const [opcValue, setOpcValue] = useState<string>("8e27b6af0e692e750f32667a3b14605d");
-  const [dnnName, setDnnName] = useState<string[]>([]);
+  const {
+    register,
+    validationErrors,
+    handleSubmit,
+    watch,
+    getValues,
+    setValue,
+    reset,
+    sessionSubscriptionFields,
+    defaultSingleNssais,
+    addDefaultSingleNssai,
+    removeDefaultSingleNssai,
+    opcType,
+    setOpcType,
+    opcValue,
+    setOpcValue,
+    dnnName,
+    setDnnName,
+  } = useSubscriptionForm();
+
+  const {
+    fields: sessionManagementSubscriptionData,
+    append: appendSessionSubscription,
+    remove: removeSessionSubscription,
+  } = sessionSubscriptionFields;
 
   if (!isNewSubscriber) {
     useEffect(() => {
       axios.get("/api/subscriber/" + id + "/" + plmn).then((res) => {
-        console.log('loaded existing subscriber', res.data);
-        setData(res.data);
+        reset(res.data);
       });
     }, [id]);
   }
+
   function toHex(v: number | undefined): string {
     return ("00" + v?.toString(16).toUpperCase()).substr(-2);
   }
@@ -326,6 +126,8 @@ export default function SubscriberCreate() {
   };
 
   const onCreate = () => {
+    const data = getValues();
+
     if (data.SessionManagementSubscriptionData === undefined) {
       alert("Please add at least one S-NSSAI");
       return;
@@ -380,6 +182,8 @@ export default function SubscriberCreate() {
   };
 
   const onUpdate = () => {
+    const data = getValues();
+
     data.SmfSelectionSubscriptionData = {
       subscribedSnssaiInfos: {},
     };
@@ -430,150 +234,140 @@ export default function SubscriberCreate() {
       });
   };
 
-  const onSnssai = () => {
-    if (
-      data.SessionManagementSubscriptionData === undefined ||
-      data.SessionManagementSubscriptionData!.length === 0
-    ) {
-      data.SessionManagementSubscriptionData = [
-        {
-          singleNssai: {
-            sst: 1,
-            sd: "010203",
-          },
-          dnnConfigurations: {},
-        },
-      ];
-      setData({ ...data });
-    } else {
-      data.SessionManagementSubscriptionData.push({
-        singleNssai: {
-          sst: 1,
-        },
-        dnnConfigurations: {},
-      });
-      setData({ ...data });
-    }
-  };
-
-  const onSnssaiDelete = (index: number, snssaiToDelete: string) => {
-    if (data.SessionManagementSubscriptionData !== undefined) {
-      console.log("delete", snssaiToDelete);
-
-      // Remove charging data if found
-      data.ChargingDatas = data!.ChargingDatas!.filter(
-        (chargingData) => chargingData.snssai !== snssaiToDelete,
-      );
-
-      data.SessionManagementSubscriptionData.splice(index, 1);
-      setData({ ...data });
-    }
-  };
-
   const onDnnAdd = (index: number) => {
-    if (data.SessionManagementSubscriptionData !== undefined) {
-      const name = dnnName[index];
-      if (name === undefined || name === "") {
-        return;
-      }
-      // TODO: add charging rule for this DNN
-      const session = data.SessionManagementSubscriptionData![index];
-      session.dnnConfigurations![name] = {
-        pduSessionTypes: {
-          defaultSessionType: "IPV4",
-          allowedSessionTypes: ["IPV4"],
-        },
-        sscModes: {
-          defaultSscMode: "SSC_MODE_1",
-          allowedSscModes: ["SSC_MODE_2", "SSC_MODE_3"],
-        },
-        "5gQosProfile": {
-          "5qi": 9,
-          arp: {
-            priorityLevel: 8,
-            preemptCap: "",
-            preemptVuln: "",
-          },
-          priorityLevel: 8,
-        },
-        sessionAmbr: {
-          uplink: "",
-          downlink: "",
-        },
-      };
-      setData({ ...data });
-      dnnName[index] = "";
-      setDnnName({ ...dnnName });
+    const sessionManagementSubscriptionData = getValues()["SessionManagementSubscriptionData"];
+    if (sessionManagementSubscriptionData === undefined) {
+      return;
     }
+
+    const name = dnnName[index];
+    if (name === undefined || name === "") {
+      return;
+    }
+    // TODO: add charging rule for this DNN
+    const session = sessionManagementSubscriptionData[index];
+    if (session.dnnConfigurations === undefined) {
+      session.dnnConfigurations = {};
+    }
+
+    session.dnnConfigurations[name] = {
+      pduSessionTypes: {
+        defaultSessionType: "IPV4",
+        allowedSessionTypes: ["IPV4"],
+      },
+      sscModes: {
+        defaultSscMode: "SSC_MODE_1",
+        allowedSscModes: ["SSC_MODE_2", "SSC_MODE_3"],
+      },
+      "5gQosProfile": {
+        "5qi": 9,
+        arp: {
+          priorityLevel: 8,
+          preemptCap: "",
+          preemptVuln: "",
+        },
+        priorityLevel: 8,
+      },
+      sessionAmbr: {
+        uplink: "",
+        downlink: "",
+      },
+    };
+    setValue("SessionManagementSubscriptionData", sessionManagementSubscriptionData);
+    dnnName[index] = "";
+    setDnnName({ ...dnnName });
   };
 
   const onDnnDelete = (index: number, dnn: string, slice: string) => {
-    if (data.SessionManagementSubscriptionData !== undefined) {
-      delete data.SessionManagementSubscriptionData![index].dnnConfigurations![dnn];
-      setData({ ...data });
+    const sessionManagementSubscriptionData = getValues()["SessionManagementSubscriptionData"];
+    const session = sessionManagementSubscriptionData[index];
+    if (session.dnnConfigurations === undefined) {
+      return;
+    }
+    delete session.dnnConfigurations[dnn];
+    setValue("SessionManagementSubscriptionData", sessionManagementSubscriptionData);
+
+    const chargingDatas = getValues()["ChargingDatas"];
+    if (chargingDatas === undefined) {
+      return;
     }
     // Remove all flow-based charging rule in this DNN
-    if (data.ChargingDatas !== undefined) {
-      for (let i = 0; i < data.ChargingDatas!.length; i++) {
-        if (data.ChargingDatas![i].dnn === dnn && data.ChargingDatas![i].snssai === slice) {
-          data.ChargingDatas!.splice(i, 1);
-          i--;
-        }
+    for (let i = 0; i < chargingDatas.length; i++) {
+      if (chargingDatas[i].dnn === dnn && chargingDatas[i].snssai === slice) {
+        chargingDatas.splice(i, 1);
+        i--;
       }
     }
-    setData({ ...data });
+    setValue("ChargingDatas", chargingDatas);
   };
 
   const onFlowRulesDelete = (dnn: string, flowKey: string, qosRef: number | undefined) => {
-    if (data.FlowRules !== undefined) {
-      for (let i = 0; i < data.FlowRules!.length; i++) {
+    const flowRules = getValues()["FlowRules"];
+    if (flowRules !== undefined) {
+      for (let i = 0; i < flowRules.length; i++) {
         if (
-          data.FlowRules![i].dnn === dnn &&
-          data.FlowRules![i].snssai === flowKey &&
-          data.FlowRules![i].qosRef === qosRef
+          flowRules[i].dnn === dnn &&
+          flowRules[i].snssai === flowKey &&
+          flowRules[i].qosRef === qosRef
         ) {
-          data.FlowRules!.splice(i, 1);
+          flowRules.splice(i, 1);
           i--;
         }
       }
     }
-    if (data.QosFlows !== undefined) {
-      for (let i = 0; i < data.QosFlows!.length; i++) {
+    setValue("FlowRules", flowRules);
+
+    const qosFlows = getValues()["QosFlows"];
+    if (qosFlows !== undefined) {
+      for (let i = 0; i < qosFlows.length; i++) {
         if (
-          data.QosFlows![i].dnn === dnn &&
-          data.QosFlows![i].snssai === flowKey &&
-          data.QosFlows![i].qosRef === qosRef
+          qosFlows[i].dnn === dnn &&
+          qosFlows[i].snssai === flowKey &&
+          qosFlows[i].qosRef === qosRef
         ) {
-          data.QosFlows!.splice(i, 1);
+          qosFlows.splice(i, 1);
           i--;
         }
       }
     }
-    if (data.ChargingDatas !== undefined) {
-      for (let i = 0; i < data.ChargingDatas!.length; i++) {
-        if (data.ChargingDatas![i].qosRef === qosRef) {
-          data.ChargingDatas!.splice(i, 1);
+    setValue("QosFlows", qosFlows);
+
+    const chargingDatas = getValues()["ChargingDatas"];
+    if (chargingDatas !== undefined) {
+      for (let i = 0; i < chargingDatas.length; i++) {
+        if (chargingDatas[i].qosRef === qosRef) {
+          chargingDatas.splice(i, 1);
           i--;
         }
       }
     }
-    setData({ ...data });
+    setValue("ChargingDatas", chargingDatas);
   };
 
-  const onUpSecurity = (dnn: DnnConfiguration | undefined) => {
+  const onUpSecurity = (sessionIndex: number, dnnKey?: string) => {
+    if (dnnKey === undefined) {
+      return;
+    }
+
+    const dnn =
+      getValues()["SessionManagementSubscriptionData"][sessionIndex].dnnConfigurations![dnnKey];
+
     if (dnn !== undefined) {
       dnn.upSecurity = {
         upIntegr: "NOT_NEEDED",
         upConfid: "NOT_NEEDED",
       };
     }
-    setData({ ...data });
+
+    setValue(`SessionManagementSubscriptionData.${sessionIndex}.dnnConfigurations.${dnnKey}`, dnn);
   };
 
   function selectQosRef(): number {
+    const qosFlows = getValues()["QosFlows"];
+
     const UsedQosRef = [];
-    for (let i = 0; i < data.QosFlows!.length; i++) {
-      UsedQosRef.push(data.QosFlows![i]!.qosRef);
+    for (let i = 0; i < qosFlows.length; i++) {
+      UsedQosRef.push(qosFlows[i].qosRef);
     }
     for (let i = 1; i < 256; i++) {
       if (!UsedQosRef.includes(i)) {
@@ -586,10 +380,10 @@ export default function SubscriberCreate() {
   }
 
   function select5Qi(dnn: string, snssai: Nssai): number {
+    const qosFlows = getValues()["QosFlows"];
+
     const sstsd = toHex(snssai.sst) + snssai.sd!;
-    const filteredQosFlows = data.QosFlows!.filter(
-      (qos) => qos.dnn === dnn && qos.snssai === sstsd,
-    );
+    const filteredQosFlows = qosFlows.filter((qos) => qos.dnn === dnn && qos.snssai === sstsd);
     const Used5Qi = [];
     for (let i = 0; i < filteredQosFlows.length; i++) {
       Used5Qi.push(filteredQosFlows[i]["5qi"]);
@@ -602,12 +396,17 @@ export default function SubscriberCreate() {
   }
 
   const onFlowRulesAdd = (dnn: string, snssai: Nssai) => {
+    let flowRules = getValues()["FlowRules"];
+    if (flowRules === undefined) {
+      flowRules = [];
+    }
+
     const sstSd = toHex(snssai.sst) + snssai.sd!;
     let filter = "8.8.8.8/32";
     for (;;) {
       let flag = false;
-      for (let i = 0; i < data.FlowRules!.length; i++) {
-        if (filter === data.FlowRules![i]!.filter) {
+      for (let i = 0; i < flowRules.length; i++) {
+        if (filter === flowRules[i]!.filter) {
           const c = Math.floor(Math.random() * 256);
           const d = Math.floor(Math.random() * 256);
           filter = "10.10." + c.toString() + "." + d.toString() + "/32";
@@ -621,15 +420,22 @@ export default function SubscriberCreate() {
 
     const selected5Qi = select5Qi(dnn, snssai);
     const selectedQosRef = selectQosRef();
-    data.FlowRules!.push({
+
+    flowRules.push({
       filter: filter,
       precedence: 127,
       snssai: sstSd,
       dnn: dnn,
       qosRef: selectedQosRef,
     });
+    setValue("FlowRules", flowRules);
 
-    data.QosFlows!.push({
+    let qosFlows = getValues()["QosFlows"];
+    if (qosFlows === undefined) {
+      qosFlows = [];
+    }
+
+    qosFlows.push({
       snssai: sstSd,
       dnn: dnn,
       qosRef: selectedQosRef,
@@ -639,8 +445,14 @@ export default function SubscriberCreate() {
       gbrUL: "100 Mbps",
       gbrDL: "100 Mbps",
     });
+    setValue("QosFlows", qosFlows);
 
-    data.ChargingDatas!.push({
+    let chargingDatas = getValues()["ChargingDatas"];
+    if (chargingDatas === undefined) {
+      chargingDatas = [];
+    }
+
+    chargingDatas.push({
       snssai: sstSd,
       dnn: dnn,
       qosRef: selectedQosRef,
@@ -649,31 +461,19 @@ export default function SubscriberCreate() {
       quota: "10000",
       unitCost: "1",
     });
-
-    setData({ ...data });
+    setValue("ChargingDatas", chargingDatas);
   };
 
-  const onUpSecurityDelete = (dnn: DnnConfiguration) => {
-    dnn.upSecurity = undefined;
-    setData({ ...data });
+  const onUpSecurityDelete = (sessionIndex: number, dnnKey?: string) => {
+    setValue(
+      `SessionManagementSubscriptionData.${sessionIndex}.dnnConfigurations.${dnnKey}.upSecurity`,
+      undefined,
+    );
   };
 
   const isDefaultNssai = (nssai: Nssai) => {
-    if (nssai === undefined || data.AccessAndMobilitySubscriptionData === undefined) {
-      return false;
-    } else {
-      for (
-        let i = 0;
-        i < data.AccessAndMobilitySubscriptionData!.nssai!.defaultSingleNssais!.length;
-        i++
-      ) {
-        const defaultNssai = data.AccessAndMobilitySubscriptionData!.nssai!.defaultSingleNssais![i];
-        if (defaultNssai.sd === nssai.sd && defaultNssai.sst === nssai.sst) {
-          return true;
-        }
-      }
-      return false;
-    }
+    const defaultNssais = watch("AccessAndMobilitySubscriptionData.nssai.defaultSingleNssais");
+    return defaultNssais.some((n) => n.sd === nssai.sd && n.sst === nssai.sst);
   };
 
   const imsiValue = (imsi: string | undefined) => {
@@ -696,91 +496,66 @@ export default function SubscriberCreate() {
     }
   };
 
-  const handleChangeUserNumber = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ): void => {
-    if (event.target.value === undefined) {
-      setData({ ...data, userNumber: undefined });
-    } else {
-      const userNumber = Number(event.target.value);
-      if (userNumber >= 1) {
-        setData({ ...data, userNumber: Number(event.target.value) });
-      }
-    }
-  };
-
-  const handleChangePlmnId = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ): void => {
-    setData({ ...data, plmnID: event.target.value });
-  };
-
-  const handleChangeUeId = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ): void => {
-    setData({ ...data, ueId: "imsi-" + event.target.value });
-  };
-
   const handleChangeMsisdn = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ): void => {
-    setData({
-      ...data,
-      AccessAndMobilitySubscriptionData: {
-        ...data.AccessAndMobilitySubscriptionData,
-        gpsis: ["msisdn-" + event.target.value],
-      },
-    });
-  };
-
-  const handleChangeAuthenticationManagementField = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ): void => {
-    setData({
-      ...data,
-      AuthenticationSubscription: {
-        ...data.AuthenticationSubscription,
-        authenticationManagementField: event.target.value,
-      },
-    });
-  };
-
-  const handleChangeAuthenticationMethod = (event: SelectChangeEvent<string>): void => {
-    setData({
-      ...data,
-      AuthenticationSubscription: {
-        ...data.AuthenticationSubscription,
-        authenticationMethod: event.target.value,
-      },
-    });
-  };
-
-  const handleChangeK = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ): void => {
-    setData({
-      ...data,
-      AuthenticationSubscription: {
-        ...data.AuthenticationSubscription,
-        permanentKey: {
-          permanentKeyValue: event.target.value,
-          encryptionKey: 0,
-          encryptionAlgorithm: 0,
-        },
-      },
-    });
+    setValue("AccessAndMobilitySubscriptionData.gpsis", ["msisdn-" + event.target.value]);
   };
 
   const handleChangeOperatorCodeType = (event: SelectChangeEvent<string>): void => {
+    const auth = getValues()["AuthenticationSubscription"];
+
     if (event.target.value === "OP") {
       setOpcType("OP");
       const tmp = {
-        ...data,
-        AuthenticationSubscription: {
-          ...data.AuthenticationSubscription,
+        ...auth,
+        milenage: {
+          op: {
+            opValue: opcValue,
+            encryptionKey: 0,
+            encryptionAlgorithm: 0,
+          },
+        },
+        opc: {
+          opcValue: "",
+          encryptionKey: 0,
+          encryptionAlgorithm: 0,
+        },
+      };
+      setValue("AuthenticationSubscription", tmp);
+    } else {
+      setOpcType("OPc");
+      const tmp = {
+        ...auth,
+        milenage: {
+          op: {
+            opValue: "",
+            encryptionKey: 0,
+            encryptionAlgorithm: 0,
+          },
+        },
+        opc: {
+          opcValue: opcValue,
+          encryptionKey: 0,
+          encryptionAlgorithm: 0,
+        },
+      };
+      setValue("AuthenticationSubscription", tmp);
+    }
+  };
+
+  const handleChangeOperatorCodeValue = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ): void => {
+    setOpcValue(event.target.value);
+    const auth = getValues()["AuthenticationSubscription"];
+    if (auth !== undefined) {
+      if (opcType === "OP") {
+        const tmp = {
+          ...auth,
           milenage: {
             op: {
-              opValue: opcValue,
+              opValue: event.target.value,
               encryptionKey: 0,
               encryptionAlgorithm: 0,
             },
@@ -790,15 +565,11 @@ export default function SubscriberCreate() {
             encryptionKey: 0,
             encryptionAlgorithm: 0,
           },
-        },
-      };
-      setData(tmp);
-    } else {
-      setOpcType("OPc");
-      const tmp = {
-        ...data,
-        AuthenticationSubscription: {
-          ...data.AuthenticationSubscription,
+        };
+        setValue("AuthenticationSubscription", tmp);
+      } else {
+        const tmp = {
+          ...auth,
           milenage: {
             op: {
               opValue: "",
@@ -807,167 +578,14 @@ export default function SubscriberCreate() {
             },
           },
           opc: {
-            opcValue: opcValue,
+            opcValue: event.target.value,
             encryptionKey: 0,
             encryptionAlgorithm: 0,
           },
-        },
-      };
-      setData(tmp);
-    }
-  };
-
-  const handleChangeOperatorCodeValue = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ): void => {
-    setOpcValue(event.target.value);
-    const auth = data.AuthenticationSubscription;
-    if (auth !== undefined) {
-      if (opcType === "OP") {
-        const tmp = {
-          ...data,
-          AuthenticationSubscription: {
-            ...data.AuthenticationSubscription,
-            milenage: {
-              op: {
-                opValue: event.target.value,
-                encryptionKey: 0,
-                encryptionAlgorithm: 0,
-              },
-            },
-            opc: {
-              opcValue: "",
-              encryptionKey: 0,
-              encryptionAlgorithm: 0,
-            },
-          },
         };
-        setData(tmp);
-      } else {
-        const tmp = {
-          ...data,
-          AuthenticationSubscription: {
-            ...data.AuthenticationSubscription,
-            milenage: {
-              op: {
-                opValue: "",
-                encryptionKey: 0,
-                encryptionAlgorithm: 0,
-              },
-            },
-            opc: {
-              opcValue: event.target.value,
-              encryptionKey: 0,
-              encryptionAlgorithm: 0,
-            },
-          },
-        };
-        setData(tmp);
+        setValue("AuthenticationSubscription", tmp);
       }
     }
-  };
-
-  const handleChangeSQN = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ): void => {
-    setData({
-      ...data,
-      AuthenticationSubscription: {
-        ...data.AuthenticationSubscription,
-        sequenceNumber: event.target.value,
-      },
-    });
-  };
-
-  const handleChangeSubAmbrUplink = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ): void => {
-    setData({
-      ...data,
-      AccessAndMobilitySubscriptionData: {
-        ...data.AccessAndMobilitySubscriptionData,
-        subscribedUeAmbr: {
-          uplink: event.target.value,
-          downlink: data.AccessAndMobilitySubscriptionData.subscribedUeAmbr?.downlink ?? "",
-        },
-      },
-    });
-  };
-
-  const handleChangeSubAmbrDownlink = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ): void => {
-    setData({
-      ...data,
-      AccessAndMobilitySubscriptionData: {
-        ...data.AccessAndMobilitySubscriptionData,
-        subscribedUeAmbr: {
-          uplink: data.AccessAndMobilitySubscriptionData.subscribedUeAmbr?.uplink ?? "",
-          downlink: event.target.value,
-        },
-      },
-    });
-  };
-
-  const handleChangeSST = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    index: number,
-  ): void => {
-    if (event.target.value === "") {
-      data.SessionManagementSubscriptionData![index].singleNssai!.sst = 0;
-    } else {
-      data.SessionManagementSubscriptionData![index].singleNssai!.sst! = Number(event.target.value);
-    }
-    setData({ ...data });
-  };
-
-  const handleChangeSD = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    index: number,
-  ): void => {
-    data.SessionManagementSubscriptionData![index].singleNssai!.sd! = event.target.value;
-    setData({ ...data });
-  };
-
-  const handleChangeDefaultSnssai = (
-    _event: React.ChangeEvent<HTMLInputElement>,
-    nssai: Nssai | undefined,
-  ) => {
-    if (nssai === undefined) {
-      return;
-    }
-    let isDefault = false;
-    let def = undefined;
-    if (data.AccessAndMobilitySubscriptionData!.nssai!.defaultSingleNssais !== undefined) {
-      def = data.AccessAndMobilitySubscriptionData!.nssai!.defaultSingleNssais!;
-      for (let i = 0; i < def.length; i++) {
-        if (def[i].sd === nssai.sd && def[i].sst === nssai.sst) {
-          def.splice(i, 1);
-          isDefault = true;
-        }
-      }
-    }
-    let single = undefined;
-    if (data.AccessAndMobilitySubscriptionData!.nssai!.singleNssais !== undefined) {
-      single = data.AccessAndMobilitySubscriptionData!.nssai!.singleNssais!;
-      for (let i = 0; i < single.length; i++) {
-        if (single[i].sd === nssai.sd && single[i].sst === nssai.sst) {
-          single.splice(i, 1);
-        }
-      }
-    }
-    if (isDefault) {
-      if (single !== undefined) {
-        single.push(nssai);
-      }
-    } else {
-      if (def !== undefined) {
-        def.push(nssai);
-      }
-    }
-    data.AccessAndMobilitySubscriptionData!.nssai!.defaultSingleNssais = def ?? [];
-    data.AccessAndMobilitySubscriptionData!.nssai!.singleNssais = single;
-    setData({ ...data });
   };
 
   const dnnValue = (index: number) => {
@@ -982,41 +600,22 @@ export default function SubscriberCreate() {
     setDnnName({ ...dnnName });
   };
 
-  const handleChangeUplinkAMBR = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  const handleToggleStaticIp = (
+    event: React.ChangeEvent<HTMLInputElement>,
     index: number,
     dnn: string,
-  ): void => {
-    data.SessionManagementSubscriptionData![index].dnnConfigurations![dnn].sessionAmbr!.uplink =
-      event.target.value;
-    setData({ ...data });
-  };
+  ) => {
+    const dnnConfig =
+      getValues()["SessionManagementSubscriptionData"][index].dnnConfigurations![dnn];
 
-  const handleChangeDownlinkAMBR = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    index: number,
-    dnn: string,
-  ): void => {
-    data.SessionManagementSubscriptionData![index].dnnConfigurations![dnn].sessionAmbr!.downlink =
-      event.target.value;
-    setData({ ...data });
-  };
-
-  const handleChangeDefault5QI = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-    index: number,
-    dnn: string,
-  ): void => {
-    if (event.target.value === "") {
-      data.SessionManagementSubscriptionData![index].dnnConfigurations![dnn]["5gQosProfile"]![
-        "5qi"
-      ] = 8;
+    const defaultStaticIpAddresses: IpAddress[] = [{ ipv4Addr: "10.60.100.1" }];
+    if (event.target.checked) {
+      dnnConfig.staticIpAddress = defaultStaticIpAddresses;
     } else {
-      data.SessionManagementSubscriptionData![index].dnnConfigurations![dnn]["5gQosProfile"]![
-        "5qi"
-      ] = Number(event.target.value);
+      dnnConfig.staticIpAddress = [];
     }
-    setData({ ...data });
+
+    setValue(`SessionManagementSubscriptionData.${index}.dnnConfigurations.${dnn}`, dnnConfig);
   };
 
   const handleChangeStaticIp = (
@@ -1024,10 +623,11 @@ export default function SubscriberCreate() {
     index: number,
     dnn: string,
   ): void => {
-    data.SessionManagementSubscriptionData![index].dnnConfigurations![dnn][
-      "staticIpAddress"
-    ]![0].ipv4Addr = event.target.value;
-    setData({ ...data });
+    const dnnConfig =
+      getValues()["SessionManagementSubscriptionData"][index].dnnConfigurations![dnn];
+    dnnConfig.staticIpAddress = [{ ipv4Addr: event.target.value }];
+
+    setValue(`SessionManagementSubscriptionData.${index}.dnnConfigurations.${dnn}`, dnnConfig);
   };
 
   const handleChangeFilter = (
@@ -1036,29 +636,32 @@ export default function SubscriberCreate() {
     flowKey: string,
     qosRef: number,
   ): void => {
-    if (data.FlowRules !== undefined) {
-      for (let i = 0; i < data.FlowRules!.length; i++) {
+    const flowRules = getValues()["FlowRules"];
+    if (flowRules !== undefined) {
+      for (let i = 0; i < flowRules.length; i++) {
         if (
-          data.FlowRules![i].snssai === flowKey &&
-          data.FlowRules![i].dnn === dnn &&
-          data.QosFlows![i].qosRef === qosRef
+          flowRules[i].snssai === flowKey &&
+          flowRules[i].dnn === dnn &&
+          flowRules[i].qosRef === qosRef
         ) {
-          data.FlowRules![i].filter = event.target.value;
-          setData({ ...data });
+          flowRules[i].filter = event.target.value;
         }
       }
+      setValue("FlowRules", flowRules);
     }
-    if (data.ChargingDatas !== undefined) {
-      for (let i = 0; i < data.ChargingDatas!.length; i++) {
+
+    const chargingDatas = getValues()["ChargingDatas"];
+    if (chargingDatas !== undefined) {
+      for (let i = 0; i < chargingDatas.length; i++) {
         if (
-          data.ChargingDatas![i].snssai === flowKey &&
-          data.ChargingDatas![i].dnn === dnn &&
-          data.ChargingDatas![i].qosRef === qosRef
+          chargingDatas[i].snssai === flowKey &&
+          chargingDatas[i].dnn === dnn &&
+          chargingDatas[i].qosRef === qosRef
         ) {
-          data.ChargingDatas![i].filter = event.target.value;
-          setData({ ...data });
+          chargingDatas[i].filter = event.target.value;
         }
       }
+      setValue("ChargingDatas", chargingDatas);
     }
   };
 
@@ -1068,21 +671,22 @@ export default function SubscriberCreate() {
     flowKey: string,
     qosRef: number,
   ): void => {
-    if (data.FlowRules !== undefined) {
-      for (let i = 0; i < data.FlowRules!.length; i++) {
+    const flowRules = getValues()["FlowRules"];
+    if (flowRules !== undefined) {
+      for (let i = 0; i < flowRules.length; i++) {
         if (
-          data.FlowRules![i].snssai === flowKey &&
-          data.FlowRules![i].dnn === dnn &&
-          data.QosFlows![i].qosRef === qosRef
+          flowRules[i].snssai === flowKey &&
+          flowRules[i].dnn === dnn &&
+          flowRules[i].qosRef === qosRef
         ) {
           if (event.target.value == "") {
-            data.FlowRules![i].precedence = undefined;
+            flowRules[i].precedence = undefined;
           } else {
-            data.FlowRules![i].precedence = Number(event.target.value);
+            flowRules[i].precedence = Number(event.target.value);
           }
-          setData({ ...data });
         }
       }
+      setValue("FlowRules", flowRules);
     }
   };
 
@@ -1092,22 +696,25 @@ export default function SubscriberCreate() {
     flowKey: string,
     qosRef: number,
   ): void => {
-    if (data.QosFlows !== undefined) {
-      for (let i = 0; i < data.QosFlows!.length; i++) {
-        if (
-          data.QosFlows![i].snssai === flowKey &&
-          data.QosFlows![i].dnn === dnn &&
-          data.QosFlows![i].qosRef === qosRef
-        ) {
-          if (event.target.value == "") {
-            data.QosFlows![i]["5qi"] = 8;
-          } else {
-            data.QosFlows![i]["5qi"] = Number(event.target.value);
-          }
-          setData({ ...data });
+    const qosFlows = getValues()["QosFlows"];
+    if (qosFlows === undefined) {
+      return;
+    }
+
+    for (let i = 0; i < qosFlows.length; i++) {
+      if (
+        qosFlows[i].snssai === flowKey &&
+        qosFlows[i].dnn === dnn &&
+        qosFlows[i].qosRef === qosRef
+      ) {
+        if (event.target.value == "") {
+          qosFlows[i]["5qi"] = 8;
+        } else {
+          qosFlows[i]["5qi"] = Number(event.target.value);
         }
       }
     }
+    setValue("QosFlows", qosFlows);
   };
 
   const handleChangeUplinkGBR = (
@@ -1116,18 +723,21 @@ export default function SubscriberCreate() {
     flowKey: string,
     qosRef: number,
   ): void => {
-    if (data.QosFlows !== undefined) {
-      for (let i = 0; i < data.QosFlows!.length; i++) {
-        if (
-          data.QosFlows![i].snssai === flowKey &&
-          data.QosFlows![i].dnn === dnn &&
-          data.QosFlows![i].qosRef === qosRef
-        ) {
-          data.QosFlows![i].gbrUL = event.target.value;
-          setData({ ...data });
-        }
+    const qosFlows = getValues()["QosFlows"];
+    if (qosFlows === undefined) {
+      return;
+    }
+
+    for (let i = 0; i < qosFlows.length; i++) {
+      if (
+        qosFlows[i].snssai === flowKey &&
+        qosFlows[i].dnn === dnn &&
+        qosFlows[i].qosRef === qosRef
+      ) {
+        qosFlows[i].gbrUL = event.target.value;
       }
     }
+    setValue("QosFlows", qosFlows);
   };
 
   const handleChangeDownlinkGBR = (
@@ -1136,18 +746,21 @@ export default function SubscriberCreate() {
     flowKey: string,
     qosRef: number,
   ): void => {
-    if (data.QosFlows !== undefined) {
-      for (let i = 0; i < data.QosFlows!.length; i++) {
-        if (
-          data.QosFlows![i].snssai === flowKey &&
-          data.QosFlows![i].dnn === dnn &&
-          data.QosFlows![i].qosRef === qosRef
-        ) {
-          data.QosFlows![i].gbrDL = event.target.value;
-          setData({ ...data });
-        }
+    const qosFlows = getValues()["QosFlows"];
+    if (qosFlows === undefined) {
+      return;
+    }
+
+    for (let i = 0; i < qosFlows.length; i++) {
+      if (
+        qosFlows[i].snssai === flowKey &&
+        qosFlows[i].dnn === dnn &&
+        qosFlows[i].qosRef === qosRef
+      ) {
+        qosFlows[i].gbrDL = event.target.value;
       }
     }
+    setValue("QosFlows", qosFlows);
   };
 
   const handleChangeUplinkMBR = (
@@ -1156,18 +769,21 @@ export default function SubscriberCreate() {
     flowKey: string,
     qosRef: number,
   ): void => {
-    if (data.QosFlows !== undefined) {
-      for (let i = 0; i < data.QosFlows!.length; i++) {
-        if (
-          data.QosFlows![i].snssai === flowKey &&
-          data.QosFlows![i].dnn === dnn &&
-          data.QosFlows![i].qosRef === qosRef
-        ) {
-          data.QosFlows![i].mbrUL = event.target.value;
-          setData({ ...data });
-        }
+    const qosFlows = getValues()["QosFlows"];
+    if (qosFlows === undefined) {
+      return;
+    }
+
+    for (let i = 0; i < qosFlows.length; i++) {
+      if (
+        qosFlows[i].snssai === flowKey &&
+        qosFlows[i].dnn === dnn &&
+        qosFlows[i].qosRef === qosRef
+      ) {
+        qosFlows[i].mbrUL = event.target.value;
       }
     }
+    setValue("QosFlows", qosFlows);
   };
 
   const handleChangeDownlinkMBR = (
@@ -1176,18 +792,21 @@ export default function SubscriberCreate() {
     flowKey: string,
     qosRef: number,
   ): void => {
-    if (data.QosFlows !== undefined) {
-      for (let i = 0; i < data.QosFlows!.length; i++) {
-        if (
-          data.QosFlows![i].snssai === flowKey &&
-          data.QosFlows![i].dnn === dnn &&
-          data.QosFlows![i].qosRef === qosRef
-        ) {
-          data.QosFlows![i].mbrDL = event.target.value;
-          setData({ ...data });
-        }
+    const qosFlows = getValues()["QosFlows"];
+    if (qosFlows === undefined) {
+      return;
+    }
+
+    for (let i = 0; i < qosFlows.length; i++) {
+      if (
+        qosFlows[i].snssai === flowKey &&
+        qosFlows[i].dnn === dnn &&
+        qosFlows[i].qosRef === qosRef
+      ) {
+        qosFlows[i].mbrDL = event.target.value;
       }
     }
+    setValue("QosFlows", qosFlows);
   };
 
   const handleChangeChargingMethod = (
@@ -1196,18 +815,20 @@ export default function SubscriberCreate() {
     flowKey: string,
     filter: string | undefined,
   ): void => {
-    for (let i = 0; i < data.ChargingDatas!.length; i++) {
-      for (let j = 0; j < data.QosFlows!.length; j++) {
-        if (
-          data.ChargingDatas![i].snssai === flowKey &&
-          data.ChargingDatas![i].dnn === dnn &&
-          data.ChargingDatas![i].filter === filter
-        ) {
-          data.ChargingDatas![i]!.chargingMethod = event.target.value;
-          setData({ ...data });
-        }
-      }
+    const chargingDatas = getValues()["ChargingDatas"];
+    const chargingData = chargingDatas.find(
+      (chargingData) =>
+        chargingData.snssai === flowKey &&
+        chargingData.dnn === dnn &&
+        chargingData.filter === filter,
+    );
+
+    if (chargingData === undefined) {
+      return;
     }
+
+    chargingData.chargingMethod = event.target.value;
+    setValue(`ChargingDatas.${chargingDatas.indexOf(chargingData)}`, chargingData);
   };
 
   const handleChangeChargingQuota = (
@@ -1216,18 +837,20 @@ export default function SubscriberCreate() {
     flowKey: string,
     filter: string | undefined,
   ): void => {
-    for (let i = 0; i < data.ChargingDatas!.length; i++) {
-      for (let j = 0; j < data.QosFlows!.length; j++) {
-        if (
-          data.ChargingDatas![i].snssai === flowKey &&
-          data.ChargingDatas![i].dnn === dnn &&
-          data.ChargingDatas![i].filter === filter
-        ) {
-          data.ChargingDatas![i]!.quota = event.target.value;
-          setData({ ...data });
-        }
-      }
+    const chargingDatas = getValues()["ChargingDatas"];
+    const chargingData = chargingDatas.find(
+      (chargingData) =>
+        chargingData.snssai === flowKey &&
+        chargingData.dnn === dnn &&
+        chargingData.filter === filter,
+    );
+
+    if (chargingData === undefined) {
+      return;
     }
+
+    chargingData.quota = event.target.value;
+    setValue(`ChargingDatas.${chargingDatas.indexOf(chargingData)}`, chargingData);
   };
 
   const handleChangeChargingUnitCost = (
@@ -1236,38 +859,42 @@ export default function SubscriberCreate() {
     flowKey: string,
     filter: string | undefined,
   ): void => {
-    for (let i = 0; i < data.ChargingDatas!.length; i++) {
-      for (let j = 0; j < data.QosFlows!.length; j++) {
-        if (
-          data.ChargingDatas![i].snssai === flowKey &&
-          data.ChargingDatas![i].dnn === dnn &&
-          data.ChargingDatas![i].filter === filter
-        ) {
-          data.ChargingDatas![i]!.unitCost = event.target.value;
-          setData({ ...data });
-        }
-      }
+    const chargingDatas = getValues()["ChargingDatas"];
+    const chargingData = chargingDatas.find(
+      (chargingData) =>
+        chargingData.snssai === flowKey &&
+        chargingData.dnn === dnn &&
+        chargingData.filter === filter,
+    );
+
+    if (chargingData === undefined) {
+      return;
     }
+
+    chargingData.unitCost = event.target.value;
+    setValue(`ChargingDatas.${chargingDatas.indexOf(chargingData)}`, chargingData);
   };
 
   const handleChangeUpIntegrity = (
     event: SelectChangeEvent<string>,
-    dnn: DnnConfiguration,
+    sessionIndex: number,
+    dnnKey?: string,
   ): void => {
-    if (dnn.upSecurity !== undefined) {
-      dnn.upSecurity!.upIntegr = event.target.value;
-    }
-    setData({ ...data });
+    setValue(
+      `SessionManagementSubscriptionData.${sessionIndex}.dnnConfigurations.${dnnKey}.upSecurity.upIntegr`,
+      event.target.value,
+    );
   };
 
   const handleChangeUpConfidentiality = (
     event: SelectChangeEvent<string>,
-    dnn: DnnConfiguration,
+    sessionIndex: number,
+    dnnKey?: string,
   ): void => {
-    if (dnn.upSecurity !== undefined) {
-      dnn.upSecurity!.upConfid = event.target.value;
-    }
-    setData({ ...data });
+    setValue(
+      `SessionManagementSubscriptionData.${sessionIndex}.dnnConfigurations.${dnnKey}.upSecurity.upConfid`,
+      event.target.value,
+    );
   };
 
   const qosFlow = (
@@ -1275,22 +902,30 @@ export default function SubscriberCreate() {
     dnn: string,
     qosRef: number | undefined,
   ): QosFlows | undefined => {
-    if (data.QosFlows !== undefined) {
-      for (let i = 0; i < data.QosFlows?.length; i++) {
-        const qos = data.QosFlows![i];
-        if (qos.snssai === sstSd && qos.dnn === dnn && qos.qosRef == qosRef) {
-          return qos;
-        }
+    const qosFlows = watch("QosFlows");
+    if (qosFlows === undefined) {
+      return;
+    }
+
+    for (let i = 0; i < qosFlows.length; i++) {
+      const qos = qosFlows[i];
+      if (qos.snssai === sstSd && qos.dnn === dnn && qos.qosRef == qosRef) {
+        return qos;
       }
     }
   };
 
   const chargingConfig = (dnn: string | undefined, snssai: Nssai, filter: string | undefined) => {
+    const chargingDatas = watch("ChargingDatas");
+    if (chargingDatas === undefined) {
+      return;
+    }
+
     const flowKey = toHex(snssai.sst) + snssai.sd;
-    for (let i = 0; i < data.ChargingDatas!.length; i++) {
-      const chargingData = data.ChargingDatas![i];
+    for (let i = 0; i < chargingDatas.length; i++) {
+      const chargingData = chargingDatas[i];
       const idPrefix = snssai + "-" + dnn + "-" + chargingData.qosRef + "-";
-      const isOnlineCharging = data.ChargingDatas![i].chargingMethod === "Online";
+      const isOnlineCharging = chargingData.chargingMethod === "Online";
       if (
         chargingData.snssai === flowKey &&
         chargingData.dnn === dnn &&
@@ -1348,193 +983,127 @@ export default function SubscriberCreate() {
   const flowRule = (dnn: string, snssai: Nssai) => {
     const flowKey = toHex(snssai.sst) + snssai.sd;
     const idPrefix = flowKey + "-" + dnn + "-";
-    if (data.FlowRules !== undefined) {
-      return data.FlowRules.filter((flow) => flow.dnn === dnn && flow.snssai === flowKey).map(
-        (flow) => (
-          <div key={flow.snssai}>
-            <Box sx={{ m: 2 }} id={idPrefix + flow.qosRef}>
-              <Grid container spacing={2}>
-                <Grid item xs={10}>
-                  <h4>Flow Rules {flow.qosRef}</h4>
-                </Grid>
-                <Grid item xs={2}>
-                  <Box display="flex" justifyContent="flex-end">
-                    <Button
-                      color="secondary"
-                      variant="contained"
-                      onClick={() => onFlowRulesDelete(dnn, flowKey, flow.qosRef)}
-                      sx={{ m: 2, backgroundColor: "red", "&:hover": { backgroundColor: "red" } }}
-                    >
-                      DELETE
-                    </Button>
-                  </Box>
-                </Grid>
-              </Grid>
-              <Card variant="outlined">
-                <Table>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell style={{ width: "25%" }}>
-                        <TextField
-                          label="IP Filter"
-                          variant="outlined"
-                          required
-                          fullWidth
-                          value={flow.filter}
-                          onChange={(ev) => handleChangeFilter(ev, dnn, flowKey, flow.qosRef!)}
-                        />
-                      </TableCell>
-                      <TableCell style={{ width: "25%" }}>
-                        <TextField
-                          label="Precedence"
-                          variant="outlined"
-                          required
-                          fullWidth
-                          type="number"
-                          value={flow.precedence}
-                          onChange={(ev) => handleChangePrecedence(ev, dnn, flowKey, flow.qosRef!)}
-                        />
-                      </TableCell>
-                      <TableCell style={{ width: "25%" }}>
-                        <TextField
-                          label="5QI"
-                          variant="outlined"
-                          required
-                          fullWidth
-                          type="number"
-                          value={qosFlow(flowKey, dnn, flow.qosRef)?.["5qi"]}
-                          onChange={(ev) => handleChange5QI(ev, dnn, flowKey, flow.qosRef!)}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell style={{ width: "25%" }}>
-                        <TextField
-                          label="Uplink GBR"
-                          variant="outlined"
-                          required
-                          fullWidth
-                          value={qosFlow(flowKey, dnn, flow.qosRef)?.gbrUL}
-                          onChange={(ev) => handleChangeUplinkGBR(ev, dnn, flowKey, flow.qosRef!)}
-                        />
-                      </TableCell>
-                      <TableCell style={{ width: "25%" }}>
-                        <TextField
-                          label="Downlink GBR"
-                          variant="outlined"
-                          required
-                          fullWidth
-                          value={qosFlow(flowKey, dnn, flow.qosRef)?.gbrDL}
-                          onChange={(ev) => handleChangeDownlinkGBR(ev, dnn, flowKey, flow.qosRef!)}
-                        />
-                      </TableCell>
-                      <TableCell style={{ width: "25%" }}>
-                        <TextField
-                          label="Uplink MBR"
-                          variant="outlined"
-                          required
-                          fullWidth
-                          value={qosFlow(flowKey, dnn, flow.qosRef)?.mbrUL}
-                          onChange={(ev) => handleChangeUplinkMBR(ev, dnn, flowKey, flow.qosRef!)}
-                        />
-                      </TableCell>
-                      <TableCell style={{ width: "25%" }}>
-                        <TextField
-                          label="Downlink MBR"
-                          variant="outlined"
-                          required
-                          fullWidth
-                          value={qosFlow(flowKey, dnn, flow.qosRef)?.mbrDL}
-                          onChange={(ev) => handleChangeDownlinkMBR(ev, dnn, flowKey, flow.qosRef!)}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-                {chargingConfig(dnn, snssai, flow.filter!)}
-              </Card>
-            </Box>
-          </div>
-        ),
-      );
-    }
+
+    const flowRules = watch(`FlowRules`).filter(
+      (flow) => flow.dnn === dnn && flow.snssai === flowKey,
+    );
+
+    return flowRules.map((flow) => (
+      <div key={flow.snssai}>
+        <Box sx={{ m: 2 }} id={idPrefix + flow.qosRef}>
+          <Grid container spacing={2}>
+            <Grid item xs={10}>
+              <h4>Flow Rules {flow.qosRef}</h4>
+            </Grid>
+            <Grid item xs={2}>
+              <Box display="flex" justifyContent="flex-end">
+                <Button
+                  color="secondary"
+                  variant="contained"
+                  onClick={() => onFlowRulesDelete(dnn, flowKey, flow.qosRef)}
+                  sx={{ m: 2, backgroundColor: "red", "&:hover": { backgroundColor: "red" } }}
+                >
+                  DELETE
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
+          <Card variant="outlined">
+            <Table>
+              <TableBody>
+                <TableRow>
+                  <TableCell style={{ width: "25%" }}>
+                    <TextField
+                      label="IP Filter"
+                      variant="outlined"
+                      required
+                      fullWidth
+                      value={flow.filter}
+                      onChange={(ev) => handleChangeFilter(ev, dnn, flowKey, flow.qosRef!)}
+                    />
+                  </TableCell>
+                  <TableCell style={{ width: "25%" }}>
+                    <TextField
+                      label="Precedence"
+                      variant="outlined"
+                      required
+                      fullWidth
+                      type="number"
+                      value={flow.precedence}
+                      onChange={(ev) => handleChangePrecedence(ev, dnn, flowKey, flow.qosRef!)}
+                    />
+                  </TableCell>
+                  <TableCell style={{ width: "25%" }}>
+                    <TextField
+                      label="5QI"
+                      variant="outlined"
+                      required
+                      fullWidth
+                      type="number"
+                      value={qosFlow(flowKey, dnn, flow.qosRef)?.["5qi"]}
+                      onChange={(ev) => handleChange5QI(ev, dnn, flowKey, flow.qosRef!)}
+                    />
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+              <TableBody>
+                <TableRow>
+                  <TableCell style={{ width: "25%" }}>
+                    <TextField
+                      label="Uplink GBR"
+                      variant="outlined"
+                      required
+                      fullWidth
+                      value={qosFlow(flowKey, dnn, flow.qosRef)?.gbrUL}
+                      onChange={(ev) => handleChangeUplinkGBR(ev, dnn, flowKey, flow.qosRef!)}
+                    />
+                  </TableCell>
+                  <TableCell style={{ width: "25%" }}>
+                    <TextField
+                      label="Downlink GBR"
+                      variant="outlined"
+                      required
+                      fullWidth
+                      value={qosFlow(flowKey, dnn, flow.qosRef)?.gbrDL}
+                      onChange={(ev) => handleChangeDownlinkGBR(ev, dnn, flowKey, flow.qosRef!)}
+                    />
+                  </TableCell>
+                  <TableCell style={{ width: "25%" }}>
+                    <TextField
+                      label="Uplink MBR"
+                      variant="outlined"
+                      required
+                      fullWidth
+                      value={qosFlow(flowKey, dnn, flow.qosRef)?.mbrUL}
+                      onChange={(ev) => handleChangeUplinkMBR(ev, dnn, flowKey, flow.qosRef!)}
+                    />
+                  </TableCell>
+                  <TableCell style={{ width: "25%" }}>
+                    <TextField
+                      label="Downlink MBR"
+                      variant="outlined"
+                      required
+                      fullWidth
+                      value={qosFlow(flowKey, dnn, flow.qosRef)?.mbrDL}
+                      onChange={(ev) => handleChangeDownlinkMBR(ev, dnn, flowKey, flow.qosRef!)}
+                    />
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+            {chargingConfig(dnn, snssai, flow.filter!)}
+          </Card>
+        </Box>
+      </div>
+    ));
   };
 
-  const upSecurity = (dnn: DnnConfiguration | undefined) => {
-    if (dnn !== undefined && dnn!.upSecurity !== undefined) {
-      const security = dnn!.upSecurity!;
-      return (
-        <div key={security.upIntegr}>
-          <Box sx={{ m: 2 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={10}>
-                <h4>UP Security</h4>
-              </Grid>
-              <Grid item xs={2}>
-                <Box display="flex" justifyContent="flex-end">
-                  <Button
-                    color="secondary"
-                    variant="contained"
-                    onClick={() => onUpSecurityDelete(dnn)}
-                    sx={{ m: 2, backgroundColor: "red", "&:hover": { backgroundColor: "red" } }}
-                  >
-                    DELETE
-                  </Button>
-                </Box>
-              </Grid>
-            </Grid>
-            <Card variant="outlined">
-              <Table>
-                <TableBody>
-                  <TableRow>
-                    <TableCell>
-                      <FormControl variant="outlined" fullWidth>
-                        <InputLabel>Integrity of UP Security</InputLabel>
-                        <Select
-                          label="Integrity of UP Security"
-                          variant="outlined"
-                          required
-                          fullWidth
-                          value={security.upIntegr}
-                          onChange={(ev) => handleChangeUpIntegrity(ev, dnn)}
-                        >
-                          <MenuItem value="NOT_NEEDED">NOT_NEEDED</MenuItem>
-                          <MenuItem value="PREFERRED">PREFERRED</MenuItem>
-                          <MenuItem value="REQUIRED">REQUIRED</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-                <TableBody>
-                  <TableRow>
-                    <TableCell>
-                      <FormControl variant="outlined" fullWidth>
-                        <InputLabel>Confidentiality of UP Security</InputLabel>
-                        <Select
-                          label="Confidentiality of UP Security"
-                          variant="outlined"
-                          required
-                          fullWidth
-                          value={security.upConfid}
-                          onChange={(ev) => handleChangeUpConfidentiality(ev, dnn)}
-                        >
-                          <MenuItem value="NOT_NEEDED">NOT_NEEDED</MenuItem>
-                          <MenuItem value="PREFERRED">PREFERRED</MenuItem>
-                          <MenuItem value="REQUIRED">REQUIRED</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </Card>
-          </Box>
-        </div>
-      );
-    } else {
+  const upSecurity = (sessionIndex: number, dnnKey?: string) => {
+    const dnn = watch(
+      `SessionManagementSubscriptionData.${sessionIndex}.dnnConfigurations.${dnnKey}`,
+    );
+
+    if (!(dnn !== undefined && dnn!.upSecurity !== undefined)) {
       return (
         <div>
           <Table>
@@ -1544,7 +1113,7 @@ export default function SubscriberCreate() {
                   <Button
                     color="secondary"
                     variant="contained"
-                    onClick={() => onUpSecurity(dnn)}
+                    onClick={() => onUpSecurity(sessionIndex, dnnKey)}
                     sx={{ m: 0 }}
                   >
                     +UP SECURITY
@@ -1556,209 +1125,22 @@ export default function SubscriberCreate() {
         </div>
       );
     }
-  };
 
-  const handleVerifyStaticIp = (sd: string, sst: number, dnn: string, ipaddr: string) => {
-    const scope: VerifyScope = {
-      supi: "",
-      sd: sd,
-      sst: sst,
-      dnn: dnn,
-      ipaddr: ipaddr,
-    };
-    axios.post("/api/verify-staticip", scope).then((res) => {
-      const result = res.data as VerifyResult;
-      console.log(result);
-      if (result["valid"] === true) {
-        alert("OK\n" + result.ipaddr);
-      } else {
-        alert("NO!\nCause: " + result["cause"]);
-      }
-    });
-  };
+    let security = dnn.upSecurity;
 
-  return (
-    <Dashboard title="Subscription" refreshAction={() => {}}>
-      <Card variant="outlined">
-        <Table>
-          <TableBody id="Subscriber Data Number">
-            <TableRow>
-              <TableCell>
-                <TextField
-                  label="Subscriber data number (auto-incresed with SUPI)"
-                  variant="outlined"
-                  required
-                  fullWidth
-                  value={data.userNumber}
-                  onChange={handleChangeUserNumber}
-                  type="number"
-                />
-              </TableCell>
-              <TableCell>
-                <TextField
-                  label="SUPI (IMSI)"
-                  variant="outlined"
-                  required
-                  fullWidth
-                  value={imsiValue(data.ueId)}
-                  onChange={handleChangeUeId}
-                />
-              </TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody id="PLMN ID">
-            <TableRow>
-              <TableCell>
-                <TextField
-                  label="PLMN ID"
-                  variant="outlined"
-                  required
-                  fullWidth
-                  value={data.plmnID}
-                  onChange={handleChangePlmnId}
-                />
-              </TableCell>
-              <TableCell>
-                <TextField
-                  label="GPSI (MSISDN)"
-                  variant="outlined"
-                  required
-                  fullWidth
-                  value={msisdnValue(data.AccessAndMobilitySubscriptionData)}
-                  onChange={handleChangeMsisdn}
-                />
-              </TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody id="Authentication Management">
-            <TableRow>
-              <TableCell>
-                <TextField
-                  label="Authentication Management Field (AMF)"
-                  variant="outlined"
-                  required
-                  fullWidth
-                  value={data.AuthenticationSubscription?.authenticationManagementField}
-                  onChange={handleChangeAuthenticationManagementField}
-                />
-              </TableCell>
-              <TableCell align="left">
-                <FormControl variant="outlined" fullWidth>
-                  <InputLabel>Authentication Method</InputLabel>
-                  <Select
-                    label="Authentication Method"
-                    variant="outlined"
-                    required
-                    fullWidth
-                    value={data.AuthenticationSubscription?.authenticationMethod}
-                    onChange={handleChangeAuthenticationMethod}
-                  >
-                    <MenuItem value="5G_AKA">5G_AKA</MenuItem>
-                    <MenuItem value="EAP_AKA_PRIME">EAP_AKA_PRIME</MenuItem>
-                  </Select>
-                </FormControl>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody id="OP">
-            <TableRow>
-              <TableCell align="left">
-                <FormControl variant="outlined" fullWidth>
-                  <InputLabel>Operator Code Type</InputLabel>
-                  <Select
-                    label="Operator Code Type"
-                    variant="outlined"
-                    required
-                    fullWidth
-                    value={opcType}
-                    onChange={handleChangeOperatorCodeType}
-                  >
-                    <MenuItem value="OP">OP</MenuItem>
-                    <MenuItem value="OPc">OPc</MenuItem>
-                  </Select>
-                </FormControl>
-              </TableCell>
-              <TableCell>
-                <TextField
-                  label="Operator Code Value"
-                  variant="outlined"
-                  required
-                  fullWidth
-                  value={opcValue}
-                  onChange={handleChangeOperatorCodeValue}
-                />
-              </TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody id="SQN">
-            <TableRow>
-              <TableCell>
-                <TextField
-                  label="SQN"
-                  variant="outlined"
-                  required
-                  fullWidth
-                  value={data.AuthenticationSubscription?.sequenceNumber}
-                  onChange={handleChangeSQN}
-                />
-              </TableCell>
-              <TableCell>
-                <TextField
-                  label="K"
-                  variant="outlined"
-                  required
-                  fullWidth
-                  value={data.AuthenticationSubscription?.permanentKey?.permanentKeyValue}
-                  onChange={handleChangeK}
-                />
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </Card>
-      <h3>Subscribed UE AMBR</h3>
-      <Card variant="outlined">
-        <Table>
-          <TableBody id="Subscribed UE AMBR">
-            <TableRow>
-              <TableCell>
-                <TextField
-                  label="Uplink"
-                  variant="outlined"
-                  required
-                  fullWidth
-                  value={data.AccessAndMobilitySubscriptionData?.subscribedUeAmbr?.uplink}
-                  onChange={handleChangeSubAmbrUplink}
-                />
-              </TableCell>
-              <TableCell>
-                <TextField
-                  label="Downlink"
-                  variant="outlined"
-                  required
-                  fullWidth
-                  value={data.AccessAndMobilitySubscriptionData?.subscribedUeAmbr?.downlink}
-                  onChange={handleChangeSubAmbrDownlink}
-                />
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </Card>
-      {data.SessionManagementSubscriptionData?.map((row, index) => (
-        <div key={index} id={toHex(row.singleNssai!.sst) + row.singleNssai!.sd!}>
+    return (
+      <div key={security.upIntegr}>
+        <Box sx={{ m: 2 }}>
           <Grid container spacing={2}>
             <Grid item xs={10}>
-              <h3>S-NSSAI Configuration ({toHex(row.singleNssai!.sst) + row.singleNssai!.sd!})</h3>
+              <h4>UP Security</h4>
             </Grid>
             <Grid item xs={2}>
               <Box display="flex" justifyContent="flex-end">
                 <Button
                   color="secondary"
                   variant="contained"
-                  onClick={() =>
-                    onSnssaiDelete(index, toHex(row.singleNssai!.sst) + row.singleNssai!.sd!)
-                  }
+                  onClick={() => onUpSecurityDelete(sessionIndex, dnnKey)}
                   sx={{ m: 2, backgroundColor: "red", "&:hover": { backgroundColor: "red" } }}
                 >
                   DELETE
@@ -1768,302 +1150,624 @@ export default function SubscriberCreate() {
           </Grid>
           <Card variant="outlined">
             <Table>
-              <TableBody
-                id={"S-NSSAI Configuration" + toHex(row.singleNssai!.sst) + row.singleNssai!.sd!}
-              >
+              <TableBody>
                 <TableRow>
-                  <TableCell style={{ width: "50%" }}>
-                    <TextField
-                      label="SST"
-                      variant="outlined"
-                      required
-                      fullWidth
-                      type="number"
-                      value={row.singleNssai!.sst!}
-                      onChange={(ev) => handleChangeSST(ev, index)}
-                    />
-                  </TableCell>
-                  <TableCell style={{ width: "50%" }}>
-                    <TextField
-                      label="SD"
-                      variant="outlined"
-                      required
-                      fullWidth
-                      value={row.singleNssai?.sd}
-                      onChange={(ev) => handleChangeSD(ev, index)}
-                    />
+                  <TableCell>
+                    <FormControl variant="outlined" fullWidth>
+                      <InputLabel>Integrity of UP Security</InputLabel>
+                      <Select
+                        label="Integrity of UP Security"
+                        variant="outlined"
+                        required
+                        fullWidth
+                        value={security.upIntegr}
+                        onChange={(ev) => handleChangeUpIntegrity(ev, sessionIndex, dnnKey)}
+                      >
+                        <MenuItem value="NOT_NEEDED">NOT_NEEDED</MenuItem>
+                        <MenuItem value="PREFERRED">PREFERRED</MenuItem>
+                        <MenuItem value="REQUIRED">REQUIRED</MenuItem>
+                      </Select>
+                    </FormControl>
                   </TableCell>
                 </TableRow>
               </TableBody>
-              <TableBody
-                id={toHex(row.singleNssai!.sst) + row.singleNssai!.sd! + "-Default S-NSSAI"}
-              >
+              <TableBody>
                 <TableRow>
-                  <TableCell>Default S-NSSAI</TableCell>
-                  <TableCell align="right">
-                    <Checkbox
-                      checked={isDefaultNssai(row.singleNssai!)}
-                      onChange={(ev) => handleChangeDefaultSnssai(ev, row.singleNssai)}
-                    />
+                  <TableCell>
+                    <FormControl variant="outlined" fullWidth>
+                      <InputLabel>Confidentiality of UP Security</InputLabel>
+                      <Select
+                        label="Confidentiality of UP Security"
+                        variant="outlined"
+                        required
+                        fullWidth
+                        value={security.upConfid}
+                        onChange={(ev) => handleChangeUpConfidentiality(ev, sessionIndex, dnnKey)}
+                      >
+                        <MenuItem value="NOT_NEEDED">NOT_NEEDED</MenuItem>
+                        <MenuItem value="PREFERRED">PREFERRED</MenuItem>
+                        <MenuItem value="REQUIRED">REQUIRED</MenuItem>
+                      </Select>
+                    </FormControl>
                   </TableCell>
                 </TableRow>
               </TableBody>
             </Table>
-            {chargingConfig("", row.singleNssai!, "")}
-            {row.dnnConfigurations &&
-              Object.keys(row.dnnConfigurations!).map((dnn) => (
-                <div
-                  key={dnn}
-                  id={toHex(row.singleNssai!.sst!) + row.singleNssai!.sd! + "-" + dnn!}
-                >
-                  <Box sx={{ m: 2 }}>
-                    <Grid container spacing={2}>
-                      <Grid item xs={10}>
-                        <h4>DNN Configurations</h4>
-                      </Grid>
-                      <Grid item xs={2}>
-                        <Box display="flex" justifyContent="flex-end">
-                          <Button
-                            color="secondary"
-                            variant="contained"
-                            onClick={() =>
-                              onDnnDelete(
-                                index,
-                                dnn,
-                                toHex(row.singleNssai!.sst!) + row.singleNssai!.sd!,
-                              )
-                            }
-                            sx={{
-                              m: 2,
-                              backgroundColor: "red",
-                              "&:hover": { backgroundColor: "red" },
-                            }}
-                          >
-                            DELETE
-                          </Button>
-                        </Box>
-                      </Grid>
-                    </Grid>
-                    <Card
-                      variant="outlined"
-                      id={
-                        toHex(row.singleNssai!.sst!) +
-                        row.singleNssai!.sd! +
-                        "-" +
-                        dnn! +
-                        "-AddFlowRuleArea"
+          </Card>
+        </Box>
+      </div>
+    );
+  };
+
+  return (
+    <Dashboard title="Subscription" refreshAction={() => {}}>
+      <form onSubmit={handleSubmit(onCreate)}>
+        <Card variant="outlined">
+          <Table>
+            <TableBody id="Subscriber Data Number">
+              <TableRow>
+                <TableCell>
+                  <TextField
+                    {...register("userNumber", { required: true, valueAsNumber: true })}
+                    type="number"
+                    error={validationErrors.userNumber !== undefined}
+                    helperText={validationErrors.userNumber?.message}
+                    label="Subscriber data number (auto-incresed with SUPI)"
+                    variant="outlined"
+                    required
+                    fullWidth
+                  />
+                </TableCell>
+                <TableCell>
+                  <TextField
+                    {...register("ueId", { required: true })}
+                    error={validationErrors.ueId !== undefined}
+                    helperText={validationErrors.ueId?.message}
+                    label="SUPI (IMSI)"
+                    variant="outlined"
+                    required
+                    fullWidth
+                  />
+                </TableCell>
+              </TableRow>
+            </TableBody>
+            <TableBody id="PLMN ID">
+              <TableRow>
+                <TableCell>
+                  <TextField
+                    {...register("plmnID", { required: true })}
+                    error={validationErrors.plmnID !== undefined}
+                    helperText={validationErrors.plmnID?.message}
+                    label="PLMN ID"
+                    variant="outlined"
+                    required
+                    fullWidth
+                  />
+                </TableCell>
+                <TableCell>
+                  <TextField
+                    label="GPSI (MSISDN)"
+                    variant="outlined"
+                    required
+                    fullWidth
+                    value={msisdnValue(watch("AccessAndMobilitySubscriptionData"))}
+                    onChange={handleChangeMsisdn}
+                  />
+                </TableCell>
+              </TableRow>
+            </TableBody>
+            <TableBody id="Authentication Management">
+              <TableRow>
+                <TableCell>
+                  <TextField
+                    {...register("AuthenticationSubscription.authenticationManagementField", {
+                      required: true,
+                    })}
+                    error={
+                      validationErrors.AuthenticationSubscription?.authenticationManagementField !==
+                      undefined
+                    }
+                    helperText={
+                      validationErrors.AuthenticationSubscription?.authenticationManagementField
+                        ?.message
+                    }
+                    label="Authentication Management Field (AMF)"
+                    variant="outlined"
+                    fullWidth
+                  />
+                </TableCell>
+                <TableCell align="left">
+                  <FormControl variant="outlined" fullWidth>
+                    <InputLabel>Authentication Method</InputLabel>
+                    <Select
+                      {...register("AuthenticationSubscription.authenticationMethod", {
+                        required: true,
+                      })}
+                      error={
+                        validationErrors.AuthenticationSubscription?.authenticationMethod !==
+                        undefined
                       }
+                      label="Authentication Method"
+                      variant="outlined"
+                      fullWidth
+                      defaultValue="5G_AKA"
                     >
-                      <Table>
-                        <TableBody>
-                          <TableRow>
-                            <TableCell>
-                              <b>{dnn}</b>
-                            </TableCell>
-                          </TableRow>
-                        </TableBody>
-                        <TableBody
-                          id={
-                            toHex(row.singleNssai!.sst!) +
-                            row.singleNssai!.sd! +
-                            "-" +
-                            dnn! +
-                            "-AMBR&5QI"
+                      <MenuItem value="5G_AKA">5G_AKA</MenuItem>
+                      <MenuItem value="EAP_AKA_PRIME">EAP_AKA_PRIME</MenuItem>
+                    </Select>
+                  </FormControl>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+            <TableBody id="OP">
+              <TableRow>
+                <TableCell align="left">
+                  <FormControl variant="outlined" fullWidth>
+                    <InputLabel>Operator Code Type</InputLabel>
+                    <Select
+                      label="Operator Code Type"
+                      variant="outlined"
+                      required
+                      fullWidth
+                      value={opcType}
+                      onChange={handleChangeOperatorCodeType}
+                    >
+                      <MenuItem value="OP">OP</MenuItem>
+                      <MenuItem value="OPc">OPc</MenuItem>
+                    </Select>
+                  </FormControl>
+                </TableCell>
+                <TableCell>
+                  <TextField
+                    label="Operator Code Value"
+                    variant="outlined"
+                    required
+                    fullWidth
+                    value={opcValue}
+                    onChange={handleChangeOperatorCodeValue}
+                  />
+                </TableCell>
+              </TableRow>
+            </TableBody>
+            <TableBody id="SQN">
+              <TableRow>
+                <TableCell>
+                  <TextField
+                    {...register("AuthenticationSubscription.sequenceNumber", { required: true })}
+                    error={
+                      validationErrors.AuthenticationSubscription?.sequenceNumber !== undefined
+                    }
+                    helperText={
+                      validationErrors.AuthenticationSubscription?.sequenceNumber?.message
+                    }
+                    label="SQN"
+                    variant="outlined"
+                    required
+                    fullWidth
+                  />
+                </TableCell>
+                <TableCell>
+                  <TextField
+                    {...register("AuthenticationSubscription.permanentKey.permanentKeyValue", {
+                      required: true,
+                    })}
+                    error={
+                      validationErrors.AuthenticationSubscription?.permanentKey
+                        ?.permanentKeyValue !== undefined
+                    }
+                    helperText={
+                      validationErrors.AuthenticationSubscription?.permanentKey?.permanentKeyValue
+                        ?.message
+                    }
+                    label="Permanent Authentication Key"
+                    variant="outlined"
+                    required
+                    fullWidth
+                  />
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </Card>
+        <h3>Subscribed UE AMBR</h3>
+        <Card variant="outlined">
+          <Table>
+            <TableBody id="Subscribed UE AMBR">
+              <TableRow>
+                <TableCell>
+                  <TextField
+                    {...register("AccessAndMobilitySubscriptionData.subscribedUeAmbr.uplink", {
+                      required: true,
+                    })}
+                    error={
+                      validationErrors.AccessAndMobilitySubscriptionData?.subscribedUeAmbr
+                        ?.uplink !== undefined
+                    }
+                    helperText={
+                      validationErrors.AccessAndMobilitySubscriptionData?.subscribedUeAmbr?.uplink
+                        ?.message
+                    }
+                    label="Uplink"
+                    variant="outlined"
+                    required
+                    fullWidth
+                  />
+                </TableCell>
+                <TableCell>
+                  <TextField
+                    {...register("AccessAndMobilitySubscriptionData.subscribedUeAmbr.downlink", {
+                      required: true,
+                    })}
+                    error={
+                      validationErrors.AccessAndMobilitySubscriptionData?.subscribedUeAmbr
+                        ?.downlink !== undefined
+                    }
+                    helperText={
+                      validationErrors.AccessAndMobilitySubscriptionData?.subscribedUeAmbr?.downlink
+                        ?.message
+                    }
+                    label="Downlink"
+                    variant="outlined"
+                    required
+                    fullWidth
+                  />
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </Card>
+        {sessionManagementSubscriptionData?.map((row, index) => (
+          <div key={row.id} id={toHex(row.singleNssai!.sst) + row.singleNssai!.sd!}>
+            <Grid container spacing={2}>
+              <Grid item xs={10}>
+                <h3>
+                  S-NSSAI Configuragtion ({toHex(row.singleNssai!.sst) + row.singleNssai!.sd!})
+                </h3>
+              </Grid>
+              <Grid item xs={2}>
+                <Box display="flex" justifyContent="flex-end">
+                  <Button
+                    color="secondary"
+                    variant="contained"
+                    onClick={() => removeSessionSubscription(index)}
+                    sx={{ m: 2, backgroundColor: "red", "&:hover": { backgroundColor: "red" } }}
+                  >
+                    DELETE
+                  </Button>
+                </Box>
+              </Grid>
+            </Grid>
+            <Card variant="outlined">
+              <Table>
+                <TableBody
+                  id={"S-NSSAI Configuragtion" + toHex(row.singleNssai!.sst) + row.singleNssai!.sd!}
+                >
+                  <TableRow>
+                    <TableCell style={{ width: "50%" }}>
+                      <TextField
+                        {...register(`SessionManagementSubscriptionData.${index}.singleNssai.sst`, {
+                          required: true,
+                        })}
+                        error={
+                          validationErrors.SessionManagementSubscriptionData?.[index]?.singleNssai
+                            ?.sst !== undefined
+                        }
+                        label="SST"
+                        variant="outlined"
+                        required
+                        fullWidth
+                        type="number"
+                      />
+                    </TableCell>
+                    <TableCell style={{ width: "50%" }}>
+                      <TextField
+                        {...register(`SessionManagementSubscriptionData.${index}.singleNssai.sd`, {
+                          required: true,
+                        })}
+                        error={
+                          validationErrors.SessionManagementSubscriptionData?.[index]?.singleNssai
+                            ?.sd !== undefined
+                        }
+                        label="SD"
+                        variant="outlined"
+                        required
+                        fullWidth
+                      />
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+                <TableBody
+                  id={toHex(row.singleNssai!.sst) + row.singleNssai!.sd! + "-Default S-NSSAI"}
+                >
+                  <TableRow>
+                    <TableCell>Default S-NSSAI</TableCell>
+                    <TableCell align="right">
+                      <Checkbox
+                        checked={defaultSingleNssais.some(
+                          (n) => n.sd === row.singleNssai!.sd && n.sst === row.singleNssai!.sst,
+                        )}
+                        onChange={(ev) => {
+                          const nssai = {
+                            sst: row.singleNssai!.sst,
+                            sd: row.singleNssai!.sd,
+                          };
+                          const checked = ev.target.checked;
+
+                          if (!checked) {
+                            removeDefaultSingleNssai(nssai);
+                          } else {
+                            addDefaultSingleNssai(nssai);
                           }
-                        >
-                          <TableRow>
-                            <TableCell>
-                              <TextField
-                                label="Uplink AMBR"
-                                variant="outlined"
-                                required
-                                fullWidth
-                                value={row.dnnConfigurations![dnn].sessionAmbr?.uplink}
-                                onChange={(ev) => handleChangeUplinkAMBR(ev, index, dnn)}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <TextField
-                                label="Downlink AMBR"
-                                variant="outlined"
-                                required
-                                fullWidth
-                                value={row.dnnConfigurations![dnn].sessionAmbr?.downlink}
-                                onChange={(ev) => handleChangeDownlinkAMBR(ev, index, dnn)}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <TextField
-                                label="Default 5QI"
-                                variant="outlined"
-                                required
-                                fullWidth
-                                type="number"
-                                value={row.dnnConfigurations![dnn]["5gQosProfile"]?.["5qi"]}
-                                onChange={(ev) => handleChangeDefault5QI(ev, index, dnn)}
-                              />
-                            </TableCell>
-                          </TableRow>
-                        </TableBody>
-                      </Table>
-                      <Table>
-                        <TableBody>
-                          <TableRow>
-                            <TableCell style={{ width: "20%" }}>
-                              <FormControlLabel
-                                style={{ justifyItems: "end" }}
-                                control=<Switch
-                                  checked={
-                                    row.dnnConfigurations![dnn]["staticIpAddress"] &&
-                                    row.dnnConfigurations![dnn]["staticIpAddress"]?.length != 0
-                                  }
-                                  onChange={(event) => {
-                                    if (event.target.checked) {
-                                      var ipaddr: IpAddress = { ipv4Addr: "10.60.100.1" };
-                                      data.SessionManagementSubscriptionData![
-                                        index
-                                      ].dnnConfigurations![dnn]["staticIpAddress"] = [ipaddr];
-                                    } else {
-                                      data.SessionManagementSubscriptionData![
-                                        index
-                                      ].dnnConfigurations![dnn]["staticIpAddress"] = [];
-                                    }
-                                    setData({ ...data });
-                                  }}
-                                />
-                                label="Static IPv4 Address"
-                              />
-                            </TableCell>
-                            <TableCell style={{ width: "68%" }}>
-                              <TextField
-                                label="IPv4 Address"
-                                variant="outlined"
-                                fullWidth
-                                disabled={
-                                  row.dnnConfigurations![dnn]["staticIpAddress"] == null ||
-                                  row.dnnConfigurations![dnn]["staticIpAddress"]?.length == 0
-                                }
-                                value={
-                                  row.dnnConfigurations![dnn]["staticIpAddress"] == null ||
-                                  row.dnnConfigurations![dnn]["staticIpAddress"]?.length == 0
-                                    ? ""
-                                    : row.dnnConfigurations![dnn]["staticIpAddress"]![0].ipv4Addr!
-                                }
-                                onChange={(ev) => handleChangeStaticIp(ev, index, dnn)}
-                              />
-                            </TableCell>
-                            <TableCell style={{ width: "12%" }}>
-                              <Button
-                                color="secondary"
-                                variant="contained"
-                                // handleVerifyStaticIp = (sd: string, sst: number, dnn: string, ipaddr: string)
-                                onClick={() =>
-                                  handleVerifyStaticIp(
-                                    row.singleNssai!.sd!,
-                                    row.singleNssai!.sst!,
-                                    dnn,
-                                    row.dnnConfigurations![dnn]["staticIpAddress"]![0].ipv4Addr!,
-                                  )
-                                }
-                                sx={{
-                                  m: 2,
-                                  backgroundColor: "blue",
-                                  "&:hover": { backgroundColor: "#7496c2" },
-                                }}
-                                disabled={
-                                  row.dnnConfigurations![dnn]["staticIpAddress"] == null ||
-                                  row.dnnConfigurations![dnn]["staticIpAddress"]?.length == 0
-                                }
-                              >
-                                Verify
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        </TableBody>
-                      </Table>
-
-                      {chargingConfig(dnn, row.singleNssai!, undefined)}
-
-                      {flowRule(dnn, row.singleNssai!)}
-
-                      <div>
+                        }}
+                      />
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+              {chargingConfig("", row.singleNssai!, "")}
+              {row.dnnConfigurations &&
+                Object.keys(row.dnnConfigurations!).map((dnn) => (
+                  <div
+                    key={dnn}
+                    id={toHex(row.singleNssai!.sst!) + row.singleNssai!.sd! + "-" + dnn!}
+                  >
+                    <Box sx={{ m: 2 }}>
+                      <Grid container spacing={2}>
+                        <Grid item xs={10}>
+                          <h4>DNN Configurations</h4>
+                        </Grid>
+                        <Grid item xs={2}>
+                          <Box display="flex" justifyContent="flex-end">
+                            <Button
+                              color="secondary"
+                              variant="contained"
+                              onClick={() =>
+                                onDnnDelete(
+                                  index,
+                                  dnn,
+                                  toHex(row.singleNssai!.sst!) + row.singleNssai!.sd!,
+                                )
+                              }
+                              sx={{
+                                m: 2,
+                                backgroundColor: "red",
+                                "&:hover": { backgroundColor: "red" },
+                              }}
+                            >
+                              DELETE
+                            </Button>
+                          </Box>
+                        </Grid>
+                      </Grid>
+                      <Card
+                        variant="outlined"
+                        id={
+                          toHex(row.singleNssai!.sst!) +
+                          row.singleNssai!.sd! +
+                          "-" +
+                          dnn! +
+                          "-AddFlowRuleArea"
+                        }
+                      >
                         <Table>
                           <TableBody>
                             <TableRow>
                               <TableCell>
+                                <b>{dnn}</b>
+                              </TableCell>
+                            </TableRow>
+                          </TableBody>
+                          <TableBody
+                            id={
+                              toHex(row.singleNssai!.sst!) +
+                              row.singleNssai!.sd! +
+                              "-" +
+                              dnn! +
+                              "-AMBR&5QI"
+                            }
+                          >
+                            <TableRow>
+                              <TableCell>
+                                <TextField
+                                  {...register(
+                                    `SessionManagementSubscriptionData.${index}.dnnConfigurations.${dnn}.sessionAmbr.uplink`,
+                                    { required: true },
+                                  )}
+                                  label="Uplink AMBR"
+                                  variant="outlined"
+                                  required
+                                  fullWidth
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <TextField
+                                  {...register(
+                                    `SessionManagementSubscriptionData.${index}.dnnConfigurations.${dnn}.sessionAmbr.downlink`,
+                                    { required: true },
+                                  )}
+                                  label="Downlink AMBR"
+                                  variant="outlined"
+                                  required
+                                  fullWidth
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <TextField
+                                  {...register(
+                                    `SessionManagementSubscriptionData.${index}.dnnConfigurations.${dnn}.5gQosProfile.5qi`,
+                                    { required: true, valueAsNumber: true },
+                                  )}
+                                  label="Default 5QI"
+                                  variant="outlined"
+                                  required
+                                  fullWidth
+                                  type="number"
+                                />
+                              </TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+
+                        <Table>
+                          <TableBody>
+                            <TableRow>
+                              <TableCell style={{ width: "20%" }}>
+                                <FormControlLabel
+                                  style={{ justifyItems: "end" }}
+                                  control=<Switch
+                                    checked={
+                                      watch(
+                                        `SessionManagementSubscriptionData.${index}.dnnConfigurations.${dnn}`,
+                                      ).staticIpAddress?.length != 0
+                                    }
+                                    onChange={(ev) => handleToggleStaticIp(ev, index, dnn)}
+                                  />
+                                  label="Static IPv4 Address"
+                                />
+                              </TableCell>
+                              <TableCell style={{ width: "68%" }}>
+                                <TextField
+                                  label="IPv4 Address"
+                                  variant="outlined"
+                                  fullWidth
+                                  disabled={
+                                    watch(
+                                      `SessionManagementSubscriptionData.${index}.dnnConfigurations.${dnn}`,
+                                    ).staticIpAddress?.length == 0
+                                  }
+                                  value={
+                                    watch(
+                                      `SessionManagementSubscriptionData.${index}.dnnConfigurations.${dnn}`,
+                                    ).staticIpAddress?.[0]?.ipv4Addr ?? ""
+                                  }
+                                  onChange={(ev) => handleChangeStaticIp(ev, index, dnn)}
+                                />
+                              </TableCell>
+                              <TableCell style={{ width: "12%" }}>
                                 <Button
                                   color="secondary"
-                                  variant="outlined"
-                                  onClick={() => onFlowRulesAdd(dnn, row.singleNssai!)}
-                                  sx={{ m: 0 }}
+                                  variant="contained"
+                                  // handleVerifyStaticIp = (sd: string, sst: number, dnn: string, ipaddr: string)
+                                  onClick={() =>
+                                    handleVerifyStaticIp(
+                                      row.singleNssai!.sd!,
+                                      row.singleNssai!.sst!,
+                                      dnn,
+                                      row.dnnConfigurations![dnn]["staticIpAddress"]![0].ipv4Addr!,
+                                    )
+                                  }
+                                  sx={{
+                                    m: 2,
+                                    backgroundColor: "blue",
+                                    "&:hover": { backgroundColor: "#7496c2" },
+                                  }}
+                                  disabled={
+                                    row.dnnConfigurations![dnn]["staticIpAddress"] == null ||
+                                    row.dnnConfigurations![dnn]["staticIpAddress"]?.length == 0
+                                  }
                                 >
-                                  +FLOW RULE
+                                  Verify
                                 </Button>
                               </TableCell>
                             </TableRow>
                           </TableBody>
                         </Table>
-                      </div>
-                      {upSecurity(row.dnnConfigurations![dnn])}
-                    </Card>
+
+                        {chargingConfig(dnn, row.singleNssai!, undefined)}
+
+                        {flowRule(dnn, row.singleNssai!)}
+
+                        <div>
+                          <Table>
+                            <TableBody>
+                              <TableRow>
+                                <TableCell>
+                                  <Button
+                                    color="secondary"
+                                    variant="outlined"
+                                    onClick={() => onFlowRulesAdd(dnn, row.singleNssai!)}
+                                    sx={{ m: 0 }}
+                                  >
+                                    +FLOW RULE
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            </TableBody>
+                          </Table>
+                        </div>
+                        {upSecurity(index, dnn)}
+                      </Card>
+                    </Box>
+                  </div>
+                ))}
+              <Grid container spacing={2}>
+                <Grid
+                  item
+                  xs={10}
+                  id={toHex(row.singleNssai!.sst) + row.singleNssai!.sd! + "-AddDNNInputArea"}
+                >
+                  <Box sx={{ m: 2 }}>
+                    <TextField
+                      label="Data Network Name"
+                      variant="outlined"
+                      required
+                      fullWidth
+                      value={dnnValue(index)}
+                      onChange={(ev) => handleChangeDNN(ev, index)}
+                    />
                   </Box>
-                </div>
-              ))}
-            <Grid container spacing={2}>
-              <Grid
-                item
-                xs={10}
-                id={toHex(row.singleNssai!.sst) + row.singleNssai!.sd! + "-AddDNNInputArea"}
-              >
-                <Box sx={{ m: 2 }}>
-                  <TextField
-                    label="Data Network Name"
-                    variant="outlined"
-                    required
-                    fullWidth
-                    value={dnnValue(index)}
-                    onChange={(ev) => handleChangeDNN(ev, index)}
-                  />
-                </Box>
+                </Grid>
+                <Grid
+                  item
+                  xs={2}
+                  id={toHex(row.singleNssai!.sst) + row.singleNssai!.sd! + "-AddDNNButtonArea"}
+                >
+                  <Box display="flex" justifyContent="flex-end">
+                    <Button
+                      color="secondary"
+                      variant="contained"
+                      onClick={() => onDnnAdd(index)}
+                      sx={{ m: 3 }}
+                    >
+                      &nbsp;&nbsp;+DNN&nbsp;&nbsp;
+                    </Button>
+                  </Box>
+                </Grid>
               </Grid>
-              <Grid
-                item
-                xs={2}
-                id={toHex(row.singleNssai!.sst) + row.singleNssai!.sd! + "-AddDNNButtonArea"}
-              >
-                <Box display="flex" justifyContent="flex-end">
-                  <Button
-                    color="secondary"
-                    variant="contained"
-                    onClick={() => onDnnAdd(index)}
-                    sx={{ m: 3 }}
-                  >
-                    &nbsp;&nbsp;+DNN&nbsp;&nbsp;
-                  </Button>
-                </Box>
-              </Grid>
-            </Grid>
-          </Card>
-        </div>
-      ))}
-      <br />
-      <Grid item xs={12}>
-        <Button color="secondary" variant="contained" onClick={onSnssai} sx={{ m: 1 }}>
-          +SNSSAI
-        </Button>
-      </Grid>
-      <br />
-      <Grid item xs={12}>
-        {isNewSubscriber ? (
-          <Button color="primary" variant="contained" onClick={onCreate} sx={{ m: 1 }}>
-            CREATE
+            </Card>
+          </div>
+        ))}
+        <br />
+        <Grid item xs={12}>
+          <Button
+            color="secondary"
+            variant="contained"
+            onClick={() =>
+              appendSessionSubscription({
+                singleNssai: {
+                  sst: 1,
+                },
+                dnnConfigurations: {},
+              })
+            }
+            sx={{ m: 1 }}
+          >
+            +SNSSAI
           </Button>
-        ) : (
-          <Button color="primary" variant="contained" onClick={onUpdate} sx={{ m: 1 }}>
-            UPDATE
-          </Button>
-        )}
-      </Grid>
+        </Grid>
+        <br />
+        <Grid item xs={12}>
+          {isNewSubscriber ? (
+            <Button color="primary" variant="contained" type="submit" sx={{ m: 1 }}>
+              CREATE
+            </Button>
+          ) : (
+            <Button color="primary" variant="contained" type="submit" sx={{ m: 1 }}>
+              UPDATE
+            </Button>
+          )}
+        </Grid>
+      </form>
     </Dashboard>
   );
 }
