@@ -1,6 +1,12 @@
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { Nssai, Subscription } from "../api";
-import { useFieldArray, useForm } from "react-hook-form";
+import {
+  FormProvider,
+  UseFormProps,
+  useFieldArray,
+  useForm,
+  useFormContext,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { subscriptionSchema } from "../lib/schemas/subscription";
 
@@ -240,6 +246,18 @@ const defaultSubscription: Subscription = {
   ],
 };
 
+const SubscriberFormOptions = {
+  mode: "onBlur",
+  reValidateMode: "onChange",
+  resolver: zodResolver(subscriptionSchema),
+  defaultValues: defaultSubscription,
+} satisfies UseFormProps<Subscription>;
+
+export const SubscriberFormProvider = ({ children }: { children: ReactNode }) => {
+  const method = useForm<Subscription>(SubscriberFormOptions);
+  return <FormProvider {...method}>{children}</FormProvider>;
+};
+
 export const useSubscriptionForm = () => {
   const {
     register,
@@ -250,12 +268,7 @@ export const useSubscriptionForm = () => {
     reset,
     control,
     formState: { errors: validationErrors },
-  } = useForm<Subscription>({
-    mode: "onBlur",
-    reValidateMode: "onChange",
-    resolver: zodResolver(subscriptionSchema),
-    defaultValues: defaultSubscription,
-  });
+  } = useFormContext<Subscription>();
 
   const defaultSingleNssais = watch("AccessAndMobilitySubscriptionData.nssai.defaultSingleNssais");
   const addDefaultSingleNssai = (nssai: Nssai) => {
