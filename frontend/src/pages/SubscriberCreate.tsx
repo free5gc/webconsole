@@ -1749,7 +1749,7 @@ export default function SubscriberCreate() {
         <div key={index} id={toHex(row.singleNssai!.sst) + row.singleNssai!.sd!}>
           <Grid container spacing={2}>
             <Grid item xs={10}>
-              <h3>S-NSSAI Configuragtion ({toHex(row.singleNssai!.sst) + row.singleNssai!.sd!})</h3>
+              <h3>S-NSSAI Configuration ({toHex(row.singleNssai!.sst) + row.singleNssai!.sd!})</h3>
             </Grid>
             <Grid item xs={2}>
               <Box display="flex" justifyContent="flex-end">
@@ -1769,7 +1769,7 @@ export default function SubscriberCreate() {
           <Card variant="outlined">
             <Table>
               <TableBody
-                id={"S-NSSAI Configuragtion" + toHex(row.singleNssai!.sst) + row.singleNssai!.sd!}
+                id={"S-NSSAI Configuration" + toHex(row.singleNssai!.sst) + row.singleNssai!.sd!}
               >
                 <TableRow>
                   <TableCell style={{ width: "50%" }}>
