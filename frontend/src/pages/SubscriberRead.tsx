@@ -358,7 +358,7 @@ export default function SubscriberRead() {
       </Card>
       {data?.SessionManagementSubscriptionData?.map((row, index) => (
         <div key={index}>
-          <h3>S-NSSAI Configuragtion</h3>
+          <h3>S-NSSAI Configuration</h3>
           <Card variant="outlined">
             <Table>
               <TableBody>
