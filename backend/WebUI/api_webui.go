@@ -1,7 +1,6 @@
 package WebUI
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/tls"
 	"encoding/json"
@@ -1788,7 +1787,14 @@ func GetRegisteredUEContext(c *gin.Context) {
 			requestUri = fmt.Sprintf("%s/namf-oam/v1/registered-ue-context", amfUris[0])
 		}
 
-		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, requestUri, nil)
+		ctx, pd, tokerErr := webui_context.GetSelf().GetTokenCtx(models.ServiceName_NAMF_OAM, models.NfType_AMF)
+		if tokerErr != nil {
+			logger.ProcLog.Errorf("GetTokenCtx error: %+v", tokerErr)
+			c.JSON(http.StatusInternalServerError, pd)
+			return
+		}
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestUri, nil)
 		if err != nil {
 			logger.ProcLog.Error(err)
 			c.JSON(http.StatusInternalServerError, gin.H{})
@@ -1845,7 +1851,15 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 	// TODO: support fetching data from multiple SMF
 	if smfUris := webuiSelf.GetOamUris(models.NfType_SMF); smfUris != nil {
 		requestUri := fmt.Sprintf("%s/nsmf-oam/v1/ue-pdu-session-info/%s", smfUris[0], smContextRef)
-		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, requestUri, nil)
+
+		ctx, pd, tokerErr := webui_context.GetSelf().GetTokenCtx(models.ServiceName_NSMF_OAM, models.NfType_SMF)
+		if tokerErr != nil {
+			logger.ProcLog.Errorf("GetTokenCtx error: %+v", tokerErr)
+			c.JSON(http.StatusInternalServerError, pd)
+			return
+		}
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestUri, nil)
 		if err != nil {
 			logger.ProcLog.Error(err)
 			c.JSON(http.StatusInternalServerError, gin.H{})
