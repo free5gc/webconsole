@@ -1,7 +1,6 @@
 package WebUI
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -125,7 +124,14 @@ func GetChargingRecord(c *gin.Context) {
 	if amfUris := webuiSelf.GetOamUris(models.NfType_AMF); amfUris != nil {
 		requestUri := fmt.Sprintf("%s/namf-oam/v1/registered-ue-context", amfUris[0])
 
-		res, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, requestUri, nil)
+		ctx, pd, tokerErr := webui_context.GetSelf().GetTokenCtx(models.ServiceName_NAMF_OAM, models.NfType_AMF)
+		if tokerErr != nil {
+			logger.ProcLog.Errorf("GetTokenCtx error: %+v", tokerErr)
+			c.JSON(http.StatusInternalServerError, pd)
+			return
+		}
+
+		res, err := http.NewRequestWithContext(ctx, http.MethodGet, requestUri, nil)
 		if err != nil {
 			logger.ProcLog.Error(err)
 			c.JSON(http.StatusInternalServerError, gin.H{})
