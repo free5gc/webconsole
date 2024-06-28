@@ -47,6 +47,12 @@ func GetSmfUserPlaneInfo() (interface{}, error) {
 			logger.ProcLog.Error(err_req)
 			return jsonData, err_req
 		}
+
+		if err = webui_context.GetSelf().RequestBindToken(req, ctx); err != nil {
+			logger.ProcLog.Error(err)
+			return jsonData, err
+		}
+
 		resp, err_rsp := httpsClient.Do(req)
 		if err_rsp != nil {
 			logger.ProcLog.Error(err_rsp)

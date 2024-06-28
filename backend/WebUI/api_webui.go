@@ -1800,6 +1800,13 @@ func GetRegisteredUEContext(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{})
 			return
 		}
+
+		if err = webui_context.GetSelf().RequestBindToken(req, ctx); err != nil {
+			logger.ProcLog.Error(err)
+			c.JSON(http.StatusInternalServerError, gin.H{})
+			return
+		}
+
 		resp, err := httpsClient.Do(req)
 		if err != nil {
 			logger.ProcLog.Error(err)
