@@ -131,13 +131,20 @@ func GetChargingRecord(c *gin.Context) {
 			return
 		}
 
-		res, err := http.NewRequestWithContext(ctx, http.MethodGet, requestUri, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestUri, nil)
 		if err != nil {
 			logger.ProcLog.Error(err)
 			c.JSON(http.StatusInternalServerError, gin.H{})
 			return
 		}
-		resp, res_err := httpsClient.Do(res)
+
+		if err = webui_context.GetSelf().RequestBindToken(req, ctx); err != nil {
+			logger.ProcLog.Error(err)
+			c.JSON(http.StatusInternalServerError, gin.H{})
+			return
+		}
+
+		resp, res_err := httpsClient.Do(req)
 		if res_err != nil {
 			logger.ProcLog.Error(err)
 			c.JSON(http.StatusInternalServerError, gin.H{})

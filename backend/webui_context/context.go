@@ -3,9 +3,12 @@ package webui_context
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/google/uuid"
+	"golang.org/x/oauth2"
 
+	"github.com/free5gc/openapi"
 	"github.com/free5gc/openapi/Nnrf_NFDiscovery"
 	"github.com/free5gc/openapi/Nnrf_NFManagement"
 	"github.com/free5gc/openapi/models"
@@ -163,4 +166,20 @@ func (c *WEBUIContext) GetTokenCtx(serviceName models.ServiceName, targetNF mode
 	logger.ConsumerLog.Infoln("GetTokenCtx:", targetNF, serviceName)
 	return oauth.GetTokenCtx(models.NfType_AF, targetNF,
 		c.NfInstanceID, c.NrfUri, string(serviceName))
+}
+
+// NewRequestWithContext() will not apply header in ctx
+// so httpsClient.Do(req) will not have token in header if OAuth2 enable
+func (c *WEBUIContext) RequestBindToken(req *http.Request, ctx context.Context) error {
+	if tok, ok := ctx.Value(openapi.ContextOAuth2).(oauth2.TokenSource); ok {
+		// We were able to grab an oauth2 token from the context
+		var latestToken *oauth2.Token
+		var err error
+		if latestToken, err = tok.Token(); err != nil {
+			logger.ConsumerLog.Error(err)
+			return err
+		}
+		latestToken.SetAuthHeader(req)
+	}
+	return nil
 }
