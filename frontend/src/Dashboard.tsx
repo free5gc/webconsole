@@ -88,6 +88,74 @@ function Dashboard(props: DashboardProps) {
   }
   const { user } = context;
 
+  const navigation = useNavigate();
+
+  const [time, setTime] = useState<Date>(new Date());
+  const [refreshInterval, setRefreshInterval] = useState(0);
+  const [refreshString, setRefreshString] = useState("manual");
+
+  // execute every time the refreshInterval changes to set the interval correctly
+  // update the time value every x ms, which triggers refresh (see below)
+  useEffect(() => {
+    if (refreshInterval === 0) {
+      console.log("refreshInterval is 0");
+      return;
+    }
+    const interval = setInterval(() => setTime(new Date()), refreshInterval);
+    return () => {
+      console.log("clear refreshInterval");
+      clearInterval(interval);
+    };
+  }, [refreshInterval]);
+
+  // refresh every time the 'time' value changes
+  useEffect(() => {
+    console.log("reload page at", time.toISOString());
+    props.refreshAction();
+  }, [time]);
+
+  const handleUserNameClick = (event: React.MouseEvent<HTMLElement>, index: number) => {
+    switch (index) {
+      case 0:
+        navigation("/password");
+        break;
+      case 1:
+        // setUser(null);
+        navigation("/login");
+        break;
+      default:
+        break;
+    }
+  };
+
+  const refreshStrings = ["manual", "1s", "5s", "10s", "30s"];
+
+  const handleRefreshClick = (event: React.MouseEvent<HTMLElement>, index: number) => {
+    switch (index) {
+      case 0: // manual
+        setRefreshInterval(0);
+        setRefreshString(refreshStrings.at(index)!);
+        break;
+      case 1: // 1s
+        setRefreshInterval(1000);
+        setRefreshString(refreshStrings.at(index)!);
+        break;
+      case 2: // 5s
+        setRefreshInterval(5000);
+        setRefreshString(refreshStrings.at(index)!);
+        break;
+      case 3: // 10s
+        setRefreshInterval(10000);
+        setRefreshString(refreshStrings.at(index)!);
+        break;
+      case 4: // 30s
+        setRefreshInterval(30000);
+        setRefreshString(refreshStrings.at(index)!);
+        break;
+      default:
+        break;
+    }
+  };
   return (
     <ThemeProvider theme={mdTheme}>
       <Box sx={{ display: "flex" }}>
