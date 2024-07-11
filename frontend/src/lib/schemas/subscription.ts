@@ -235,7 +235,7 @@ export const smfSelectionSubscriptionDataSchema = z.object({
 });
 
 export const accessAndMobilitySubscriptionDataSchema = z.object({
-  gpsis: z.array(z.string()).optional(),
+  gpsis: z.array(z.string().startsWith("msisdn-")).optional(),
   subscribedUeAmbr: subscribedUeAmbrSchema.optional(),
   nssai: defaultSingleNssaisSchema.optional(),
 });

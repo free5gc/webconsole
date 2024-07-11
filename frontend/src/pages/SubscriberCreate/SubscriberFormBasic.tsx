@@ -27,24 +27,6 @@ export default function SubscriberFormBasic() {
     setOpcValue,
   } = useSubscriptionForm();
 
-  const msisdnValue = (subData: AccessAndMobilitySubscriptionData | undefined) => {
-    if (subData === undefined) {
-      return "";
-    } else {
-      if (subData.gpsis !== undefined && subData.gpsis!.length !== 0) {
-        return subData.gpsis[0].replace("msisdn-", "");
-      } else {
-        return "";
-      }
-    }
-  };
-
-  const handleChangeMsisdn = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ): void => {
-    setValue("AccessAndMobilitySubscriptionData.gpsis", ["msisdn-" + event.target.value]);
-  };
-
   const handleChangeOperatorCodeType = (event: SelectChangeEvent<string>): void => {
     const auth = getValues()["AuthenticationSubscription"];
 
@@ -176,12 +158,13 @@ export default function SubscriberFormBasic() {
             </TableCell>
             <TableCell>
               <TextField
+                {...register("AccessAndMobilitySubscriptionData.gpsis.0")}
+                error={validationErrors.AccessAndMobilitySubscriptionData?.gpsis?.[0] !== undefined}
+                helperText={validationErrors.AccessAndMobilitySubscriptionData?.gpsis?.[0]?.message}
                 label="GPSI (MSISDN)"
                 variant="outlined"
                 required
                 fullWidth
-                value={msisdnValue(watch("AccessAndMobilitySubscriptionData"))}
-                onChange={handleChangeMsisdn}
               />
             </TableCell>
           </TableRow>
