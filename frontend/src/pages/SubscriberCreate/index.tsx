@@ -173,19 +173,6 @@ function SubscriberCreate() {
       });
   };
 
-  const isDefaultNssai = (nssai: Nssai) => {
-    const defaultNssais = watch("AccessAndMobilitySubscriptionData.nssai.defaultSingleNssais");
-    return defaultNssais.some((n) => n.sd === nssai.sd && n.sst === nssai.sst);
-  };
-
-  const imsiValue = (imsi: string | undefined) => {
-    if (imsi === undefined) {
-      return "";
-    } else {
-      return imsi.replace("imsi-", "");
-    }
-  };
-
   const formSubmitFn = isNewSubscriber ? onCreate : onUpdate;
   const formSubmitText = isNewSubscriber ? "CREATE" : "UPDATE";
 
