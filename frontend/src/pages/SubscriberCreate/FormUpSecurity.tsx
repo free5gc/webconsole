@@ -14,28 +14,36 @@ import {
   SelectChangeEvent,
 } from "@mui/material";
 import { useSubscriptionForm } from "../../hooks/subscription-form";
+import { defaultUpSecurity } from "../../lib/dtos/subscription";
 
 interface FormUpSecurityProps {
   sessionIndex: number;
-  dnnKey?: string;
+  dnnKey: string;
 }
 
-interface NoUpSecurityProps {
-  createUpSecurity: () => void;
-}
-function NoUpSecurity(props: NoUpSecurityProps) {
+function NoUpSecurity(props: FormUpSecurityProps) {
+  const { watch, setValue } = useSubscriptionForm();
+
+  const dnnConfig = watch(
+    `SnssaiConfigurations.${props.sessionIndex}.dnnConfigurations.${props.dnnKey}`,
+  );
+
+  const onUpSecurity = () => {
+    dnnConfig.upSecurity = defaultUpSecurity();
+
+    setValue(
+      `SnssaiConfigurations.${props.sessionIndex}.dnnConfigurations.${props.dnnKey}`,
+      dnnConfig,
+    );
+  };
+
   return (
     <div>
       <Table>
         <TableBody>
           <TableRow>
             <TableCell>
-              <Button
-                color="secondary"
-                variant="contained"
-                onClick={props.createUpSecurity}
-                sx={{ m: 0 }}
-              >
+              <Button color="secondary" variant="contained" onClick={onUpSecurity} sx={{ m: 0 }}>
                 +UP SECURITY
               </Button>
             </TableCell>
@@ -46,68 +54,26 @@ function NoUpSecurity(props: NoUpSecurityProps) {
   );
 }
 
-export default function FormUpSecurity({ sessionIndex, dnnKey }: FormUpSecurityProps) {
-  const { watch, getValues, setValue } = useSubscriptionForm();
+export default function FormUpSecurity(props: FormUpSecurityProps) {
+  const { register, validationErrors, watch, getValues, setValue } = useSubscriptionForm();
 
-  const dnn = watch(
-    `SessionManagementSubscriptionData.${sessionIndex}.dnnConfigurations.${dnnKey}`,
+  const dnnConfig = watch(
+    `SnssaiConfigurations.${props.sessionIndex}.dnnConfigurations.${props.dnnKey}`,
   );
 
-  const onUpSecurity = (sessionIndex: number, dnnKey?: string) => {
-    if (dnnKey === undefined) {
-      return;
-    }
-
-    const dnn =
-      getValues()["SessionManagementSubscriptionData"][sessionIndex].dnnConfigurations![dnnKey];
-
-    if (dnn !== undefined) {
-      dnn.upSecurity = {
-        upIntegr: "NOT_NEEDED",
-        upConfid: "NOT_NEEDED",
-      };
-    }
-
-    setValue(`SessionManagementSubscriptionData.${sessionIndex}.dnnConfigurations.${dnnKey}`, dnn);
-  };
-
-  if (!(dnn !== undefined && dnn!.upSecurity !== undefined)) {
-    return <NoUpSecurity createUpSecurity={() => onUpSecurity(sessionIndex, dnnKey)} />;
+  if (!(dnnConfig.upSecurity !== undefined)) {
+    return <NoUpSecurity {...props} />;
   }
 
-  let security = dnn.upSecurity;
-
-  const onUpSecurityDelete = (sessionIndex: number, dnnKey?: string) => {
-    setValue(
-      `SessionManagementSubscriptionData.${sessionIndex}.dnnConfigurations.${dnnKey}.upSecurity`,
-      undefined,
-    );
-  };
-
-  const handleChangeUpIntegrity = (
-    event: SelectChangeEvent<string>,
-    sessionIndex: number,
-    dnnKey?: string,
-  ): void => {
-    setValue(
-      `SessionManagementSubscriptionData.${sessionIndex}.dnnConfigurations.${dnnKey}.upSecurity.upIntegr`,
-      event.target.value,
-    );
-  };
-
-  const handleChangeUpConfidentiality = (
-    event: SelectChangeEvent<string>,
-    sessionIndex: number,
-    dnnKey?: string,
-  ): void => {
-    setValue(
-      `SessionManagementSubscriptionData.${sessionIndex}.dnnConfigurations.${dnnKey}.upSecurity.upConfid`,
-      event.target.value,
-    );
+  const onUpSecurityDelete = () => {
+    setValue(`SnssaiConfigurations.${props.sessionIndex}.dnnConfigurations.${props.dnnKey}`, {
+      ...dnnConfig,
+      upSecurity: undefined,
+    });
   };
 
   return (
-    <div key={security.upIntegr}>
+    <div>
       <Box sx={{ m: 2 }}>
         <Grid container spacing={2}>
           <Grid item xs={10}>
@@ -118,7 +84,7 @@ export default function FormUpSecurity({ sessionIndex, dnnKey }: FormUpSecurityP
               <Button
                 color="secondary"
                 variant="contained"
-                onClick={() => onUpSecurityDelete(sessionIndex, dnnKey)}
+                onClick={() => onUpSecurityDelete()}
                 sx={{ m: 2, backgroundColor: "red", "&:hover": { backgroundColor: "red" } }}
               >
                 DELETE
@@ -134,12 +100,20 @@ export default function FormUpSecurity({ sessionIndex, dnnKey }: FormUpSecurityP
                   <FormControl variant="outlined" fullWidth>
                     <InputLabel>Integrity of UP Security</InputLabel>
                     <Select
+                      {...register(
+                        `SnssaiConfigurations.${props.sessionIndex}.dnnConfigurations.${props.dnnKey}.upSecurity.upIntegr`,
+                        {
+                          required: true,
+                        },
+                      )}
+                      error={
+                        validationErrors.SnssaiConfigurations?.[props.sessionIndex]
+                          ?.dnnConfigurations?.[props.dnnKey]?.upSecurity?.upIntegr !== undefined
+                      }
                       label="Integrity of UP Security"
                       variant="outlined"
                       required
                       fullWidth
-                      value={security.upIntegr}
-                      onChange={(ev) => handleChangeUpIntegrity(ev, sessionIndex, dnnKey)}
                     >
                       <MenuItem value="NOT_NEEDED">NOT_NEEDED</MenuItem>
                       <MenuItem value="PREFERRED">PREFERRED</MenuItem>
@@ -155,12 +129,20 @@ export default function FormUpSecurity({ sessionIndex, dnnKey }: FormUpSecurityP
                   <FormControl variant="outlined" fullWidth>
                     <InputLabel>Confidentiality of UP Security</InputLabel>
                     <Select
+                      {...register(
+                        `SnssaiConfigurations.${props.sessionIndex}.dnnConfigurations.${props.dnnKey}.upSecurity.upConfid`,
+                        {
+                          required: true,
+                        },
+                      )}
+                      error={
+                        validationErrors.SnssaiConfigurations?.[props.sessionIndex]
+                          ?.dnnConfigurations?.[props.dnnKey]?.upSecurity?.upConfid !== undefined
+                      }
                       label="Confidentiality of UP Security"
                       variant="outlined"
                       required
                       fullWidth
-                      value={security.upConfid}
-                      onChange={(ev) => handleChangeUpConfidentiality(ev, sessionIndex, dnnKey)}
                     >
                       <MenuItem value="NOT_NEEDED">NOT_NEEDED</MenuItem>
                       <MenuItem value="PREFERRED">PREFERRED</MenuItem>

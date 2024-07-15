@@ -1,3 +1,4 @@
+import { z } from "zod";
 import {
   AuthenticationSubscription,
   ChargingData,
@@ -12,15 +13,14 @@ import {
 } from "../../api";
 import { DEFAULT_5QI } from "../const";
 
-interface SubscriptionDTO {
-  userNumber: number;
-  ueId: string;
-  plmnID: string;
-  gpsi: string;
-  auth: SubscriberAuthDTO;
-  subscribedUeAmbr: AmbrDTO;
-  SnssaiConfigurations: SnssaiConfiurationDTO[];
-}
+export const subscriberAuthDTOSchema = z.object({
+  authenticationManagementField: z.string().regex(/^[A-Fa-f0-9]{4}$/), // 16 bit hex string
+  authenticationMethod: z.enum(["5G_AKA", "EAP_AKA_PRIME"]),
+  sequenceNumber: z.string().regex(/^[A-Fa-f0-9]{12}$/), // 48 bit hex string
+  permanentKey: z.string(),
+  operatorCodeType: z.enum(["OP", "OPc"]),
+  operatorCode: z.string(),
+})
 
 interface SubscriberAuthDTO {
   authenticationManagementField: string;
@@ -31,26 +31,38 @@ interface SubscriberAuthDTO {
   operatorCode: string;
 }
 
+export const ambrDTOSchema = z.object({
+  uplink: z.string(),
+  downlink: z.string(),
+})
+
 interface AmbrDTO {
   uplink: string;
   downlink: string;
 }
 
-interface SnssaiConfiurationDTO {
-  sst: number;
-  sd: string;
-  isDefault: boolean;
-  chargingData: ChargingDataDTO;
-  dnnConfigurations: { [key: string]: DnnConfigurationDTO };
+export const chargingDataDTOSchema = z.object({
+  chargingMethod: z.enum(["Online", "Offline"]),
+  quota: z.string(),
+  unitCost: z.string(),
+})
+
+interface ChargingDataDTO {
+  chargingMethod: "Online" | "Offline";
+  quota: string;
+  unitCost: string;
 }
 
-interface DnnConfigurationDTO {
-  default5qi: number;
-  sessionAmbr: AmbrDTO;
-  staticIpv4Address?: string;
-  flowRules: FlowRulesDTO[];
-  upSecurity?: UpSecurityDTO;
-}
+export const flowRulesDTOSchema = z.object({
+  filter: z.string(),
+  precedence: z.number(),
+  "5qi": z.number(),
+  gbrUL: z.string(),
+  gbrDL: z.string(),
+  mbrUL: z.string(),
+  mbrDL: z.string(),
+  chargingData: chargingDataDTOSchema,
+})
 
 interface FlowRulesDTO {
   filter: string;
@@ -63,15 +75,68 @@ interface FlowRulesDTO {
   chargingData: ChargingDataDTO;
 }
 
-interface ChargingDataDTO {
-  chargingMethod: "Online" | "Offline";
-  quota: string;
-  unitCost: string;
-}
+export const upSecurityDTOSchema = z.object({
+  upIntegr: z.string(),
+  upConfid: z.string(),
+})
 
 interface UpSecurityDTO {
   upIntegr: string;
   upConfid: string;
+}
+
+export const DnnConfigurationDTOSchema = z.object({
+  default5qi: z.number(),
+  sessionAmbr: ambrDTOSchema,
+  staticIpv4Address: z.string().optional(),
+  flowRules: z.array(flowRulesDTOSchema),
+  upSecurity: upSecurityDTOSchema.optional(), 
+})
+
+interface DnnConfigurationDTO {
+  default5qi: number;
+  sessionAmbr: AmbrDTO;
+  staticIpv4Address?: string;
+  flowRules: FlowRulesDTO[];
+  upSecurity?: UpSecurityDTO;
+}
+
+
+export const SnssaiConfigurationDTOSchema = z.object({
+  sst: z.number(),
+  sd: z.string().optional(),
+  isDefault: z.boolean(),
+  chargingData: chargingDataDTOSchema,
+  dnnConfigurations: z.record(DnnConfigurationDTOSchema),
+});
+
+interface SnssaiConfiurationDTO {
+  sst: number;
+  sd: string;
+  isDefault: boolean;
+  chargingData: ChargingDataDTO;
+  dnnConfigurations: { [key: string]: DnnConfigurationDTO };
+}
+
+
+export const subscriptionDTOSchema = z.object({
+  userNumber: z.number().positive(),
+  ueId: z.string().length(20).startsWith("imsi-"),
+  plmnID: z.string().length(5),
+  gpsi: z.string().optional(),
+  auth: subscriberAuthDTOSchema,
+  subscribedUeAmbr: ambrDTOSchema,
+  SnssaiConfigurations: z.array(SnssaiConfigurationDTOSchema),
+})
+
+interface SubscriptionDTO {
+  userNumber: number;
+  ueId: string;
+  plmnID: string;
+  gpsi?: string;
+  auth: SubscriberAuthDTO;
+  subscribedUeAmbr: AmbrDTO;
+  SnssaiConfigurations: SnssaiConfiurationDTO[];
 }
 
 interface FlowsDTO {
@@ -186,7 +251,7 @@ class SubscriptionMapperImpl implements SubscriptionMapper {
       plmnID: subscription.plmnID,
       AuthenticationSubscription: this.buildSubscriberAuth(subscription.auth),
       AccessAndMobilitySubscriptionData: {
-        gpsis: [subscription.gpsi],
+        gpsis: [`msisdn-${subscription.gpsi ?? ""}`],
         subscribedUeAmbr: this.buildSubscriberAmbr(subscription.subscribedUeAmbr),
         nssai: {
           defaultSingleNssais: subscription.SnssaiConfigurations.filter((s) => s.isDefault).map(
@@ -244,7 +309,7 @@ class SubscriptionMapperImpl implements SubscriptionMapper {
       userNumber: 1,
       ueId: subscription.ueId,
       plmnID: subscription.plmnID,
-      gpsi: subscription.AccessAndMobilitySubscriptionData.gpsis?.[0] ?? "",
+      gpsi: subscription.AccessAndMobilitySubscriptionData.gpsis?.[0].slice(7) ?? "",
       auth: {
         authenticationManagementField:
           subscription.AuthenticationSubscription.authenticationManagementField ?? "",
@@ -436,7 +501,7 @@ export const defaultSubscriptionDTO = (): SubscriptionDTO => ({
   userNumber: 1,
   ueId: "imsi-208930000000001",
   plmnID: "20893",
-  gpsi: "msisdn-",
+  gpsi: "",
   auth: {
     authenticationManagementField: "8000",
     authenticationMethod: "5G_AKA",

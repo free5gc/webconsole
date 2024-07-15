@@ -1,17 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import axios from "../../axios";
-import type { IpAddress, Nssai } from "../../api/api";
 
 import Dashboard from "../../Dashboard";
 import { Button, Grid } from "@mui/material";
 import { SubscriberFormProvider, useSubscriptionForm } from "../../hooks/subscription-form";
 import SubscriberFormBasic from "./SubscriberFormBasic";
 import SubscriberFormUeAmbr from "./SubscriberFormUeAmbr";
-import { toHex } from "../../lib/utils";
 import SubscriberFormSessions from "./SubscriberFormSessions";
+import { FlowsMapperImpl, SubscriptionMapperImpl } from "../../lib/dtos/subscription";
 
 function FormHOC(Component: React.ComponentType<any>) {
   return function (props: any) {
@@ -33,26 +32,30 @@ function SubscriberCreate() {
 
   const isNewSubscriber = id === undefined && plmn === undefined;
   const navigation = useNavigate();
+  const [loading, setLoading] = useState(false);
 
-  const {
-    handleSubmit,
-    watch,
-    getValues,
-    reset,
-    sessionSubscriptionFields: { append: appendSessionSubscription },
-  } = useSubscriptionForm();
+  const { handleSubmit, getValues, reset } = useSubscriptionForm();
 
   if (!isNewSubscriber) {
     useEffect(() => {
-      axios.get("/api/subscriber/" + id + "/" + plmn).then((res) => {
-        reset(res.data);
-      });
+      setLoading(true);
+
+      axios
+        .get("/api/subscriber/" + id + "/" + plmn)
+        .then((res) => {
+          const subscriberMapper = new SubscriptionMapperImpl(new FlowsMapperImpl());
+          const subscription = subscriberMapper.mapFromSubscription(res.data);
+          reset(subscription);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }, [id]);
   }
 
-  const nssai2KeyString = (nssai: Nssai) => {
-    return toHex(nssai.sst) + nssai.sd;
-  };
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   const supiIncrement = (supi: string): string => {
     const imsi = supi.split("-", 2);
@@ -65,42 +68,24 @@ function SubscriberCreate() {
   };
 
   const onCreate = () => {
+    console.log("trace: onCreate")
+
     const data = getValues();
 
-    if (data.SessionManagementSubscriptionData === undefined) {
+    if (data.SnssaiConfigurations.length === 0) {
       alert("Please add at least one S-NSSAI");
       return;
     }
-    for (let i = 0; i < data.SessionManagementSubscriptionData!.length; i++) {
-      const nssai = data.SessionManagementSubscriptionData![i];
-      const key = nssai2KeyString(nssai.singleNssai!);
-      Object.keys(nssai.dnnConfigurations!).map((dnn) => {
-        if (data.SmfSelectionSubscriptionData!.subscribedSnssaiInfos![key] === undefined) {
-          data.SmfSelectionSubscriptionData!.subscribedSnssaiInfos![key] = {
-            dnnInfos: [{ dnn: dnn }],
-          };
-        } else {
-          data.SmfSelectionSubscriptionData!.subscribedSnssaiInfos![key].dnnInfos!.push({
-            dnn: dnn,
-          });
-        }
-        if (data.SmPolicyData!.smPolicySnssaiData![key] === undefined) {
-          data.SmPolicyData!.smPolicySnssaiData![key] = {
-            snssai: nssai.singleNssai,
-            smPolicyDnnData: {},
-          };
-        }
-        data.SmPolicyData!.smPolicySnssaiData![key].smPolicyDnnData![dnn] = {
-          dnn: dnn,
-        };
-      });
-    }
+
+    const subscriberMapper = new SubscriptionMapperImpl(new FlowsMapperImpl());
+    const subscription = subscriberMapper.mapFromDto(data);
+
     // Iterate subscriber data number.
-    let supi = data.ueId!;
-    for (let i = 0; i < data.userNumber!; i++) {
-      data.ueId = supi;
+    let supi = subscription.ueId;
+    for (let i = 0; i < subscription.userNumber!; i++) {
+      subscription.ueId = supi;
       axios
-        .post("/api/subscriber/" + data.ueId + "/" + data.plmnID, data)
+        .post("/api/subscriber/" + subscription.ueId + "/" + subscription.plmnID, subscription)
         .then(() => {
           navigation("/subscriber");
         })
@@ -121,44 +106,16 @@ function SubscriberCreate() {
   };
 
   const onUpdate = () => {
-    const data = getValues();
+    console.log("trace: onUpdate")
 
-    data.SmfSelectionSubscriptionData = {
-      subscribedSnssaiInfos: {},
-    };
-    data.SmPolicyData = {
-      smPolicySnssaiData: {},
-    };
-    for (let i = 0; i < data.SessionManagementSubscriptionData!.length; i++) {
-      const nssai = data.SessionManagementSubscriptionData![i];
-      const key = nssai2KeyString(nssai.singleNssai!);
-      if (nssai.dnnConfigurations !== undefined) {
-        Object.keys(nssai.dnnConfigurations!).map((dnn) => {
-          if (data.SmfSelectionSubscriptionData!.subscribedSnssaiInfos![key] === undefined) {
-            data.SmfSelectionSubscriptionData!.subscribedSnssaiInfos![key] = {
-              dnnInfos: [{ dnn: dnn }],
-            };
-          } else {
-            data.SmfSelectionSubscriptionData!.subscribedSnssaiInfos![key].dnnInfos!.push({
-              dnn: dnn,
-            });
-          }
-          if (data.SmPolicyData!.smPolicySnssaiData![key] === undefined) {
-            data.SmPolicyData!.smPolicySnssaiData![key] = {
-              snssai: nssai.singleNssai,
-              smPolicyDnnData: {},
-            };
-          }
-          data.SmPolicyData!.smPolicySnssaiData![key].smPolicyDnnData![dnn] = {
-            dnn: dnn,
-          };
-        });
-      }
-    }
+    const data = getValues();
+    const subscriberMapper = new SubscriptionMapperImpl(new FlowsMapperImpl());
+    const subscription = subscriberMapper.mapFromDto(data);
+
     axios
-      .put("/api/subscriber/" + data.ueId + "/" + data.plmnID, data)
+      .put("/api/subscriber/" + subscription.ueId + "/" + subscription.plmnID, subscription)
       .then(() => {
-        navigation("/subscriber/" + data.ueId + "/" + data.plmnID);
+        navigation("/subscriber/" + subscription.ueId + "/" + subscription.plmnID);
       })
       .catch((err) => {
         if (err.response) {
@@ -178,7 +135,9 @@ function SubscriberCreate() {
 
   return (
     <Dashboard title="Subscription" refreshAction={() => {}}>
-      <form onSubmit={handleSubmit(formSubmitFn)}>
+      <form onSubmit={handleSubmit(formSubmitFn, (err) => {
+        console.log("form error: ", err)
+      })}>
         <SubscriberFormBasic />
 
         <h3>Subscribed UE AMBR</h3>
@@ -186,24 +145,6 @@ function SubscriberCreate() {
 
         <SubscriberFormSessions />
 
-        <br />
-        <Grid item xs={12}>
-          <Button
-            color="secondary"
-            variant="contained"
-            onClick={() =>
-              appendSessionSubscription({
-                singleNssai: {
-                  sst: 1,
-                },
-                dnnConfigurations: {},
-              })
-            }
-            sx={{ m: 1 }}
-          >
-            +SNSSAI
-          </Button>
-        </Grid>
         <br />
         <Grid item xs={12}>
           <Button color="primary" variant="contained" type="submit" sx={{ m: 1 }}>

@@ -1,5 +1,4 @@
-import type { SelectChangeEvent } from "@mui/material";
-import type { AccessAndMobilitySubscriptionData } from "../../api";
+import { Controller } from "react-hook-form";
 import { useSubscriptionForm } from "../../hooks/subscription-form";
 import {
   Card,
@@ -15,103 +14,7 @@ import {
 } from "@mui/material";
 
 export default function SubscriberFormBasic() {
-  const {
-    register,
-    watch,
-    validationErrors,
-    getValues,
-    setValue,
-    opcType,
-    setOpcType,
-    opcValue,
-    setOpcValue,
-  } = useSubscriptionForm();
-
-  const handleChangeOperatorCodeType = (event: SelectChangeEvent<string>): void => {
-    const auth = getValues()["AuthenticationSubscription"];
-
-    if (event.target.value === "OP") {
-      setOpcType("OP");
-      const tmp = {
-        ...auth,
-        milenage: {
-          op: {
-            opValue: opcValue,
-            encryptionKey: 0,
-            encryptionAlgorithm: 0,
-          },
-        },
-        opc: {
-          opcValue: "",
-          encryptionKey: 0,
-          encryptionAlgorithm: 0,
-        },
-      };
-      setValue("AuthenticationSubscription", tmp);
-    } else {
-      setOpcType("OPc");
-      const tmp = {
-        ...auth,
-        milenage: {
-          op: {
-            opValue: "",
-            encryptionKey: 0,
-            encryptionAlgorithm: 0,
-          },
-        },
-        opc: {
-          opcValue: opcValue,
-          encryptionKey: 0,
-          encryptionAlgorithm: 0,
-        },
-      };
-      setValue("AuthenticationSubscription", tmp);
-    }
-  };
-
-  const handleChangeOperatorCodeValue = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ): void => {
-    setOpcValue(event.target.value);
-    const auth = getValues()["AuthenticationSubscription"];
-    if (auth !== undefined) {
-      if (opcType === "OP") {
-        const tmp = {
-          ...auth,
-          milenage: {
-            op: {
-              opValue: event.target.value,
-              encryptionKey: 0,
-              encryptionAlgorithm: 0,
-            },
-          },
-          opc: {
-            opcValue: "",
-            encryptionKey: 0,
-            encryptionAlgorithm: 0,
-          },
-        };
-        setValue("AuthenticationSubscription", tmp);
-      } else {
-        const tmp = {
-          ...auth,
-          milenage: {
-            op: {
-              opValue: "",
-              encryptionKey: 0,
-              encryptionAlgorithm: 0,
-            },
-          },
-          opc: {
-            opcValue: event.target.value,
-            encryptionKey: 0,
-            encryptionAlgorithm: 0,
-          },
-        };
-        setValue("AuthenticationSubscription", tmp);
-      }
-    }
-  };
+  const { register, validationErrors, watch, control } = useSubscriptionForm();
 
   return (
     <Card variant="outlined">
@@ -158,12 +61,11 @@ export default function SubscriberFormBasic() {
             </TableCell>
             <TableCell>
               <TextField
-                {...register("AccessAndMobilitySubscriptionData.gpsis.0")}
-                error={validationErrors.AccessAndMobilitySubscriptionData?.gpsis?.[0] !== undefined}
-                helperText={validationErrors.AccessAndMobilitySubscriptionData?.gpsis?.[0]?.message}
+                {...register("gpsi")}
+                error={validationErrors.gpsi !== undefined}
+                helperText={validationErrors.gpsi?.message}
                 label="GPSI (MSISDN)"
                 variant="outlined"
-                required
                 fullWidth
               />
             </TableCell>
@@ -173,17 +75,9 @@ export default function SubscriberFormBasic() {
           <TableRow>
             <TableCell>
               <TextField
-                {...register("AuthenticationSubscription.authenticationManagementField", {
-                  required: true,
-                })}
-                error={
-                  validationErrors.AuthenticationSubscription?.authenticationManagementField !==
-                  undefined
-                }
-                helperText={
-                  validationErrors.AuthenticationSubscription?.authenticationManagementField
-                    ?.message
-                }
+                {...register("auth.authenticationManagementField")}
+                error={validationErrors.auth?.authenticationManagementField !== undefined}
+                helperText={validationErrors.auth?.authenticationManagementField?.message}
                 label="Authentication Management Field (AMF)"
                 variant="outlined"
                 fullWidth
@@ -192,21 +86,24 @@ export default function SubscriberFormBasic() {
             <TableCell align="left">
               <FormControl variant="outlined" fullWidth>
                 <InputLabel>Authentication Method</InputLabel>
-                <Select
-                  {...register("AuthenticationSubscription.authenticationMethod", {
-                    required: true,
-                  })}
-                  error={
-                    validationErrors.AuthenticationSubscription?.authenticationMethod !== undefined
-                  }
-                  label="Authentication Method"
-                  variant="outlined"
-                  fullWidth
-                  defaultValue="5G_AKA"
-                >
-                  <MenuItem value="5G_AKA">5G_AKA</MenuItem>
-                  <MenuItem value="EAP_AKA_PRIME">EAP_AKA_PRIME</MenuItem>
-                </Select>
+                <Controller
+                  control={control}
+                  name="auth.authenticationMethod"
+                  rules={{ required: true }}
+                  render={(props) => (
+                    <Select
+                      {...props.field}
+                      error={props.fieldState.error !== undefined}
+                      label="Authentication Method"
+                      variant="outlined"
+                      fullWidth
+                      defaultValue=""
+                    >
+                      <MenuItem value="5G_AKA">5G_AKA</MenuItem>
+                      <MenuItem value="EAP_AKA_PRIME">EAP_AKA_PRIME</MenuItem>
+                    </Select>
+                  )}
+                />
               </FormControl>
             </TableCell>
           </TableRow>
@@ -216,27 +113,38 @@ export default function SubscriberFormBasic() {
             <TableCell align="left">
               <FormControl variant="outlined" fullWidth>
                 <InputLabel>Operator Code Type</InputLabel>
-                <Select
-                  label="Operator Code Type"
-                  variant="outlined"
-                  required
-                  fullWidth
-                  value={opcType}
-                  onChange={handleChangeOperatorCodeType}
-                >
-                  <MenuItem value="OP">OP</MenuItem>
-                  <MenuItem value="OPc">OPc</MenuItem>
-                </Select>
+                <Controller
+                  control={control}
+                  name="auth.operatorCodeType"
+                  rules={{ required: true }}
+                  render={(props) => (
+                    <Select
+                      {...props.field}
+                      error={props.fieldState.error !== undefined}
+                      label="Operator Code Type"
+                      variant="outlined"
+                      required
+                      fullWidth
+                      defaultValue=""
+                    >
+                      <MenuItem value="OP">OP</MenuItem>
+                      <MenuItem value="OPc">OPc</MenuItem>
+                    </Select>
+                  )}
+                />
               </FormControl>
             </TableCell>
             <TableCell>
               <TextField
+                {...register("auth.operatorCode", {
+                  required: true,
+                })}
+                error={validationErrors.auth?.operatorCode !== undefined}
+                helperText={validationErrors.auth?.operatorCode?.message}
                 label="Operator Code Value"
                 variant="outlined"
                 required
                 fullWidth
-                value={opcValue}
-                onChange={handleChangeOperatorCodeValue}
               />
             </TableCell>
           </TableRow>
@@ -245,9 +153,9 @@ export default function SubscriberFormBasic() {
           <TableRow>
             <TableCell>
               <TextField
-                {...register("AuthenticationSubscription.sequenceNumber", { required: true })}
-                error={validationErrors.AuthenticationSubscription?.sequenceNumber !== undefined}
-                helperText={validationErrors.AuthenticationSubscription?.sequenceNumber?.message}
+                {...register("auth.sequenceNumber", { required: true })}
+                error={validationErrors.auth?.sequenceNumber !== undefined}
+                helperText={validationErrors.auth?.sequenceNumber?.message}
                 label="SQN"
                 variant="outlined"
                 required
@@ -256,17 +164,11 @@ export default function SubscriberFormBasic() {
             </TableCell>
             <TableCell>
               <TextField
-                {...register("AuthenticationSubscription.permanentKey.permanentKeyValue", {
+                {...register("auth.permanentKey", {
                   required: true,
                 })}
-                error={
-                  validationErrors.AuthenticationSubscription?.permanentKey?.permanentKeyValue !==
-                  undefined
-                }
-                helperText={
-                  validationErrors.AuthenticationSubscription?.permanentKey?.permanentKeyValue
-                    ?.message
-                }
+                error={validationErrors.auth?.permanentKey !== undefined}
+                helperText={validationErrors.auth?.permanentKey?.message}
                 label="Permanent Authentication Key"
                 variant="outlined"
                 required

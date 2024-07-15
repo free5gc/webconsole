@@ -11,17 +11,11 @@ export default function SubscriberFormUeAmbr() {
           <TableRow>
             <TableCell>
               <TextField
-                {...register("AccessAndMobilitySubscriptionData.subscribedUeAmbr.uplink", {
+                {...register("subscribedUeAmbr.uplink", {
                   required: true,
                 })}
-                error={
-                  validationErrors.AccessAndMobilitySubscriptionData?.subscribedUeAmbr?.uplink !==
-                  undefined
-                }
-                helperText={
-                  validationErrors.AccessAndMobilitySubscriptionData?.subscribedUeAmbr?.uplink
-                    ?.message
-                }
+                error={validationErrors.subscribedUeAmbr?.uplink !== undefined}
+                helperText={validationErrors.subscribedUeAmbr?.uplink?.message}
                 label="Uplink"
                 variant="outlined"
                 required
@@ -30,17 +24,11 @@ export default function SubscriberFormUeAmbr() {
             </TableCell>
             <TableCell>
               <TextField
-                {...register("AccessAndMobilitySubscriptionData.subscribedUeAmbr.downlink", {
+                {...register("subscribedUeAmbr.downlink", {
                   required: true,
                 })}
-                error={
-                  validationErrors.AccessAndMobilitySubscriptionData?.subscribedUeAmbr?.downlink !==
-                  undefined
-                }
-                helperText={
-                  validationErrors.AccessAndMobilitySubscriptionData?.subscribedUeAmbr?.downlink
-                    ?.message
-                }
+                error={validationErrors.subscribedUeAmbr?.downlink !== undefined}
+                helperText={validationErrors.subscribedUeAmbr?.downlink?.message}
                 label="Downlink"
                 variant="outlined"
                 required
