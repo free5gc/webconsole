@@ -280,7 +280,7 @@ export default function SubscriberFormSessions() {
                                   row.sd,
                                   row.sst,
                                   dnn,
-                                  row.dnnConfigurations[dnn].staticIpv4Address ?? "",
+                                  watch(`SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.staticIpv4Address`) ?? "",
                                 )
                               }
                               sx={{
