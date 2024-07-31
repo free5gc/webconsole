@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 
 export default function SubscriberFormBasic() {
-  const { register, validationErrors, watch, control } = useSubscriptionForm();
+  const { register, validationErrors, control } = useSubscriptionForm();
 
   return (
     <Card variant="outlined">

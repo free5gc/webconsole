@@ -9,6 +9,7 @@ import {
   TableCell,
   TableRow,
   TextField,
+  Switch,
 } from "@mui/material";
 import { useSubscriptionForm } from "../../hooks/subscription-form";
 import { toHex } from "../../lib/utils";
@@ -54,7 +55,7 @@ const handleVerifyStaticIp = (sd: string, sst: number, dnn: string, ipaddr: stri
 };
 
 export default function SubscriberFormSessions() {
-  const { register, validationErrors, getValues, setValue, control } = useSubscriptionForm();
+  const { register, validationErrors, watch, getValues, setValue, control } = useSubscriptionForm();
 
   const {
     fields: snssaiConfigurations,
@@ -248,7 +249,13 @@ export default function SubscriberFormSessions() {
                     <Table>
                       <TableBody>
                         <TableRow>
-                          <TableCell style={{ width: "80%" }}>
+                          <TableCell style={{ width: "10%" }}>
+                              <Switch 
+                                {...register(`SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.enableStaticIpv4Address`)} 
+                              />
+                          </TableCell>
+
+                          <TableCell style={{ width: "70%" }}>
                             <TextField
                               {...register(
                                 `SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.staticIpv4Address`,
@@ -258,6 +265,7 @@ export default function SubscriberFormSessions() {
                                   dnn
                                 ]?.staticIpv4Address !== undefined
                               }
+                              disabled={!watch(`SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.enableStaticIpv4Address`)}
                               label="IPv4 Address"
                               variant="outlined"
                               fullWidth
@@ -267,7 +275,6 @@ export default function SubscriberFormSessions() {
                             <Button
                               color="secondary"
                               variant="contained"
-                              // handleVerifyStaticIp = (sd: string, sst: number, dnn: string, ipaddr: string)
                               onClick={() =>
                                 handleVerifyStaticIp(
                                   row.sd,

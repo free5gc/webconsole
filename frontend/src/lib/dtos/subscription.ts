@@ -88,6 +88,7 @@ interface UpSecurityDTO {
 export const DnnConfigurationDTOSchema = z.object({
   default5qi: z.number(),
   sessionAmbr: ambrDTOSchema,
+  enableStaticIpv4Address: z.boolean(),
   staticIpv4Address: z.string().optional(),
   flowRules: z.array(flowRulesDTOSchema),
   upSecurity: upSecurityDTOSchema.optional(), 
@@ -96,6 +97,7 @@ export const DnnConfigurationDTOSchema = z.object({
 interface DnnConfigurationDTO {
   default5qi: number;
   sessionAmbr: AmbrDTO;
+  enableStaticIpv4Address: boolean;
   staticIpv4Address?: string;
   flowRules: FlowRulesDTO[];
   upSecurity?: UpSecurityDTO;
@@ -341,6 +343,7 @@ class SubscriptionMapperImpl implements SubscriptionMapper {
                 uplink: value.sessionAmbr?.uplink ?? "",
                 downlink: value.sessionAmbr?.downlink ?? "",
               },
+              enableStaticIpv4Address: value.staticIpAddress?.length !== 0,
               flowRules: this.parseDnnFlowRules(s.singleNssai, key, subscription),
               upSecurity: value.upSecurity,
             } satisfies DnnConfigurationDTO,
@@ -480,7 +483,7 @@ class SubscriptionMapperImpl implements SubscriptionMapper {
         priorityLevel: 8,
       },
       sessionAmbr: this.buildSubscriberAmbr(data.sessionAmbr),
-      staticIpAddress: data.staticIpv4Address ? [{ ipv4Addr: data.staticIpv4Address }] : [],
+      staticIpAddress: data.enableStaticIpv4Address ? [{ ipv4Addr: data.staticIpv4Address }] : [],
       upSecurity: this.buildUpSecurity(data.upSecurity),
     };
   }
@@ -526,6 +529,7 @@ export const defaultSubscriptionDTO = (): SubscriptionDTO => ({
       },
       dnnConfigurations: {
         internet: {
+          enableStaticIpv4Address: false,
           default5qi: 9,
           sessionAmbr: {
             uplink: "1000 Mbps",
@@ -561,6 +565,7 @@ export const defaultSubscriptionDTO = (): SubscriptionDTO => ({
       },
       dnnConfigurations: {
         internet: {
+          enableStaticIpv4Address: false,
           default5qi: 8,
           sessionAmbr: {
             uplink: "1000 Mbps",
@@ -606,6 +611,7 @@ export const defaultDnnConfig = (): DnnConfigurationDTO => ({
     uplink: "",
     downlink: "",
   },
+  enableStaticIpv4Address: false,
   staticIpv4Address: "",
   flowRules: [],
   upSecurity: undefined,
