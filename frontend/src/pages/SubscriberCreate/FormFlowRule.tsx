@@ -116,6 +116,7 @@ export default function FormFlowRule({ snssaiIndex, dnn, snssai }: FormFlowRuleP
                         {...register(
                           `SnssaiConfigurations.${snssaiIndex}.dnnConfigurations.${dnn}.flowRules.${index}.5qi`,
                           {
+                            valueAsNumber: true,
                             required: true,
                           },
                         )}

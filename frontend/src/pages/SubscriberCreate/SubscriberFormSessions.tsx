@@ -125,6 +125,7 @@ export default function SubscriberFormSessions() {
                   <TableCell style={{ width: "50%" }}>
                     <TextField
                       {...register(`SnssaiConfigurations.${index}.sst`, {
+                        valueAsNumber: true,
                         required: true,
                       })}
                       error={validationErrors.SnssaiConfigurations?.[index]?.sst !== undefined}
