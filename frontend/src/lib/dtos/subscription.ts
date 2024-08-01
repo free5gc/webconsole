@@ -387,23 +387,25 @@ class SubscriptionMapperImpl implements SubscriptionMapper {
       (f) => f.dnn === dnn && f.snssai === snssai.sst.toString().padStart(2, "0") + snssai.sd,
     );
 
-    const flowRule = subscription.FlowRules.find((r) => r.qosRef === qosFlows[0].qosRef);
-    const chargingData = subscription.ChargingDatas.find((c) => c.qosRef === qosFlows[0].qosRef);
+    return qosFlows.map((f) => {
+      const flowRule = subscription.FlowRules.find((r) => r.qosRef === f.qosRef);
+      const chargingData = subscription.ChargingDatas.find((c) => c.qosRef === f.qosRef);
 
-    return qosFlows.map((f) => ({
-      filter: flowRule?.filter ?? "",
-      precedence: flowRule?.precedence ?? 0,
-      "5qi": f["5qi"] ?? DEFAULT_5QI,
-      gbrUL: f.gbrUL ?? "",
-      gbrDL: f.gbrDL ?? "",
-      mbrUL: f.mbrUL ?? "",
-      mbrDL: f.mbrDL ?? "",
-      chargingData: {
-        chargingMethod: chargingData?.chargingMethod === "Online" ? "Online" : "Offline",
-        quota: chargingData?.quota ?? "",
-        unitCost: chargingData?.unitCost ?? "",
-      },
-    }));
+      return {
+        filter: flowRule?.filter ?? "",
+        precedence: flowRule?.precedence ?? 0,
+        "5qi": f["5qi"] ?? DEFAULT_5QI,
+        gbrUL: f.gbrUL ?? "",
+        gbrDL: f.gbrDL ?? "",
+        mbrUL: f.mbrUL ?? "",
+        mbrDL: f.mbrDL ?? "",
+        chargingData: {
+          chargingMethod: chargingData?.chargingMethod === "Online" ? "Online" : "Offline",
+          quota: chargingData?.quota ?? "",
+          unitCost: chargingData?.unitCost ?? "",
+        },
+      }
+    });
   }
 
   private buildSubscriberAuth(data: SubscriberAuthDTO): AuthenticationSubscription {

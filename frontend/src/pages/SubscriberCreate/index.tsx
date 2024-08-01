@@ -45,9 +45,6 @@ function SubscriberCreate() {
         .then((res) => {
           const subscriberMapper = new SubscriptionMapperImpl(new FlowsMapperImpl());
           const subscription = subscriberMapper.mapFromSubscription(res.data);
-
-          console.log("Subscription Raw: ", res.data);
-          console.log("Subscription: ", subscription);
           reset(subscription);
         })
         .finally(() => {
