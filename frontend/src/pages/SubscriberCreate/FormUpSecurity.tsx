@@ -13,6 +13,7 @@ import {
   TableRow,
   SelectChangeEvent,
 } from "@mui/material";
+import { Controller } from "react-hook-form";
 import { useSubscriptionForm } from "../../hooks/subscription-form";
 import { defaultUpSecurity } from "../../lib/dtos/subscription";
 
@@ -55,7 +56,7 @@ function NoUpSecurity(props: FormUpSecurityProps) {
 }
 
 export default function FormUpSecurity(props: FormUpSecurityProps) {
-  const { register, validationErrors, watch, getValues, setValue } = useSubscriptionForm();
+  const { register, validationErrors, watch, control, getValues, setValue } = useSubscriptionForm();
 
   const dnnConfig = watch(
     `SnssaiConfigurations.${props.sessionIndex}.dnnConfigurations.${props.dnnKey}`,
@@ -92,6 +93,7 @@ export default function FormUpSecurity(props: FormUpSecurityProps) {
             </Box>
           </Grid>
         </Grid>
+
         <Card variant="outlined">
           <Table>
             <TableBody>
@@ -99,55 +101,54 @@ export default function FormUpSecurity(props: FormUpSecurityProps) {
                 <TableCell>
                   <FormControl variant="outlined" fullWidth>
                     <InputLabel>Integrity of UP Security</InputLabel>
-                    <Select
-                      {...register(
-                        `SnssaiConfigurations.${props.sessionIndex}.dnnConfigurations.${props.dnnKey}.upSecurity.upIntegr`,
-                        {
-                          required: true,
-                        },
+                    <Controller
+                      control={control}
+                      name={`SnssaiConfigurations.${props.sessionIndex}.dnnConfigurations.${props.dnnKey}.upSecurity.upIntegr`}
+                      rules={{ required: true }}
+                      render={(props) => (
+                        <Select
+                          {...props.field}
+                          error={props.fieldState.error !== undefined}
+                          label="Integrity of UP Security"
+                          variant="outlined"
+                          required
+                          fullWidth
+                        >
+                          <MenuItem value="NOT_NEEDED">NOT_NEEDED</MenuItem>
+                          <MenuItem value="PREFERRED">PREFERRED</MenuItem>
+                          <MenuItem value="REQUIRED">REQUIRED</MenuItem>
+                        </Select>
                       )}
-                      error={
-                        validationErrors.SnssaiConfigurations?.[props.sessionIndex]
-                          ?.dnnConfigurations?.[props.dnnKey]?.upSecurity?.upIntegr !== undefined
-                      }
-                      label="Integrity of UP Security"
-                      variant="outlined"
-                      required
-                      fullWidth
-                    >
-                      <MenuItem value="NOT_NEEDED">NOT_NEEDED</MenuItem>
-                      <MenuItem value="PREFERRED">PREFERRED</MenuItem>
-                      <MenuItem value="REQUIRED">REQUIRED</MenuItem>
-                    </Select>
+                    />
                   </FormControl>
                 </TableCell>
               </TableRow>
             </TableBody>
+
             <TableBody>
               <TableRow>
                 <TableCell>
                   <FormControl variant="outlined" fullWidth>
                     <InputLabel>Confidentiality of UP Security</InputLabel>
-                    <Select
-                      {...register(
-                        `SnssaiConfigurations.${props.sessionIndex}.dnnConfigurations.${props.dnnKey}.upSecurity.upConfid`,
-                        {
-                          required: true,
-                        },
+                    <Controller
+                      control={control}
+                      name={`SnssaiConfigurations.${props.sessionIndex}.dnnConfigurations.${props.dnnKey}.upSecurity.upConfid`}
+                      rules={{ required: true }}
+                      render={(props) => (
+                        <Select
+                          {...props.field}
+                          error={props.fieldState.error !== undefined}
+                          label="Confidentiality of UP Security"
+                          variant="outlined"
+                          required
+                          fullWidth
+                        >
+                          <MenuItem value="NOT_NEEDED">NOT_NEEDED</MenuItem>
+                          <MenuItem value="PREFERRED">PREFERRED</MenuItem>
+                          <MenuItem value="REQUIRED">REQUIRED</MenuItem>
+                        </Select>    
                       )}
-                      error={
-                        validationErrors.SnssaiConfigurations?.[props.sessionIndex]
-                          ?.dnnConfigurations?.[props.dnnKey]?.upSecurity?.upConfid !== undefined
-                      }
-                      label="Confidentiality of UP Security"
-                      variant="outlined"
-                      required
-                      fullWidth
-                    >
-                      <MenuItem value="NOT_NEEDED">NOT_NEEDED</MenuItem>
-                      <MenuItem value="PREFERRED">PREFERRED</MenuItem>
-                      <MenuItem value="REQUIRED">REQUIRED</MenuItem>
-                    </Select>
+                    />
                   </FormControl>
                 </TableCell>
               </TableRow>
