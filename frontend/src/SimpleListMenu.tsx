@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import Menu from "@mui/material/Menu";
+import { useNavigate } from "react-router-dom";
+import { LoginContext } from "./LoginContext";
 
 export interface SimpleListMenuProps {
   title: string | undefined;
@@ -17,6 +19,37 @@ export default function SimpleListMenu(props: SimpleListMenuProps) {
   const open = Boolean(anchorEl);
   const handleClickListItem = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
+  };
+
+  const navigation = useNavigate();
+  const context = useContext(LoginContext);
+  if (context === undefined) {
+    throw new Error("LoginContext must be used within a LoginContext.Provider");
+  }
+  const { setUser } = context;
+
+  function onChangePassword() {
+    navigation("/password");
+  }
+
+  function onLogout() {
+    setUser(null);
+    navigation("/login");
+  }
+
+  const handleMenuItemClick = (event: React.MouseEvent<HTMLElement>, index: number) => {
+    setSelectedIndex(index);
+    setAnchorEl(null);
+    switch (index) {
+      case 0:
+        onChangePassword();
+        break;
+      case 1:
+        onLogout();
+        break;
+      default:
+        break;
+    }
   };
 
   const handleClose = () => {

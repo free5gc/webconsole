@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import StatusList from "./pages/StatusList";
 import StatusRead from "./pages/StatusRead";
@@ -19,10 +19,38 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import { LoginContext, User } from "./LoginContext";
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    // retrieve from local storage on initial load (if available)
+    const storedUser = localStorage.getItem('username');
+    const storedToken = localStorage.getItem('token');
+    if (storedUser && storedToken) {
+      return { username: storedUser, token: storedToken };
+    } else {
+      console.warn('no user stored!');
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    if (user && user.token) {
+      console.log('setting user related state');
+      localStorage.setItem('username', user.username);
+      localStorage.setItem('token', user.token);
+    } else {
+      console.log('deleting user related state');
+      localStorage.removeItem('username');
+      localStorage.removeItem('token');
+    }
+  }, [user])
+
+  // performance optimization, skip re-rendering of children if user did not change
+  const contextValue = useMemo(() => ({
+    user,
+    setUser
+  }), [user]);
 
   return (
-    <LoginContext.Provider value={{ user, setUser }}>
+    <LoginContext.Provider value={contextValue}>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />

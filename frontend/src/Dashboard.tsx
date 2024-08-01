@@ -82,7 +82,12 @@ function Dashboard(props: DashboardProps) {
   const toggleDrawer = () => {
     setOpen(!open);
   };
-  const { user, setUser } = useContext(LoginContext);
+  const context = useContext(LoginContext);
+  if (context === undefined) {
+    throw new Error("LoginContext must be used within a LoginContext.Provider");
+  }
+  const { user } = context;
+
   const navigation = useNavigate();
 
   const [time, setTime] = useState<Date>(new Date());
@@ -115,7 +120,7 @@ function Dashboard(props: DashboardProps) {
         navigation("/password");
         break;
       case 1:
-        setUser(null);
+        // setUser(null);
         navigation("/login");
         break;
       default:
@@ -151,7 +156,6 @@ function Dashboard(props: DashboardProps) {
         break;
     }
   };
-
   return (
     <ThemeProvider theme={mdTheme}>
       <Box sx={{ display: "flex" }}>
