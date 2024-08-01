@@ -189,7 +189,6 @@ class FlowsMapperImpl implements FlowsMapper {
 
     dnns.forEach((dnn) => {
       const snssai = dnn.snssai;
-      const qosRef = this.refNumber++;
 
       this.chargingDatas.push({
         ...dnn.sliceCharingData,
@@ -199,6 +198,8 @@ class FlowsMapperImpl implements FlowsMapper {
       });
 
       dnn.flowRules.forEach((flow) => {
+        const qosRef = this.refNumber++;
+
         this.flowRules.push({
           filter: flow.filter,
           precedence: flow.precedence,

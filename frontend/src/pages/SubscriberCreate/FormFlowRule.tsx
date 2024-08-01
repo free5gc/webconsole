@@ -92,6 +92,7 @@ export default function FormFlowRule({ snssaiIndex, dnn, snssai }: FormFlowRuleP
                           `SnssaiConfigurations.${snssaiIndex}.dnnConfigurations.${dnn}.flowRules.${index}.precedence`,
                           {
                             required: true,
+                            valueAsNumber: true,
                           },
                         )}
                         error={
