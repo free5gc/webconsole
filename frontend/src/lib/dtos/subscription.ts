@@ -611,12 +611,12 @@ export const defaultSnssaiConfiguration = (): SnssaiConfiurationDTO => ({
 export const defaultDnnConfig = (): DnnConfigurationDTO => ({
   default5qi: DEFAULT_5QI,
   sessionAmbr: {
-    uplink: "",
-    downlink: "",
+    uplink: "1000 Mbps",
+    downlink: "1000 Mbps",
   },
   enableStaticIpv4Address: false,
   staticIpv4Address: "",
-  flowRules: [],
+  flowRules: [defaultFlowRule()],
   upSecurity: undefined,
 });
 

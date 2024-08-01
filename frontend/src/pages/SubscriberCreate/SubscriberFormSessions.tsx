@@ -61,6 +61,7 @@ export default function SubscriberFormSessions() {
     fields: snssaiConfigurations,
     append: appendSnssaiConfiguration,
     remove: removeSnssaiConfiguration,
+    update: updateSnssaiConfiguration,
   } = useFieldArray({
     control,
     name: "SnssaiConfigurations",
@@ -75,8 +76,9 @@ export default function SubscriberFormSessions() {
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     index: number,
   ): void => {
-    dnnName[index] = event.target.value;
-    setDnnName(dnnName);
+    setDnnName((dnnName) => 
+      dnnName.map((name, i) => index === i ? event.target.value : name)
+    )
   };
 
   const onDnnAdd = (index: number) => {
@@ -85,17 +87,28 @@ export default function SubscriberFormSessions() {
       return;
     }
 
-    setValue(`SnssaiConfigurations.${index}.dnnConfigurations.${name}`, defaultDnnConfig());
-    setDnnName({ ...dnnName, [index]: "" });
+    const snssaiConfig = watch(`SnssaiConfigurations.${index}`);
+    updateSnssaiConfiguration(index, {
+      ...snssaiConfig,
+      dnnConfigurations: {
+        ...snssaiConfig.dnnConfigurations,
+        [name]: defaultDnnConfig(),
+      }
+    });
+
+    // restore input field
+    setDnnName((dnnName) => dnnName.map((name, i) => index === i ? "" : name))
   };
 
   const onDnnDelete = (index: number, dnn: string, slice: string) => {
-    const session = getValues()["SnssaiConfigurations"][index];
-    if (session.dnnConfigurations === undefined) {
-      return;
-    }
-    delete session.dnnConfigurations[dnn];
-    setValue(`SnssaiConfigurations.${index}`, session);
+    const snssaiConfig = watch(`SnssaiConfigurations.${index}`);
+    const newDnnConfigurations = { ...snssaiConfig.dnnConfigurations };
+    delete newDnnConfigurations[dnn];
+
+    updateSnssaiConfiguration(index, {
+      ...snssaiConfig,
+      dnnConfigurations: newDnnConfigurations
+    });
   };
 
   return (
@@ -315,7 +328,7 @@ export default function SubscriberFormSessions() {
                     label="Data Network Name"
                     variant="outlined"
                     fullWidth
-                    value={dnnValue(index)}
+                    value={dnnName[index]}
                     onChange={(ev) => handleChangeDNN(ev, index)}
                   />
                 </Box>
