@@ -23,6 +23,7 @@ export const useSubscriptionForm = () => {
     watch,
     getValues,
     setValue,
+    setFocus,
     reset,
     control,
     formState: { errors: validationErrors },
@@ -33,9 +34,10 @@ export const useSubscriptionForm = () => {
     validationErrors,
     handleSubmit,
     watch,
-    control,
     getValues,
+    control,
     setValue,
+    setFocus,
     reset,
   };
 };

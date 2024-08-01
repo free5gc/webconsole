@@ -55,7 +55,7 @@ const handleVerifyStaticIp = (sd: string, sst: number, dnn: string, ipaddr: stri
 };
 
 export default function SubscriberFormSessions() {
-  const { register, validationErrors, watch, getValues, setValue, control } = useSubscriptionForm();
+  const { register, validationErrors, watch, control, setFocus } = useSubscriptionForm();
 
   const {
     fields: snssaiConfigurations,
@@ -81,6 +81,13 @@ export default function SubscriberFormSessions() {
     )
   };
 
+  const enterKeyCreateDnn = (index: number) => (ev: React.KeyPressEvent<HTMLInputElement>) => {
+    if (ev.key === 'Enter') {
+      ev.preventDefault();
+      onDnnAdd(index);
+    }
+  } 
+
   const onDnnAdd = (index: number) => {
     const name = dnnName[index];
     if (name === undefined || name === "") {
@@ -94,6 +101,11 @@ export default function SubscriberFormSessions() {
         ...snssaiConfig.dnnConfigurations,
         [name]: defaultDnnConfig(),
       }
+    });
+
+    setTimeout(() => {
+      /* IMPORTANT: setFocus after rerender */
+      setFocus(`SnssaiConfigurations.${index}.dnnConfigurations.${name}.sessionAmbr.uplink`)
     });
 
     // restore input field
@@ -330,6 +342,7 @@ export default function SubscriberFormSessions() {
                     fullWidth
                     value={dnnName[index]}
                     onChange={(ev) => handleChangeDNN(ev, index)}
+                    onKeyPress={enterKeyCreateDnn(index)}
                   />
                 </Box>
               </Grid>
