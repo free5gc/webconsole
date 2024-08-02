@@ -55,17 +55,15 @@ function FormSliceChargingConfig({ snssaiIndex }: FormCharginConfigProps) {
 
           <TableCell style={{ width: "33%" }}>
             <TextField
-              {...register(
-                `SnssaiConfigurations.${snssaiIndex}.chargingData.quota`,
-                {
-                  required: true,
-                },
-              )}
+              {...register(`SnssaiConfigurations.${snssaiIndex}.chargingData.quota`, {
+                required: true,
+              })}
               error={
-                validationErrors.SnssaiConfigurations?.[snssaiIndex].chargingData?.quota !== undefined
+                validationErrors.SnssaiConfigurations?.[snssaiIndex]?.chargingData?.quota !==
+                undefined
               }
               helperText={
-                validationErrors.SnssaiConfigurations?.[snssaiIndex].chargingData?.quota?.message
+                validationErrors.SnssaiConfigurations?.[snssaiIndex]?.chargingData?.quota?.message
               }
               label="Quota (monetary)"
               variant="outlined"

@@ -68,7 +68,7 @@ function SubscriberCreate() {
   };
 
   const onCreate = () => {
-    console.log("trace: onCreate")
+    console.log("trace: onCreate");
 
     const data = getValues();
 
@@ -91,14 +91,18 @@ function SubscriberCreate() {
         })
         .catch((err) => {
           if (err.response) {
+            const msg = "Status: " + err.response.status;
             if (err.response.data.cause) {
-              alert(err.response.data.cause);
+              alert(msg + ", cause: " + err.response.data.cause);
+            } else if (err.response.data) {
+              alert(msg + ", data:" + err.response.data);
             } else {
-              alert(err.response.data);
+              alert(msg);
             }
           } else {
             alert(err.message);
           }
+          console.log(err);
           return;
         });
       supi = supiIncrement(supi);
@@ -106,7 +110,7 @@ function SubscriberCreate() {
   };
 
   const onUpdate = () => {
-    console.log("trace: onUpdate")
+    console.log("trace: onUpdate");
 
     const data = getValues();
     const subscriberMapper = new SubscriptionMapperImpl(new FlowsMapperImpl());
@@ -119,10 +123,13 @@ function SubscriberCreate() {
       })
       .catch((err) => {
         if (err.response) {
+          const msg = "Status: " + err.response.status;
           if (err.response.data.cause) {
-            alert(err.response.data.cause);
+            alert(msg + ", cause: " + err.response.data.cause);
+          } else if (err.response.data) {
+            alert(msg + ", data:" + err.response.data);
           } else {
-            alert(err.response.data);
+            alert(msg);
           }
         } else {
           alert(err.message);
@@ -135,9 +142,11 @@ function SubscriberCreate() {
 
   return (
     <Dashboard title="Subscription" refreshAction={() => {}}>
-      <form onSubmit={handleSubmit(formSubmitFn, (err) => {
-        console.log("form error: ", err)
-      })}>
+      <form
+        onSubmit={handleSubmit(formSubmitFn, (err) => {
+          console.log("form error: ", err);
+        })}
+      >
         <SubscriberFormBasic />
 
         <h3>Subscribed UE AMBR</h3>
