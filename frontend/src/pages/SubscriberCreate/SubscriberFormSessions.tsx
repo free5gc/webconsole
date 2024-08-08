@@ -68,25 +68,13 @@ export default function SubscriberFormSessions() {
   });
 
   const [dnnName, setDnnName] = useState<string[]>(Array(snssaiConfigurations.length).fill(""));
-  const dnnValue = (index: number) => {
-    return dnnName[index];
-  };
 
   const handleChangeDNN = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     index: number,
   ): void => {
-    setDnnName((dnnName) => 
-      dnnName.map((name, i) => index === i ? event.target.value : name)
-    )
+    setDnnName((dnnName) => dnnName.map((name, i) => (index === i ? event.target.value : name)));
   };
-
-  const enterKeyCreateDnn = (index: number) => (ev: React.KeyPressEvent<HTMLInputElement>) => {
-    if (ev.key === 'Enter') {
-      ev.preventDefault();
-      onDnnAdd(index);
-    }
-  } 
 
   const onDnnAdd = (index: number) => {
     const name = dnnName[index];
@@ -100,16 +88,16 @@ export default function SubscriberFormSessions() {
       dnnConfigurations: {
         ...snssaiConfig.dnnConfigurations,
         [name]: defaultDnnConfig(),
-      }
+      },
     });
 
     setTimeout(() => {
       /* IMPORTANT: setFocus after rerender */
-      setFocus(`SnssaiConfigurations.${index}.dnnConfigurations.${name}.sessionAmbr.uplink`)
+      setFocus(`SnssaiConfigurations.${index}.dnnConfigurations.${name}.sessionAmbr.uplink`);
     });
 
     // restore input field
-    setDnnName((dnnName) => dnnName.map((name, i) => index === i ? "" : name))
+    setDnnName((dnnName) => dnnName.map((name, i) => (index === i ? "" : name)));
   };
 
   const onDnnDelete = (index: number, dnn: string, slice: string) => {
@@ -119,7 +107,7 @@ export default function SubscriberFormSessions() {
 
     updateSnssaiConfiguration(index, {
       ...snssaiConfig,
-      dnnConfigurations: newDnnConfigurations
+      dnnConfigurations: newDnnConfigurations,
     });
   };
 
@@ -165,12 +153,11 @@ export default function SubscriberFormSessions() {
                   <TableCell style={{ width: "50%" }}>
                     <TextField
                       {...register(`SnssaiConfigurations.${index}.sd`, {
-                        required: true,
+                        required: false,
                       })}
                       error={validationErrors.SnssaiConfigurations?.[index]?.sd !== undefined}
                       label="SD"
                       variant="outlined"
-                      required
                       fullWidth
                     />
                   </TableCell>
@@ -275,9 +262,11 @@ export default function SubscriberFormSessions() {
                       <TableBody>
                         <TableRow>
                           <TableCell style={{ width: "10%" }}>
-                              <Switch 
-                                {...register(`SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.enableStaticIpv4Address`)} 
-                              />
+                            <Switch
+                              {...register(
+                                `SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.enableStaticIpv4Address`,
+                              )}
+                            />
                           </TableCell>
 
                           <TableCell style={{ width: "70%" }}>
@@ -290,7 +279,11 @@ export default function SubscriberFormSessions() {
                                   dnn
                                 ]?.staticIpv4Address !== undefined
                               }
-                              disabled={!watch(`SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.enableStaticIpv4Address`)}
+                              disabled={
+                                !watch(
+                                  `SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.enableStaticIpv4Address`,
+                                )
+                              }
                               label="IPv4 Address"
                               variant="outlined"
                               fullWidth
@@ -305,7 +298,9 @@ export default function SubscriberFormSessions() {
                                   row.sd,
                                   row.sst,
                                   dnn,
-                                  watch(`SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.staticIpv4Address`) ?? "",
+                                  watch(
+                                    `SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.staticIpv4Address`,
+                                  ) ?? "",
                                 )
                               }
                               sx={{
@@ -342,7 +337,6 @@ export default function SubscriberFormSessions() {
                     fullWidth
                     value={dnnName[index]}
                     onChange={(ev) => handleChangeDNN(ev, index)}
-                    onKeyPress={enterKeyCreateDnn(index)}
                   />
                 </Box>
               </Grid>
