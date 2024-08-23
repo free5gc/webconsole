@@ -75,27 +75,15 @@ func GetSmfUserPlaneInfo() (interface{}, error) {
 	return jsonData, nil
 }
 
-func getDnnStaticIpPool(snssai models.Snssai, dnn string) ([]netip.Prefix, error) {
-	var userplaneinfo smf_factory.UserPlaneInformation
-
-	raw_info, get_err := GetSmfUserPlaneInfo()
-	if get_err != nil {
-		logger.ProcLog.Errorf("GetSmfUserPlaneInfo(): %+v", get_err)
-		// net, parseErr := netip.ParsePrefix("0.0.0.0/32")
-		return []netip.Prefix{}, get_err
-	}
-
-	tmp, err := json.Marshal(raw_info)
-	if err != nil {
-		logger.ProcLog.Errorf("Marshal err: %+v", err)
-	}
-	unmarshal_err := json.Unmarshal(tmp, &userplaneinfo)
-	if unmarshal_err != nil {
-		logger.ProcLog.Errorf("Unmarshal err: %+v", unmarshal_err)
-	}
+func GetStaticIpPoolsFromUserPlaneInfomation(
+	userplaneinfo *smf_factory.UserPlaneInformation,
+	snssai models.Snssai,
+	dnn string,
+) ([]netip.Prefix, error) {
+	result := []netip.Prefix{}
 
 	for nodeName := range userplaneinfo.UPNodes {
-		if nodeName == "UPF" {
+		if userplaneinfo.UPNodes[nodeName].Type == "UPF" {
 			// Find the UPF node
 			for _, snssaiupfinfo := range userplaneinfo.UPNodes[nodeName].SNssaiInfos {
 				// Find the Slice (snssai)
@@ -104,7 +92,6 @@ func getDnnStaticIpPool(snssai models.Snssai, dnn string) ([]netip.Prefix, error
 						// Find the DNN name
 						if dnnInfo.Dnn == dnn {
 							if len(dnnInfo.StaticPools) > 0 {
-								result := []netip.Prefix{}
 								for _, pool := range dnnInfo.StaticPools {
 									staticPoolstr := pool.Cidr
 									net, parseErr := netip.ParsePrefix(staticPoolstr)
@@ -126,6 +113,28 @@ func getDnnStaticIpPool(snssai models.Snssai, dnn string) ([]netip.Prefix, error
 	}
 	net, parseErr := netip.ParsePrefix("0.0.0.0/32")
 	return []netip.Prefix{net}, parseErr
+}
+
+func getDnnStaticIpPools(snssai models.Snssai, dnn string) ([]netip.Prefix, error) {
+	var userplaneinfo smf_factory.UserPlaneInformation
+
+	raw_info, get_err := GetSmfUserPlaneInfo()
+	if get_err != nil {
+		logger.ProcLog.Errorf("GetSmfUserPlaneInfo(): %+v", get_err)
+		return []netip.Prefix{}, get_err
+	}
+
+	tmp, err := json.Marshal(raw_info)
+	if err != nil {
+		logger.ProcLog.Errorf("Marshal err: %+v", err)
+	}
+	unmarshal_err := json.Unmarshal(tmp, &userplaneinfo)
+	if unmarshal_err != nil {
+		logger.ProcLog.Errorf("Unmarshal err: %+v", unmarshal_err)
+		return []netip.Prefix{}, unmarshal_err
+	}
+
+	return GetStaticIpPoolsFromUserPlaneInfomation(&userplaneinfo, snssai, dnn)
 }
 
 func VerifyStaticIP(c *gin.Context) {
@@ -154,7 +163,7 @@ func VerifyStaticIP(c *gin.Context) {
 		snssai.Sd = checkData.Sd
 	}
 
-	staticPools, get_pool_err := getDnnStaticIpPool(snssai, checkData.Dnn)
+	staticPools, get_pool_err := getDnnStaticIpPools(snssai, checkData.Dnn)
 	if get_pool_err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":  get_pool_err,
@@ -201,7 +210,7 @@ func VerifyStaticIpProcedure(
 		return
 	}
 
-	if gin.Mode() != "test" && checkIpCollisionFromDb(c, checkData) {
+	if gin.Mode() != "test" && checkIpCollisionFromDb(c, checkData) != nil {
 		return
 	}
 
@@ -217,7 +226,7 @@ func VerifyStaticIpProcedure(
 func checkIpCollisionFromDb(
 	c *gin.Context,
 	checkData VerifyScope,
-) bool {
+) error {
 	snssai := models.Snssai{
 		Sst: int32(checkData.Sst),
 	}
@@ -238,13 +247,13 @@ func checkIpCollisionFromDb(
 			"valid":  false,
 			"cause":  mongo_err.Error(),
 		})
-		return true
+		return mongo_err
 	}
 	var smDatas []models.SessionManagementSubscriptionData
 	if err := json.Unmarshal(sliceToByte(smDataDataInterface), &smDatas); err != nil {
 		logger.ProcLog.Errorf("Unmarshal smDatas err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
-		return true
+		return err
 	}
 	for _, smData := range smDatas {
 		if dnnConfig, ok := smData.DnnConfigurations[checkData.Dnn]; ok {
@@ -257,10 +266,10 @@ func checkIpCollisionFromDb(
 						"valid":  false,
 						"cause":  msg,
 					})
-					return true
+					return fmt.Errorf("%s", msg)
 				}
 			}
 		}
 	}
-	return false
+	return nil
 }
