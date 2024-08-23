@@ -15,6 +15,7 @@ require (
 	github.com/jlaffaye/ftp v0.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.0
+	github.com/stretchr/testify v1.8.3
 	github.com/urfave/cli v1.22.5
 	go.mongodb.org/mongo-driver v1.11.3
 	golang.org/x/crypto v0.21.0
@@ -63,6 +64,7 @@ require (
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
 	github.com/pelletier/go-toml/v2 v2.0.8 // indirect
 	github.com/pkg/sftp v1.13.5 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
