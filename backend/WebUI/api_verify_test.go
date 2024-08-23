@@ -7,9 +7,10 @@ import (
 	"net/netip"
 	"testing"
 
-	"github.com/free5gc/webconsole/backend/WebUI"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
+
+	"github.com/free5gc/webconsole/backend/WebUI"
 )
 
 func TestVerifyStaticIpProcedure(t *testing.T) {
@@ -32,6 +33,61 @@ func TestVerifyStaticIpProcedure(t *testing.T) {
 			},
 			IpPools: []string{"10.163.100.0/24"},
 			Result:  true,
+		},
+		{
+			Name: "One Static Pool - Not in pool",
+			Scope: WebUI.VerifyScope{
+				Supi:   "imsi-",
+				Sst:    1,
+				Dnn:    "internet",
+				Ipaddr: "10.163.163.1",
+			},
+			IpPools: []string{"10.163.100.0/24"},
+			Result:  false,
+		},
+		{
+			Name: "Two Static Pools - PASS (In first)",
+			Scope: WebUI.VerifyScope{
+				Supi:   "imsi-",
+				Sst:    1,
+				Sd:     "010203",
+				Dnn:    "internet",
+				Ipaddr: "10.163.100.100",
+			},
+			IpPools: []string{
+				"10.163.100.0/24",
+				"10.163.101.0/24",
+			},
+			Result: true,
+		},
+		{
+			Name: "Two Static Pools - PASS (In Second)",
+			Scope: WebUI.VerifyScope{
+				Supi:   "imsi-",
+				Sst:    1,
+				Sd:     "010203",
+				Dnn:    "internet",
+				Ipaddr: "10.163.101.100",
+			},
+			IpPools: []string{
+				"10.163.100.0/24",
+				"10.163.101.0/24",
+			},
+			Result: true,
+		},
+		{
+			Name: "Two Static Pools - Not in pools",
+			Scope: WebUI.VerifyScope{
+				Supi:   "imsi-",
+				Sst:    1,
+				Dnn:    "internet",
+				Ipaddr: "10.163.163.1",
+			},
+			IpPools: []string{
+				"10.163.100.0/24",
+				"10.163.101.0/24",
+			},
+			Result: false,
 		},
 	}
 
