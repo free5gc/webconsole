@@ -18,7 +18,7 @@ import (
 
 type VerifyScope struct {
 	Supi   string `json:"supi"`
-	Sd     string `json:"sd"`
+	Sd     string `json:"sd,omitempty"`
 	Sst    int    `json:"sst"`
 	Dnn    string `json:"dnn"`
 	Ipaddr string `json:"ipaddr"`
@@ -75,13 +75,53 @@ func GetSmfUserPlaneInfo() (interface{}, error) {
 	return jsonData, nil
 }
 
-func getDnnStaticIpPool(snssai models.Snssai, dnn string) (netip.Prefix, error) {
+func GetStaticIpPoolsFromUserPlaneInfomation(
+	userplaneinfo *smf_factory.UserPlaneInformation,
+	snssai models.Snssai,
+	dnn string,
+) ([]netip.Prefix, error) {
+	result := []netip.Prefix{}
+
+	for nodeName := range userplaneinfo.UPNodes {
+		if userplaneinfo.UPNodes[nodeName].Type == "UPF" {
+			// Find the UPF node
+			for _, snssaiupfinfo := range userplaneinfo.UPNodes[nodeName].SNssaiInfos {
+				// Find the Slice (snssai)
+				if *snssaiupfinfo.SNssai == snssai {
+					for _, dnnInfo := range snssaiupfinfo.DnnUpfInfoList {
+						// Find the DNN name
+						if dnnInfo.Dnn == dnn {
+							if len(dnnInfo.StaticPools) > 0 {
+								for _, pool := range dnnInfo.StaticPools {
+									staticPoolstr := pool.Cidr
+									net, parseErr := netip.ParsePrefix(staticPoolstr)
+									if parseErr != nil {
+										return result, parseErr
+									}
+									result = append(result, net)
+								}
+								return result, nil
+							}
+							// If there is no static pool, return smallest
+							net, parseErr := netip.ParsePrefix("0.0.0.0/32")
+							return []netip.Prefix{net}, parseErr
+						}
+					}
+				}
+			}
+		}
+	}
+	net, parseErr := netip.ParsePrefix("0.0.0.0/32")
+	return []netip.Prefix{net}, parseErr
+}
+
+func getDnnStaticIpPools(snssai models.Snssai, dnn string) ([]netip.Prefix, error) {
 	var userplaneinfo smf_factory.UserPlaneInformation
 
 	raw_info, get_err := GetSmfUserPlaneInfo()
 	if get_err != nil {
 		logger.ProcLog.Errorf("GetSmfUserPlaneInfo(): %+v", get_err)
-		return netip.ParsePrefix("0.0.0.0/32")
+		return []netip.Prefix{}, get_err
 	}
 
 	tmp, err := json.Marshal(raw_info)
@@ -91,30 +131,10 @@ func getDnnStaticIpPool(snssai models.Snssai, dnn string) (netip.Prefix, error) 
 	unmarshal_err := json.Unmarshal(tmp, &userplaneinfo)
 	if unmarshal_err != nil {
 		logger.ProcLog.Errorf("Unmarshal err: %+v", unmarshal_err)
+		return []netip.Prefix{}, unmarshal_err
 	}
 
-	for nodeName := range userplaneinfo.UPNodes {
-		if nodeName == "UPF" {
-			// Find the UPF node
-			for _, snssaiupfinfo := range userplaneinfo.UPNodes[nodeName].SNssaiInfos {
-				// Find the Slice (snssai)
-				if *snssaiupfinfo.SNssai == snssai {
-					for _, dnnInfo := range snssaiupfinfo.DnnUpfInfoList {
-						// Find the DNN name
-						if dnnInfo.Dnn == dnn {
-							if len(dnnInfo.StaticPools) > 0 {
-								staticPoolstr := dnnInfo.StaticPools[0].Cidr
-								return netip.ParsePrefix(staticPoolstr)
-							}
-							// If there is no static pool, return smallest
-							return netip.ParsePrefix("0.0.0.0/32")
-						}
-					}
-				}
-			}
-		}
-	}
-	return netip.ParsePrefix("0.0.0.0/32")
+	return GetStaticIpPoolsFromUserPlaneInfomation(&userplaneinfo, snssai, dnn)
 }
 
 func VerifyStaticIP(c *gin.Context) {
@@ -136,6 +156,31 @@ func VerifyStaticIP(c *gin.Context) {
 		return
 	}
 
+	snssai := models.Snssai{
+		Sst: int32(checkData.Sst),
+	}
+	if checkData.Sd != "" {
+		snssai.Sd = checkData.Sd
+	}
+
+	staticPools, get_pool_err := getDnnStaticIpPools(snssai, checkData.Dnn)
+	if get_pool_err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":  get_pool_err,
+			"ipaddr": checkData.Ipaddr,
+			"valid":  false,
+			"cause":  get_pool_err.Error(),
+		})
+		return
+	}
+	VerifyStaticIpProcedure(c, checkData, staticPools)
+}
+
+func VerifyStaticIpProcedure(
+	c *gin.Context,
+	checkData VerifyScope,
+	staticPools []netip.Prefix,
+) {
 	staticIp, parse_err := netip.ParseAddr(checkData.Ipaddr)
 	if parse_err != nil {
 		logger.ProcLog.Errorln(parse_err.Error())
@@ -147,35 +192,48 @@ func VerifyStaticIP(c *gin.Context) {
 	}
 	logger.ProcLog.Debugln("check IP address:", staticIp)
 
-	snssai := models.Snssai{
-		Sd:  checkData.Sd,
-		Sst: int32(checkData.Sst),
-	}
-
-	staticPool, get_pool_err := getDnnStaticIpPool(snssai, checkData.Dnn)
-	if get_pool_err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error":  get_pool_err,
-			"ipaddr": staticIp,
-			"valid":  false,
-			"cause":  get_pool_err.Error(),
-		})
-		return
-	}
-
 	// Check in Static Pool
-	result := staticPool.Contains(staticIp)
+	result := false
+	for _, staticPool := range staticPools {
+		result = staticPool.Contains(staticIp)
+		if result {
+			break
+		}
+	}
 	if !result {
 		c.JSON(http.StatusOK, gin.H{
 			"ipaddr": staticIp,
 			"valid":  result,
-			"cause":  "Not in static pool: " + staticPool.String(),
+			"cause":  "Not in static pools!",
 		})
-		logger.ProcLog.Debugln("StaticIP", staticIp, ": not in static pool: "+staticPool.String())
+		logger.ProcLog.Debugln("StaticIP", staticIp, ": not in static pool!")
 		return
 	}
 
-	// Check not used by other UE
+	if gin.Mode() != "test" && checkIpCollisionFromDb(c, checkData) != nil {
+		return
+	}
+
+	// Return the result
+	c.JSON(http.StatusOK, gin.H{
+		"ipaddr": staticIp,
+		"valid":  result,
+		"cause":  "",
+	})
+}
+
+// Check IP not used by other UE
+func checkIpCollisionFromDb(
+	c *gin.Context,
+	checkData VerifyScope,
+) error {
+	snssai := models.Snssai{
+		Sst: int32(checkData.Sst),
+	}
+	if checkData.Sd != "" {
+		snssai.Sd = checkData.Sd
+	}
+
 	smDataColl := "subscriptionData.provisionedData.smData"
 	filter := bson.M{
 		"singleNssai": snssai,
@@ -185,17 +243,17 @@ func VerifyStaticIP(c *gin.Context) {
 	if mongo_err != nil {
 		logger.ProcLog.Warningln(smDataColl, "mongo error: ", mongo_err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"ipaddr": staticIp,
+			"ipaddr": checkData.Ipaddr,
 			"valid":  false,
 			"cause":  mongo_err.Error(),
 		})
-		return
+		return mongo_err
 	}
 	var smDatas []models.SessionManagementSubscriptionData
 	if err := json.Unmarshal(sliceToByte(smDataDataInterface), &smDatas); err != nil {
 		logger.ProcLog.Errorf("Unmarshal smDatas err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
-		return
+		return err
 	}
 	for _, smData := range smDatas {
 		if dnnConfig, ok := smData.DnnConfigurations[checkData.Dnn]; ok {
@@ -204,20 +262,14 @@ func VerifyStaticIP(c *gin.Context) {
 					msg := "StaticIP: " + checkData.Ipaddr + " has already exist!"
 					logger.ProcLog.Warningln(msg)
 					c.JSON(http.StatusOK, gin.H{
-						"ipaddr": staticIp,
+						"ipaddr": checkData.Ipaddr,
 						"valid":  false,
 						"cause":  msg,
 					})
-					return
+					return fmt.Errorf("%s", msg)
 				}
 			}
 		}
 	}
-
-	// Return the result
-	c.JSON(http.StatusOK, gin.H{
-		"ipaddr": staticIp,
-		"valid":  result,
-		"cause":  "",
-	})
+	return nil
 }
