@@ -124,7 +124,8 @@ func GetChargingRecord(c *gin.Context) {
 	if amfUris := webuiSelf.GetOamUris(models.NrfNfManagementNfType_AMF); amfUris != nil {
 		requestUri := fmt.Sprintf("%s/namf-oam/v1/registered-ue-context", amfUris[0])
 
-		ctx, pd, tokerErr := webui_context.GetSelf().GetTokenCtx(models.ServiceName_NAMF_OAM, models.NrfNfManagementNfType_AMF)
+		ctx, pd, tokerErr := webui_context.GetSelf().GetTokenCtx(
+			models.ServiceName_NAMF_OAM, models.NrfNfManagementNfType_AMF)
 		if tokerErr != nil {
 			logger.ProcLog.Errorf("GetTokenCtx error: %+v", tokerErr)
 			c.JSON(http.StatusInternalServerError, pd)
