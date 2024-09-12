@@ -1789,7 +1789,8 @@ func GetRegisteredUEContext(c *gin.Context) {
 			requestUri = fmt.Sprintf("%s/namf-oam/v1/registered-ue-context", amfUris[0])
 		}
 
-		ctx, pd, tokerErr := webui_context.GetSelf().GetTokenCtx(r17models.ServiceName_NAMF_OAM, r17models.NrfNfManagementNfType_AMF)
+		ctx, pd, tokerErr := webui_context.GetSelf().GetTokenCtx(
+			r17models.ServiceName_NAMF_OAM, r17models.NrfNfManagementNfType_AMF)
 		if tokerErr != nil {
 			logger.ProcLog.Errorf("GetTokenCtx error: %+v", tokerErr)
 			c.JSON(http.StatusInternalServerError, pd)
