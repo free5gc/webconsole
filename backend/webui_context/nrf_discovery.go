@@ -1,48 +1,44 @@
 package webui_context
 
 import (
-	"net/http"
+	"fmt"
 
-	"github.com/free5gc/openapi/Nnrf_NFDiscovery"
 	"github.com/free5gc/openapi/models"
+	Nnrf_NFDiscovery "github.com/free5gc/openapi/nrf/NFDiscovery"
 	"github.com/free5gc/webconsole/backend/logger"
 )
 
 type NfInstance struct {
-	ValidityPeriod int                `json:"validityPeriod"`
-	NfInstances    []models.NfProfile `json:"nfInstances"`
+	ValidityPeriod int                              `json:"validityPeriod"`
+	NfInstances    []models.NrfNfDiscoveryNfProfile `json:"nfInstances"`
 }
 
-func SendSearchNFInstances(targetNfType models.NfType) ([]models.NfProfile, error) {
-	var nfProfiles []models.NfProfile
+func SendSearchNFInstances(targetNfType models.NrfNfManagementNfType) ([]models.NrfNfDiscoveryNfProfile, error) {
+	var nfProfiles []models.NrfNfDiscoveryNfProfile
 
-	ctx, _, err := GetSelf().GetTokenCtx(models.ServiceName_NNRF_DISC, models.NfType_NRF)
+	ctx, _, err := GetSelf().GetTokenCtx(models.ServiceName_NNRF_DISC, models.NrfNfManagementNfType_NRF)
 	if err != nil {
 		logger.ConsumerLog.Errorln(err.Error())
 		return nfProfiles, err
 	}
 
 	client := GetSelf().NFDiscoveryClient
-	localVarOptionals := Nnrf_NFDiscovery.SearchNFInstancesParamOpts{}
+	requestNfType := models.NrfNfManagementNfType_AF
 
-	result, res, err := client.
-		NFInstancesStoreApi.SearchNFInstances(ctx, targetNfType, models.NfType_AF, &localVarOptionals)
+	req := &Nnrf_NFDiscovery.SearchNFInstancesRequest{
+		TargetNfType:    &targetNfType,
+		RequesterNfType: &requestNfType,
+	}
+
+	res, err := client.NFInstancesStoreApi.SearchNFInstances(ctx, req)
 	if err != nil {
 		logger.ConsumerLog.Errorf("SearchNFInstances failed: %+v", err)
-	}
-	defer func() {
-		if res != nil {
-			if resCloseErr := res.Body.Close(); resCloseErr != nil {
-				logger.ConsumerLog.Errorf("NFInstancesStoreApi response body cannot close: %+v", resCloseErr)
-			}
-		}
-	}()
-
-	if res != nil && res.StatusCode == http.StatusTemporaryRedirect {
-		logger.ConsumerLog.Errorln("Temporary Redirect For Non NRF Consumer")
 		return nfProfiles, err
 	}
-	nfProfiles = result.NfInstances
+	if res == nil {
+		return nfProfiles, fmt.Errorf("SearchNFInstances resule nil:%+v", err)
+	}
+	nfProfiles = res.SearchResult.NfInstances
 
 	return nfProfiles, nil
 }
