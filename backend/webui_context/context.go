@@ -72,7 +72,9 @@ func (context *WEBUIContext) UpdateNfProfiles() {
 	}
 	context.NFProfiles = append(context.NFProfiles, nfProfiles...)
 
-	for _, nfProfile := range context.NFProfiles {
+	for idx := 0; idx < len(context.NFProfiles); idx++ {
+		nfProfile := &context.NFProfiles[idx]
+
 		if nfProfile.NfServices == nil || context.NfProfileAlreadyExists(nfProfile) {
 			continue
 		}
@@ -94,7 +96,7 @@ func (context *WEBUIContext) UpdateNfProfiles() {
 	}
 }
 
-func (context *WEBUIContext) NfProfileAlreadyExists(nfProfile models.NrfNfDiscoveryNfProfile) bool {
+func (context *WEBUIContext) NfProfileAlreadyExists(nfProfile *models.NrfNfDiscoveryNfProfile) bool {
 	for _, instance := range context.NFOamInstances {
 		if instance.NfId == nfProfile.NfInstanceId {
 			return true
@@ -103,7 +105,7 @@ func (context *WEBUIContext) NfProfileAlreadyExists(nfProfile models.NrfNfDiscov
 	return false
 }
 
-func getNfOamUri(nfProfile models.NrfNfDiscoveryNfProfile, serviceName models.ServiceName) (nfOamUri string) {
+func getNfOamUri(nfProfile *models.NrfNfDiscoveryNfProfile, serviceName models.ServiceName) (nfOamUri string) {
 	for _, service := range nfProfile.NfServices {
 		if service.ServiceName == serviceName && service.NfServiceStatus == models.NfServiceStatus_REGISTERED {
 			if nfProfile.Fqdn != "" {
