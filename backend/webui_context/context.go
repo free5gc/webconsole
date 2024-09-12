@@ -9,9 +9,9 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/free5gc/openapi"
-	"github.com/free5gc/openapi/Nnrf_NFDiscovery"
-	"github.com/free5gc/openapi/Nnrf_NFManagement"
 	"github.com/free5gc/openapi/models"
+	Nnrf_NFDiscovery "github.com/free5gc/openapi/nrf/NFDiscovery"
+	Nnrf_NFManagement "github.com/free5gc/openapi/nrf/NFManagement"
 	"github.com/free5gc/openapi/oauth"
 	"github.com/free5gc/webconsole/backend/factory"
 	"github.com/free5gc/webconsole/backend/logger"
@@ -21,7 +21,7 @@ var webuiContext WEBUIContext
 
 type WEBUIContext struct {
 	NfInstanceID   string
-	NFProfiles     []models.NfProfile
+	NFProfiles     []models.NrfNfDiscoveryNfProfile
 	NFOamInstances []NfOamInstance
 
 	// is registered to NRF as AF
@@ -36,7 +36,7 @@ type WEBUIContext struct {
 
 type NfOamInstance struct {
 	NfId   string
-	NfType models.NfType
+	NfType models.NrfNfManagementNfType
 	Uri    string
 }
 
@@ -56,16 +56,16 @@ func Init() {
 }
 
 func (context *WEBUIContext) UpdateNfProfiles() {
-	var nfProfiles []models.NfProfile
+	var nfProfiles []models.NrfNfDiscoveryNfProfile
 
-	nfProfiles, err := SendSearchNFInstances(models.NfType_AMF)
+	nfProfiles, err := SendSearchNFInstances(models.NrfNfManagementNfType_AMF)
 	if err != nil {
 		logger.CtxLog.Error(err)
 		return
 	}
 	context.NFProfiles = append(context.NFProfiles, nfProfiles...)
 
-	nfProfiles, err = SendSearchNFInstances(models.NfType_SMF)
+	nfProfiles, err = SendSearchNFInstances(models.NrfNfManagementNfType_SMF)
 	if err != nil {
 		logger.CtxLog.Error(err)
 		return
@@ -79,9 +79,9 @@ func (context *WEBUIContext) UpdateNfProfiles() {
 
 		var uri string
 		switch nfProfile.NfType {
-		case models.NfType_AMF:
+		case models.NrfNfManagementNfType_AMF:
 			uri = getNfOamUri(nfProfile, models.ServiceName("namf-oam"))
-		case models.NfType_SMF:
+		case models.NrfNfManagementNfType_SMF:
 			uri = getNfOamUri(nfProfile, models.ServiceName("nsmf-oam"))
 		}
 		if uri != "" {
@@ -94,7 +94,7 @@ func (context *WEBUIContext) UpdateNfProfiles() {
 	}
 }
 
-func (context *WEBUIContext) NfProfileAlreadyExists(nfProfile models.NfProfile) bool {
+func (context *WEBUIContext) NfProfileAlreadyExists(nfProfile models.NrfNfDiscoveryNfProfile) bool {
 	for _, instance := range context.NFOamInstances {
 		if instance.NfId == nfProfile.NfInstanceId {
 			return true
@@ -103,8 +103,8 @@ func (context *WEBUIContext) NfProfileAlreadyExists(nfProfile models.NfProfile) 
 	return false
 }
 
-func getNfOamUri(nfProfile models.NfProfile, serviceName models.ServiceName) (nfOamUri string) {
-	for _, service := range *nfProfile.NfServices {
+func getNfOamUri(nfProfile models.NrfNfDiscoveryNfProfile, serviceName models.ServiceName) (nfOamUri string) {
+	for _, service := range nfProfile.NfServices {
 		if service.ServiceName == serviceName && service.NfServiceStatus == models.NfServiceStatus_REGISTERED {
 			if nfProfile.Fqdn != "" {
 				nfOamUri = nfProfile.Fqdn
@@ -113,7 +113,7 @@ func getNfOamUri(nfProfile models.NfProfile, serviceName models.ServiceName) (nf
 			} else if service.ApiPrefix != "" {
 				nfOamUri = service.ApiPrefix
 			} else if service.IpEndPoints != nil {
-				point := (*service.IpEndPoints)[0]
+				point := service.IpEndPoints[0]
 				if point.Ipv4Address != "" {
 					nfOamUri = getSbiUri(service.Scheme, point.Ipv4Address, point.Port)
 				} else if len(nfProfile.Ipv4Addresses) != 0 {
@@ -128,7 +128,7 @@ func getNfOamUri(nfProfile models.NfProfile, serviceName models.ServiceName) (nf
 	return
 }
 
-func (context *WEBUIContext) GetOamUris(targetNfType models.NfType) (uris []string) {
+func (context *WEBUIContext) GetOamUris(targetNfType models.NrfNfManagementNfType) (uris []string) {
 	for _, oamInstance := range context.NFOamInstances {
 		if oamInstance.NfType == targetNfType {
 			uris = append(uris, oamInstance.Uri)
@@ -156,7 +156,7 @@ func getSbiUri(scheme models.UriScheme, ipv4Address string, port int32) (uri str
 	return
 }
 
-func (c *WEBUIContext) GetTokenCtx(serviceName models.ServiceName, targetNF models.NfType) (
+func (c *WEBUIContext) GetTokenCtx(serviceName models.ServiceName, targetNF models.NrfNfManagementNfType) (
 	context.Context, *models.ProblemDetails, error,
 ) {
 	if !c.OAuth2Required {
@@ -164,7 +164,7 @@ func (c *WEBUIContext) GetTokenCtx(serviceName models.ServiceName, targetNF mode
 	}
 
 	logger.ConsumerLog.Infoln("GetTokenCtx:", targetNF, serviceName)
-	return oauth.GetTokenCtx(models.NfType_AF, targetNF,
+	return oauth.GetTokenCtx(models.NrfNfManagementNfType_AF, targetNF,
 		c.NfInstanceID, c.NrfUri, string(serviceName))
 }
 

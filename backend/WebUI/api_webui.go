@@ -21,7 +21,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/free5gc/openapi/models"
+	"github.com/free5gc/openapi-r15/models"
+	r17models "github.com/free5gc/openapi/models"
 	"github.com/free5gc/util/mongoapi"
 	"github.com/free5gc/webconsole/backend/logger"
 	"github.com/free5gc/webconsole/backend/webui_context"
@@ -1857,7 +1858,7 @@ func GetRegisteredUEContext(c *gin.Context) {
 
 	supi, supiExists := c.Params.Get("supi")
 	// TODO: support fetching data from multiple AMFs
-	if amfUris := webuiSelf.GetOamUris(models.NfType_AMF); len(amfUris) > 0 {
+	if amfUris := webuiSelf.GetOamUris(r17models.NrfNfManagementNfType_AMF); amfUris != nil {
 		var requestUri string
 
 		if supiExists {
@@ -1866,7 +1867,7 @@ func GetRegisteredUEContext(c *gin.Context) {
 			requestUri = fmt.Sprintf("%s/namf-oam/v1/registered-ue-context", amfUris[0])
 		}
 
-		ctx, pd, tokerErr := webui_context.GetSelf().GetTokenCtx(models.ServiceName_NAMF_OAM, models.NfType_AMF)
+		ctx, pd, tokerErr := webui_context.GetSelf().GetTokenCtx(r17models.ServiceName_NAMF_OAM, r17models.NrfNfManagementNfType_AMF)
 		if tokerErr != nil {
 			logger.ProcLog.Errorf("GetTokenCtx error: %+v", tokerErr)
 			c.JSON(http.StatusInternalServerError, pd)
@@ -1936,10 +1937,11 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 	}
 
 	// TODO: support fetching data from multiple SMF
-	if smfUris := webuiSelf.GetOamUris(models.NfType_SMF); smfUris != nil {
+	if smfUris := webuiSelf.GetOamUris(r17models.NrfNfManagementNfType_SMF); smfUris != nil {
 		requestUri := fmt.Sprintf("%s/nsmf-oam/v1/ue-pdu-session-info/%s", smfUris[0], smContextRef)
 
-		ctx, pd, tokerErr := webui_context.GetSelf().GetTokenCtx(models.ServiceName_NSMF_OAM, models.NfType_SMF)
+		ctx, pd, tokerErr := webui_context.GetSelf().GetTokenCtx(
+			r17models.ServiceName_NSMF_OAM, r17models.NrfNfManagementNfType_SMF)
 		if tokerErr != nil {
 			logger.ProcLog.Errorf("GetTokenCtx error: %+v", tokerErr)
 			c.JSON(http.StatusInternalServerError, pd)
