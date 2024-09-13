@@ -271,6 +271,7 @@ func sendResponseToClientFilterTenant(c *gin.Context, response *http.Response, t
 	c.JSON(response.StatusCode, sliceData)
 }
 
+// TODO: R15 models to R17
 func GetSampleJSON(c *gin.Context) {
 	setCorsHeader(c)
 
@@ -278,7 +279,18 @@ func GetSampleJSON(c *gin.Context) {
 
 	var subsData SubsData
 
-	authSubsData := models.AuthenticationSubscription{
+	authSubsData := r17models.AuthenticationSubscription{
+		AuthenticationMethod: r17models.AuthMethod__5_G_AKA,
+		SequenceNumber: &r17models.SequenceNumber{
+			SqnScheme: r17models.SqnScheme_GENERAL,
+			Sqn:       "16f3b3f70fc2",
+		},
+		// EncOpcKey
+		// EncTopcKey
+	}
+	fmt.Println(authSubsData)
+
+	oldAuthSubsData := models.AuthenticationSubscription{
 		AuthenticationManagementField: "8000",
 		AuthenticationMethod:          "5G_AKA", // "5G_AKA", "EAP_AKA_PRIME"
 		Milenage: &models.Milenage{
@@ -452,7 +464,7 @@ func GetSampleJSON(c *gin.Context) {
 	subsData = SubsData{
 		PlmnID:                            servingPlmnId,
 		UeId:                              ueId,
-		AuthenticationSubscription:        authSubsData,
+		AuthenticationSubscription:        oldAuthSubsData,
 		AccessAndMobilitySubscriptionData: amDataData,
 		SessionManagementSubscriptionData: smDataData,
 		SmfSelectionSubscriptionData:      smfSelData,
