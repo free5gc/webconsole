@@ -21,26 +21,26 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/free5gc/openapi-r15/models"
-	r17models "github.com/free5gc/openapi/models"
+	"github.com/free5gc/openapi/models"
 	"github.com/free5gc/util/mongoapi"
 	"github.com/free5gc/webconsole/backend/logger"
 	"github.com/free5gc/webconsole/backend/webui_context"
 )
 
 const (
-	authSubsDataColl = "subscriptionData.authenticationData.authenticationSubscription"
-	amDataColl       = "subscriptionData.provisionedData.amData"
-	smDataColl       = "subscriptionData.provisionedData.smData"
-	smfSelDataColl   = "subscriptionData.provisionedData.smfSelectionSubscriptionData"
-	amPolicyDataColl = "policyData.ues.amData"
-	smPolicyDataColl = "policyData.ues.smData"
-	flowRuleDataColl = "policyData.ues.flowRule"
-	qosFlowDataColl  = "policyData.ues.qosFlow"
-	chargingDataColl = "policyData.ues.chargingData"
-	userDataColl     = "userData"
-	tenantDataColl   = "tenantData"
-	identityDataColl = "subscriptionData.identityData"
+	authSubsDataColl    = "subscriptionData.authenticationData.authenticationSubscription"
+	authWebSubsDataColl = "subscriptionData.authenticationData.webAuthenticationSubscription"
+	amDataColl          = "subscriptionData.provisionedData.amData"
+	smDataColl          = "subscriptionData.provisionedData.smData"
+	smfSelDataColl      = "subscriptionData.provisionedData.smfSelectionSubscriptionData"
+	amPolicyDataColl    = "policyData.ues.amData"
+	smPolicyDataColl    = "policyData.ues.smData"
+	flowRuleDataColl    = "policyData.ues.flowRule"
+	qosFlowDataColl     = "policyData.ues.qosFlow"
+	chargingDataColl    = "policyData.ues.chargingData"
+	userDataColl        = "userData"
+	tenantDataColl      = "tenantData"
+	identityDataColl    = "subscriptionData.identityData"
 	profileDataColl  = "profileData" // store profile data
 )
 
@@ -271,209 +271,6 @@ func sendResponseToClientFilterTenant(c *gin.Context, response *http.Response, t
 	c.JSON(response.StatusCode, sliceData)
 }
 
-// TODO: R15 models to R17
-func GetSampleJSON(c *gin.Context) {
-	setCorsHeader(c)
-
-	logger.ProcLog.Infoln("Get a JSON Example")
-
-	var subsData SubsData
-
-	authSubsData := r17models.AuthenticationSubscription{
-		AuthenticationMethod: r17models.AuthMethod__5_G_AKA,
-		SequenceNumber: &r17models.SequenceNumber{
-			SqnScheme: r17models.SqnScheme_GENERAL,
-			Sqn:       "16f3b3f70fc2",
-		},
-		// EncOpcKey
-		// EncTopcKey
-	}
-	fmt.Println(authSubsData)
-
-	oldAuthSubsData := models.AuthenticationSubscription{
-		AuthenticationManagementField: "8000",
-		AuthenticationMethod:          "5G_AKA", // "5G_AKA", "EAP_AKA_PRIME"
-		Milenage: &models.Milenage{
-			Op: &models.Op{
-				EncryptionAlgorithm: 0,
-				EncryptionKey:       0,
-				OpValue:             "c9e8763286b5b9ffbdf56e1297d0887b", // Required
-			},
-		},
-		Opc: &models.Opc{
-			EncryptionAlgorithm: 0,
-			EncryptionKey:       0,
-			OpcValue:            "981d464c7c52eb6e5036234984ad0bcf", // Required
-		},
-		PermanentKey: &models.PermanentKey{
-			EncryptionAlgorithm: 0,
-			EncryptionKey:       0,
-			PermanentKeyValue:   "5122250214c33e723a5dd523fc145fc0", // Required
-		},
-		SequenceNumber: "16f3b3f70fc2",
-	}
-
-	amDataData := models.AccessAndMobilitySubscriptionData{
-		Gpsis: []string{
-			"msisdn-0900000000",
-		},
-		Nssai: &models.Nssai{
-			DefaultSingleNssais: []models.Snssai{
-				{
-					Sd:  "010203",
-					Sst: 1,
-				},
-				{
-					Sd:  "112233",
-					Sst: 1,
-				},
-			},
-			SingleNssais: []models.Snssai{
-				{
-					Sd:  "010203",
-					Sst: 1,
-				},
-				{
-					Sd:  "112233",
-					Sst: 1,
-				},
-			},
-		},
-		SubscribedUeAmbr: &models.AmbrRm{
-			Downlink: "1000 Kbps",
-			Uplink:   "1000 Kbps",
-		},
-	}
-
-	smDataData := []models.SessionManagementSubscriptionData{
-		{
-			SingleNssai: &models.Snssai{
-				Sst: 1,
-				Sd:  "010203",
-			},
-			DnnConfigurations: map[string]models.DnnConfiguration{
-				"internet": {
-					PduSessionTypes: &models.PduSessionTypes{
-						DefaultSessionType:  models.PduSessionType_IPV4,
-						AllowedSessionTypes: []models.PduSessionType{models.PduSessionType_IPV4},
-					},
-					SscModes: &models.SscModes{
-						DefaultSscMode:  models.SscMode__1,
-						AllowedSscModes: []models.SscMode{models.SscMode__1},
-					},
-					SessionAmbr: &models.Ambr{
-						Downlink: "1000 Kbps",
-						Uplink:   "1000 Kbps",
-					},
-					Var5gQosProfile: &models.SubscribedDefaultQos{
-						Var5qi: 9,
-						Arp: &models.Arp{
-							PriorityLevel: 8,
-						},
-						PriorityLevel: 8,
-					},
-				},
-			},
-		},
-		{
-			SingleNssai: &models.Snssai{
-				Sst: 1,
-				Sd:  "112233",
-			},
-			DnnConfigurations: map[string]models.DnnConfiguration{
-				"internet": {
-					PduSessionTypes: &models.PduSessionTypes{
-						DefaultSessionType:  models.PduSessionType_IPV4,
-						AllowedSessionTypes: []models.PduSessionType{models.PduSessionType_IPV4},
-					},
-					SscModes: &models.SscModes{
-						DefaultSscMode:  models.SscMode__1,
-						AllowedSscModes: []models.SscMode{models.SscMode__1},
-					},
-					SessionAmbr: &models.Ambr{
-						Downlink: "1000 Kbps",
-						Uplink:   "1000 Kbps",
-					},
-					Var5gQosProfile: &models.SubscribedDefaultQos{
-						Var5qi: 9,
-						Arp: &models.Arp{
-							PriorityLevel: 8,
-						},
-						PriorityLevel: 8,
-					},
-				},
-			},
-		},
-	}
-
-	smfSelData := models.SmfSelectionSubscriptionData{
-		SubscribedSnssaiInfos: map[string]models.SnssaiInfo{
-			"01010203": {
-				DnnInfos: []models.DnnInfo{
-					{
-						Dnn: "internet",
-					},
-				},
-			},
-			"01112233": {
-				DnnInfos: []models.DnnInfo{
-					{
-						Dnn: "internet",
-					},
-				},
-			},
-		},
-	}
-
-	amPolicyData := models.AmPolicyData{
-		SubscCats: []string{
-			"free5gc",
-		},
-	}
-
-	smPolicyData := models.SmPolicyData{
-		SmPolicySnssaiData: map[string]models.SmPolicySnssaiData{
-			"01010203": {
-				Snssai: &models.Snssai{
-					Sd:  "010203",
-					Sst: 1,
-				},
-				SmPolicyDnnData: map[string]models.SmPolicyDnnData{
-					"internet": {
-						Dnn: "internet",
-					},
-				},
-			},
-			"01112233": {
-				Snssai: &models.Snssai{
-					Sd:  "112233",
-					Sst: 1,
-				},
-				SmPolicyDnnData: map[string]models.SmPolicyDnnData{
-					"internet": {
-						Dnn: "internet",
-					},
-				},
-			},
-		},
-	}
-
-	servingPlmnId := "20893"
-	ueId := "imsi-2089300007487"
-
-	subsData = SubsData{
-		PlmnID:                            servingPlmnId,
-		UeId:                              ueId,
-		AuthenticationSubscription:        oldAuthSubsData,
-		AccessAndMobilitySubscriptionData: amDataData,
-		SessionManagementSubscriptionData: smDataData,
-		SmfSelectionSubscriptionData:      smfSelData,
-		AmPolicyData:                      amPolicyData,
-		SmPolicyData:                      smPolicyData,
-	}
-	c.JSON(http.StatusOK, subsData)
-}
-
 type OAuth struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
@@ -570,7 +367,7 @@ func Logout(c *gin.Context) {
 }
 
 type AuthSub struct {
-	models.AuthenticationSubscription
+	WebAuthenticationSubscription
 	TenantId string `json:"tenantId" bson:"tenantId"`
 }
 
@@ -1050,7 +847,7 @@ func GetSubscribers(c *gin.Context) {
 		tenantId := amData["tenantId"]
 
 		filterUeIdOnly := bson.M{"ueId": ueId}
-		authSubsDataInterface, err_get := mongoapi.RestfulAPIGetOne(authSubsDataColl, filterUeIdOnly)
+		authSubsDataInterface, err_get := mongoapi.RestfulAPIGetOne(authWebSubsDataColl, filterUeIdOnly)
 		if err_get != nil {
 			logger.ProcLog.Errorf("GetSubscribers err: %+v", err_get)
 			c.JSON(http.StatusInternalServerError, gin.H{})
@@ -1098,7 +895,7 @@ func GetSubscriberByID(c *gin.Context) {
 	filterUeIdOnly := bson.M{"ueId": ueId}
 	filter := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId}
 
-	authSubsDataInterface, err := mongoapi.RestfulAPIGetOne(authSubsDataColl, filterUeIdOnly)
+	authSubsDataInterface, err := mongoapi.RestfulAPIGetOne(authWebSubsDataColl, filterUeIdOnly)
 	if err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
@@ -1153,7 +950,7 @@ func GetSubscriberByID(c *gin.Context) {
 		return
 	}
 
-	var authSubsData models.AuthenticationSubscription
+	var authSubsData WebAuthenticationSubscription
 	if err = json.Unmarshal(mapToByte(authSubsDataInterface), &authSubsData); err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
@@ -1231,7 +1028,7 @@ func GetSubscriberByID(c *gin.Context) {
 	subsData = SubsData{
 		PlmnID:                            servingPlmnId,
 		UeId:                              ueId,
-		AuthenticationSubscription:        authSubsData,
+		WebAuthenticationSubscription:     authSubsData,
 		AccessAndMobilitySubscriptionData: amDataData,
 		SessionManagementSubscriptionData: smDataData,
 		SmfSelectionSubscriptionData:      smfSelData,
@@ -1341,7 +1138,7 @@ func PostSubscriberByID(c *gin.Context) {
 
 		// Lookup same UE ID of other tenant's subscription.
 		if claims != nil {
-			authSubsDataInterface, err_get := mongoapi.RestfulAPIGetOne(authSubsDataColl, filterUeIdOnly)
+			authSubsDataInterface, err_get := mongoapi.RestfulAPIGetOne(authWebSubsDataColl, filterUeIdOnly)
 			if err_get != nil {
 				logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err_get)
 				c.JSON(http.StatusInternalServerError, gin.H{})
@@ -1356,6 +1153,8 @@ func PostSubscriberByID(c *gin.Context) {
 	}
 	c.JSON(http.StatusCreated, gin.H{})
 }
+
+// ctfang
 
 func validate(supi string, gpsi string) bool {
 	filter := bson.M{"gpsi": gpsi}
@@ -1523,11 +1322,21 @@ func dbOperation(
 		}
 	}
 	if method == "post" || method == "put" {
-		authSubsBsonM := toBsonM(subsData.AuthenticationSubscription)
+		webAuthSubsBsonM := toBsonM(subsData.WebAuthenticationSubscription)
+		webAuthSubsBsonM["ueId"] = ueId
+
+		authSubs, errModel := WebAuthSubToModels(subsData.WebAuthenticationSubscription)
+		if errModel != nil {
+			logger.ProcLog.Errorf("WebAuthSubToModels err: %+v", errModel)
+		}
+		authSubsBsonM := toBsonM(authSubs)
 		authSubsBsonM["ueId"] = ueId
+
 		if claims != nil {
+			webAuthSubsBsonM["tenantId"] = claims["tenantId"].(string)
 			authSubsBsonM["tenantId"] = claims["tenantId"].(string)
 		}
+
 		amDataBsonM := toBsonM(subsData.AccessAndMobilitySubscriptionData)
 		amDataBsonM["ueId"] = ueId
 		amDataBsonM["servingPlmnId"] = servingPlmnId
@@ -1659,6 +1468,9 @@ func dbOperation(
 			}
 		}
 
+		if _, err := mongoapi.RestfulAPIPutOne(authWebSubsDataColl, filterUeIdOnly, webAuthSubsBsonM); err != nil {
+			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
+		}
 		if _, err := mongoapi.RestfulAPIPutOne(authSubsDataColl, filterUeIdOnly, authSubsBsonM); err != nil {
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
 		}
@@ -1737,8 +1549,16 @@ func PatchSubscriberByID(c *gin.Context) {
 	filterUeIdOnly := bson.M{"ueId": supi}
 	filter := bson.M{"ueId": supi, "servingPlmnId": servingPlmnId}
 
-	authSubsBsonM := toBsonM(subsData.AuthenticationSubscription)
-	authSubsBsonM["ueId"] = supi
+	webAuthSubsBsonM := toBsonM(subsData.WebAuthenticationSubscription)
+	webAuthSubsBsonM["ueId"] = supi
+
+	authSubs, errModels := WebAuthSubToModels(subsData.WebAuthenticationSubscription)
+	if errModels != nil {
+		logger.ProcLog.Errorf("WebAuthSubToModels err: %+v", errModels)
+	}
+	authSubsBsonM := toBsonM(authSubs)
+	authSubsBsonM["ueId"] = ueId
+
 	amDataBsonM := toBsonM(subsData.AccessAndMobilitySubscriptionData)
 	amDataBsonM["ueId"] = supi
 	amDataBsonM["servingPlmnId"] = servingPlmnId
@@ -1769,6 +1589,11 @@ func PatchSubscriberByID(c *gin.Context) {
 	smPolicyDataBsonM := toBsonM(subsData.SmPolicyData)
 	smPolicyDataBsonM["ueId"] = supi
 
+	if err := mongoapi.RestfulAPIMergePatch(authWebSubsDataColl, filterUeIdOnly, webAuthSubsBsonM); err != nil {
+		logger.ProcLog.Errorf("PatchSubscriberByID err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
 	if err := mongoapi.RestfulAPIMergePatch(authSubsDataColl, filterUeIdOnly, authSubsBsonM); err != nil {
 		logger.ProcLog.Errorf("PatchSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
@@ -1870,7 +1695,7 @@ func GetRegisteredUEContext(c *gin.Context) {
 
 	supi, supiExists := c.Params.Get("supi")
 	// TODO: support fetching data from multiple AMFs
-	if amfUris := webuiSelf.GetOamUris(r17models.NrfNfManagementNfType_AMF); amfUris != nil {
+	if amfUris := webuiSelf.GetOamUris(models.NrfNfManagementNfType_AMF); amfUris != nil {
 		var requestUri string
 
 		if supiExists {
@@ -1880,7 +1705,7 @@ func GetRegisteredUEContext(c *gin.Context) {
 		}
 
 		ctx, pd, tokerErr := webui_context.GetSelf().GetTokenCtx(
-			r17models.ServiceName_NAMF_OAM, r17models.NrfNfManagementNfType_AMF)
+			models.ServiceName_NAMF_OAM, models.NrfNfManagementNfType_AMF)
 		if tokerErr != nil {
 			logger.ProcLog.Errorf("GetTokenCtx error: %+v", tokerErr)
 			c.JSON(http.StatusInternalServerError, pd)
@@ -1950,11 +1775,11 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 	}
 
 	// TODO: support fetching data from multiple SMF
-	if smfUris := webuiSelf.GetOamUris(r17models.NrfNfManagementNfType_SMF); smfUris != nil {
+	if smfUris := webuiSelf.GetOamUris(models.NrfNfManagementNfType_SMF); smfUris != nil {
 		requestUri := fmt.Sprintf("%s/nsmf-oam/v1/ue-pdu-session-info/%s", smfUris[0], smContextRef)
 
 		ctx, pd, tokerErr := webui_context.GetSelf().GetTokenCtx(
-			r17models.ServiceName_NSMF_OAM, r17models.NrfNfManagementNfType_SMF)
+			models.ServiceName_NSMF_OAM, models.NrfNfManagementNfType_SMF)
 		if tokerErr != nil {
 			logger.ProcLog.Errorf("GetTokenCtx error: %+v", tokerErr)
 			c.JSON(http.StatusInternalServerError, pd)

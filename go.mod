@@ -7,8 +7,7 @@ require (
 	github.com/fclairamb/go-log v0.4.1
 	github.com/free5gc/chf v1.0.5-0.20241224083457-ad38fc8dfa7d
 	github.com/free5gc/openapi v1.0.9-0.20240823100026-6a9f667e914f
-	github.com/free5gc/openapi-r15 v0.0.0
-	github.com/free5gc/util v1.0.6
+	github.com/free5gc/util v1.0.7-0.20240911054252-194b3b49aba9
 	github.com/gin-contrib/cors v1.6.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/golang-jwt/jwt v3.2.1+incompatible
@@ -116,5 +115,3 @@ require (
 	golang.org/x/oauth2 v0.8.0
 	google.golang.org/api v0.122.0 // indirect
 )
-
-replace github.com/free5gc/openapi-r15 => github.com/free5gc/openapi v1.0.9-0.20240730084323-449098e08462
