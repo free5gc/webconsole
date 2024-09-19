@@ -106,13 +106,15 @@ func SendDeregisterNFInstance() (*models.ProblemDetails, error) {
 			case Nnrf_NFManagement.DeregisterNFInstanceError:
 				pd = &errModel.ProblemDetails
 				logger.InitLog.Errorf("Deregister NF instance Failed Problem[%+v]", pd)
+				return pd, err
 			case error:
-				logger.InitLog.Errorf("Deregister NF instance Error[%+v]", err)
+				logger.InitLog.Errorf("Deregister NF instance GenericOpenAPIError[%+v]", err)
+				return nil, errModel
 			}
-		case error:
+		default:
 			logger.InitLog.Errorf("Deregister NF instance Error[%+v]", err)
+			return nil, err
 		}
-		logger.InitLog.Errorf("Deregister NF instance Error[%+v]", err)
 	}
-	return nil, fmt.Errorf("Unknown error")
+	return nil, nil
 }
