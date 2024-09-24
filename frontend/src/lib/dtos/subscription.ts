@@ -124,7 +124,7 @@ interface SnssaiConfiurationDTO {
 export const subscriptionDTOSchema = z.object({
   userNumber: z.number().positive(),
   ueId: z.string().length(20).startsWith("imsi-"),
-  plmnID: z.string().length(5),
+  plmnID: z.string().min(5).max(6),
   gpsi: z.string().optional(),
   auth: subscriberAuthDTOSchema,
   subscribedUeAmbr: ambrDTOSchema,
