@@ -3,35 +3,40 @@ package webui_context
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
 	"github.com/free5gc/openapi"
 	"github.com/free5gc/openapi/models"
+	Nnrf_NFManagement "github.com/free5gc/openapi/nrf/NFManagement"
 	"github.com/free5gc/webconsole/backend/logger"
 )
 
 func SendNFRegistration() error {
-	profile := models.NfProfile{
+	profile := &models.NrfNfManagementNfProfile{
 		NfInstanceId: GetSelf().NfInstanceID,
-		NfType:       models.NfType_AF,
-		NfStatus:     models.NfStatus_REGISTERED,
+		NfType:       models.NrfNfManagementNfType_AF,
+		NfStatus:     models.NrfNfManagementNfStatus_REGISTERED,
 		CustomInfo: map[string]interface{}{
 			"AfType": "webconsole",
 		},
 	}
 
-	var nf models.NfProfile
-	var res *http.Response
+	registrationRequest := &Nnrf_NFManagement.RegisterNFInstanceRequest{
+		NfInstanceID:             &GetSelf().NfInstanceID,
+		NrfNfManagementNfProfile: profile,
+	}
+
+	var nf models.NrfNfManagementNfProfile
+	var res *Nnrf_NFManagement.RegisterNFInstanceResponse
 	var err error
 
 	retryTime := 0
 	for {
-		nf, res, err = GetSelf().
+		res, err = GetSelf().
 			NFManagementClient.
-			NFInstanceIDDocumentApi.
-			RegisterNFInstance(context.TODO(), GetSelf().NfInstanceID, profile)
+			NFInstanceIDDocumentApi.RegisterNFInstance(context.Background(), registrationRequest)
+		// RegisterNFInstance(context.TODO(), GetSelf().NfInstanceID, profile)
 		if err != nil || res == nil {
 			logger.ConsumerLog.Warnf("Webconsole-AF register to NRF Error[%s]", err.Error())
 			time.Sleep(2 * time.Second)
@@ -41,19 +46,14 @@ func SendNFRegistration() error {
 			}
 			continue
 		}
-		defer func() {
-			if resCloseErr := res.Body.Close(); resCloseErr != nil {
-				logger.ConsumerLog.Errorf("RegisterNFInstance response body cannot close: %+v", resCloseErr)
-			}
-		}()
+		nf = res.NrfNfManagementNfProfile
 
-		status := res.StatusCode
-		if status == http.StatusOK {
+		if res.Location == "" {
 			// NFUpdate
 			break
-		} else if status == http.StatusCreated {
+		} else {
 			// NFRegister
-			resourceUri := res.Header.Get("Location")
+			resourceUri := res.Location
 			GetSelf().NfInstanceID = resourceUri[strings.LastIndex(resourceUri, "/")+1:]
 
 			oauth2 := false
@@ -65,9 +65,6 @@ func SendNFRegistration() error {
 				}
 			}
 			GetSelf().OAuth2Required = oauth2
-			break
-		} else {
-			logger.ConsumerLog.Infof("handler returned wrong status code %d", status)
 		}
 	}
 
@@ -91,31 +88,33 @@ func RetrySendNFRegistration(maxRetry int) error {
 func SendDeregisterNFInstance() (*models.ProblemDetails, error) {
 	logger.ConsumerLog.Infof("Send Deregister NFInstance")
 
-	ctx, pd, err := GetSelf().GetTokenCtx(models.ServiceName_NNRF_NFM, models.NfType_NRF)
+	ctx, pd, err := GetSelf().GetTokenCtx(models.ServiceName_NNRF_NFM, models.NrfNfManagementNfType_NRF)
 	if err != nil {
 		return pd, err
 	}
 
 	afSelf := GetSelf()
+	req := &Nnrf_NFManagement.DeregisterNFInstanceRequest{
+		NfInstanceID: &afSelf.NfInstanceID,
+	}
 
-	res, err := afSelf.
-		NFManagementClient.
-		NFInstanceIDDocumentApi.
-		DeregisterNFInstance(ctx, afSelf.NfInstanceID)
-	if err == nil {
-		return nil, err
-	} else if res != nil {
-		defer func() {
-			if resCloseErr := res.Body.Close(); resCloseErr != nil {
-				logger.ConsumerLog.Errorf("DeregisterNFInstance response body cannot close: %+v", resCloseErr)
+	_, err = afSelf.NFManagementClient.NFInstanceIDDocumentApi.DeregisterNFInstance(ctx, req)
+	if err != nil {
+		switch apiErr := err.(type) {
+		case openapi.GenericOpenAPIError:
+			switch errModel := apiErr.Model().(type) {
+			case Nnrf_NFManagement.DeregisterNFInstanceError:
+				pd = &errModel.ProblemDetails
+				logger.InitLog.Errorf("Deregister NF instance Failed Problem[%+v]", pd)
+				return pd, err
+			case error:
+				logger.InitLog.Errorf("Deregister NF instance GenericOpenAPIError[%+v]", err)
+				return nil, errModel
 			}
-		}()
-		if res.Status != err.Error() {
+		default:
+			logger.InitLog.Errorf("Deregister NF instance Error[%+v]", err)
 			return nil, err
 		}
-		problem := err.(openapi.GenericOpenAPIError).Model().(models.ProblemDetails)
-		return &problem, err
-	} else {
-		return nil, openapi.ReportError("server no response")
 	}
+	return nil, nil
 }
