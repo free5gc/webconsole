@@ -15,6 +15,7 @@ import {
   TableHead,
   TableRow,
   TablePagination,
+  TextField,
 } from "@mui/material";
 
 export default function SubscriberList() {
@@ -23,6 +24,7 @@ export default function SubscriberList() {
   const [data, setData] = useState<Subscriber[]>([]);
   const [limit, setLimit] = useState(50);
   const [page, setPage] = useState(0);
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   useEffect(() => {
     console.log("get subscribers");
@@ -95,8 +97,25 @@ export default function SubscriberList() {
     navigation("/subscriber/" + subscriber.ueId + "/" + subscriber.plmnID);
   };
 
+  const filteredData = data.filter((subscriber) =>
+    subscriber.ueId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    subscriber.plmnID?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
+
   const tableView = (
     <React.Fragment>
+      <TextField
+        label="Search Subscriber"
+        variant="outlined"
+        value={searchTerm}
+        onChange={handleSearch}
+        fullWidth
+        margin="normal"
+      />
       <Table>
         <TableHead>
           <TableRow>
@@ -107,7 +126,7 @@ export default function SubscriberList() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {data.map((row, index) => (
+          {filteredData.map((row, index) => (
             <TableRow key={index}>
               <TableCell>{row.plmnID}</TableCell>
               <TableCell>{row.ueId}</TableCell>
