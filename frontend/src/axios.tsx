@@ -16,20 +16,35 @@ const instance = axios.create({
 
 // attach the token to every request
 instance.interceptors.request.use(
-  config => {
-    const token = localStorage.getItem('token');
+  (config) => {
+    const token = localStorage.getItem("token");
     if (token) {
       // add the token to the header
-      console.log('adding token to axios header');
+      console.log("adding token to axios header");
       config.headers.Token = `${token}`;
     } else {
-      console.warn('no token in local storage!');
+      console.warn("no token in local storage!");
     }
     return config;
   },
-  error => {
+  (error) => {
     return Promise.reject(error);
-  }
+  },
+);
+
+// Handle Unauthorized Error(401)
+instance.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      console.warn("Unauthorized error, clearing token");
+      localStorage.removeItem("token");
+      window.location.href = "/"; // Redirect to index page
+    }
+    return Promise.reject(error);
+  },
 );
 
 export default instance;

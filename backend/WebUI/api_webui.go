@@ -594,9 +594,11 @@ func CheckAuth(c *gin.Context) bool {
 // Tenant ID
 func GetTenantId(c *gin.Context) (string, error) {
 	tokenStr := c.GetHeader("Token")
+	if tokenStr == "" {
+		return "", fmt.Errorf("No token in header")
+	}
 	claims, err := ParseJWT(tokenStr)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{})
 		return "", errors.Wrap(err, "GetTenantId error")
 	}
 	return claims["tenantId"].(string), nil
@@ -1012,8 +1014,8 @@ func GetSubscribers(c *gin.Context) {
 	userTenantId, err := GetTenantId(c)
 	if err != nil {
 		logger.ProcLog.Errorln(err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{
-			"cause": "Illegal Token",
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"cause": "Illegal Token (Relogin required)!",
 		})
 		return
 	}
@@ -1249,8 +1251,8 @@ func PostSubscriberByID(c *gin.Context) {
 	claims, err := ParseJWT(tokenStr)
 	if err != nil {
 		logger.ProcLog.Errorln(err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{
-			"cause": "Illegal Token",
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"cause": "Illegal Token (Relogin required)!",
 		})
 		return
 	}
@@ -1778,7 +1780,7 @@ func GetRegisteredUEContext(c *gin.Context) {
 
 	supi, supiExists := c.Params.Get("supi")
 	// TODO: support fetching data from multiple AMFs
-	if amfUris := webuiSelf.GetOamUris(models.NfType_AMF); amfUris != nil {
+	if amfUris := webuiSelf.GetOamUris(models.NfType_AMF); len(amfUris) > 0 {
 		var requestUri string
 
 		if supiExists {
@@ -1823,8 +1825,8 @@ func GetRegisteredUEContext(c *gin.Context) {
 		tenantId, err := GetTenantId(c)
 		if err != nil {
 			logger.ProcLog.Errorln(err.Error())
-			c.JSON(http.StatusBadRequest, gin.H{
-				"cause": "Illegal Token",
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"cause": "Illegal or Nil token",
 			})
 			return
 		}
@@ -1835,7 +1837,8 @@ func GetRegisteredUEContext(c *gin.Context) {
 			sendResponseToClientFilterTenant(c, resp, tenantId)
 		}
 	} else {
-		c.JSON(http.StatusInternalServerError, gin.H{
+		logger.ProcLog.Warningln("No AMF found!")
+		c.JSON(http.StatusNotFound, gin.H{
 			"cause": "No AMF Found",
 		})
 	}
@@ -1899,7 +1902,9 @@ func ChangePasswordInfo(c *gin.Context) {
 	tenantId, err := GetTenantId(c)
 	if err != nil {
 		logger.ProcLog.Errorln(err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{})
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"cause": "Illegal or Nil token",
+		})
 		return
 	}
 

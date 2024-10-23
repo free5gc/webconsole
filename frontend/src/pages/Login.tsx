@@ -7,7 +7,6 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import logo from "../free5gc_logo.png";
 import axios from "../axios";
 import { useNavigate } from "react-router-dom";
 import { LoginContext } from "../LoginContext";
@@ -53,7 +52,7 @@ export default function SignIn() {
             alignItems: "center",
           }}
         >
-          <img src={logo} className="App-logo" alt="logo" />
+          <img src="/free5gc_logo.png" className="App-logo" alt="logo" />
           <br />
           <Typography component="h1" variant="h6" color="red">
             {error}
