@@ -112,7 +112,7 @@ export const SnssaiConfigurationDTOSchema = z.object({
   dnnConfigurations: z.record(DnnConfigurationDTOSchema),
 });
 
-interface SnssaiConfiurationDTO {
+interface SnssaiConfigurationDTO {
   sst: number;
   sd: string;
   isDefault: boolean;
@@ -138,7 +138,7 @@ interface SubscriptionDTO {
   gpsi?: string;
   auth: SubscriberAuthDTO;
   subscribedUeAmbr: AmbrDTO;
-  SnssaiConfigurations: SnssaiConfiurationDTO[];
+  SnssaiConfigurations: SnssaiConfigurationDTO[];
 }
 
 interface FlowsDTO {
@@ -442,7 +442,7 @@ class SubscriptionMapperImpl implements SubscriptionMapper {
     };
   }
 
-  buildNssai(data: SnssaiConfiurationDTO): Nssai {
+  buildNssai(data: SnssaiConfigurationDTO): Nssai {
     return {
       sst: data.sst,
       sd: data.sd,
@@ -450,7 +450,7 @@ class SubscriptionMapperImpl implements SubscriptionMapper {
   }
 
   buildSessionManagementSubscriptionData(
-    data: SnssaiConfiurationDTO,
+    data: SnssaiConfigurationDTO,
   ): SessionManagementSubscriptionData {
     return {
       singleNssai: {
@@ -596,7 +596,7 @@ export const defaultSubscriptionDTO = (): SubscriptionDTO => ({
   ],
 });
 
-export const defaultSnssaiConfiguration = (): SnssaiConfiurationDTO => ({
+export const defaultSnssaiConfiguration = (): SnssaiConfigurationDTO => ({
   sst: 1,
   sd: "",
   isDefault: false,
@@ -643,7 +643,7 @@ export const defaultUpSecurity = (): UpSecurityDTO => ({
 export {
   type SubscriptionDTO,
   type FlowRulesDTO,
-  type SnssaiConfiurationDTO,
+  type SnssaiConfigurationDTO,
   type DnnConfigurationDTO,
   FlowsMapperImpl,
   SubscriptionMapperImpl,
