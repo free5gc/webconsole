@@ -1,9 +1,9 @@
 {
 	"info": {
-		"_postman_id": "227e7242-725b-4caa-b1bd-4eec7dc4f424",
+		"_postman_id": "26b086b1-ac04-4a3d-b3ff-3154cc0acb98",
 		"name": "free5gc-Webconsole",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
-		"_exporter_id": "27798737"
+		"_exporter_id": "38955132"
 	},
 	"item": [
 		{
@@ -1570,6 +1570,99 @@
 					"body": "[\n    {\n        \"chargingMethod\": \"Offline\",\n        \"dnn\": \"\",\n        \"filter\": \"\",\n        \"quota\": \"0\",\n        \"ratingGroup\": 5,\n        \"servingPlmnId\": \"20893\",\n        \"snssai\": \"01010203\",\n        \"ueId\": \"imsi-208930000000001\",\n        \"unitCost\": \"1\"\n    },\n    {\n        \"chargingMethod\": \"Offline\",\n        \"dnn\": \"internet\",\n        \"filter\": \"9.9.9.9/32\",\n        \"qosRef\": 1,\n        \"quota\": \"0\",\n        \"ratingGroup\": 6,\n        \"servingPlmnId\": \"20893\",\n        \"snssai\": \"01010203\",\n        \"ueId\": \"imsi-208930000000001\",\n        \"unitCost\": \"1\"\n    },\n    {\n        \"chargingMethod\": \"Offline\",\n        \"dnn\": \"\",\n        \"filter\": \"\",\n        \"quota\": \"0\",\n        \"ratingGroup\": 1,\n        \"servingPlmnId\": \"20893\",\n        \"snssai\": \"01010203\",\n        \"ueId\": \"imsi-208930000000002\",\n        \"unitCost\": \"1\"\n    },\n    {\n        \"chargingMethod\": \"Offline\",\n        \"dnn\": \"internet\",\n        \"filter\": \"1.1.1.1/32\",\n        \"qosRef\": 1,\n        \"quota\": \"0\",\n        \"ratingGroup\": 2,\n        \"servingPlmnId\": \"20893\",\n        \"snssai\": \"01010203\",\n        \"ueId\": \"imsi-208930000000002\",\n        \"unitCost\": \"1\"\n    }\n]"
 				}
 			]
+		},
+		{
+			"name": "Delete Profile",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": "http://{{WEB_URL}}/api/profile/{{PROFILE_NAME}}"
+			},
+			"response": []
+		},
+		{
+			"name": "Add a Profile",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"profileName\": \"test\",\n    \"AccessAndMobilitySubscriptionData\": {\n        \"gpsis\": [\n            \"msisdn-0900000000\"\n        ],\n        \"nssai\": {\n            \"defaultSingleNssais\": [\n                {\n                    \"sst\": 1,\n                    \"sd\": \"010203\",\n                    \"isDefault\": true\n                },\n                {\n                    \"sst\": 1,\n                    \"sd\": \"112233\",\n                    \"isDefault\": true\n                }\n            ],\n            \"singleNssais\": []\n        },\n        \"subscribedUeAmbr\": {\n            \"downlink\": \"2 Gbps\",\n            \"uplink\": \"1 Gbps\"\n        }\n    },\n    \"SessionManagementSubscriptionData\": [\n        {\n            \"singleNssai\": {\n                \"sst\": 1,\n                \"sd\": \"010203\"\n            },\n            \"dnnConfigurations\": {\n                \"internet\": {\n                    \"sscModes\": {\n                        \"defaultSscMode\": \"SSC_MODE_1\",\n                        \"allowedSscModes\": [\n                            \"SSC_MODE_2\",\n                            \"SSC_MODE_3\"\n                        ]\n                    },\n                    \"pduSessionTypes\": {\n                        \"defaultSessionType\": \"IPV4\",\n                        \"allowedSessionTypes\": [\n                            \"IPV4\"\n                        ]\n                    },\n                    \"sessionAmbr\": {\n                        \"uplink\": \"200 Mbps\",\n                        \"downlink\": \"100 Mbps\"\n                    },\n                    \"5gQosProfile\": {\n                        \"5qi\": 9,\n                        \"arp\": {\n                            \"priorityLevel\": 8\n                        },\n                        \"priorityLevel\": 8\n                    }\n                },\n                \"internet2\": {\n                    \"sscModes\": {\n                        \"defaultSscMode\": \"SSC_MODE_1\",\n                        \"allowedSscModes\": [\n                            \"SSC_MODE_2\",\n                            \"SSC_MODE_3\"\n                        ]\n                    },\n                    \"pduSessionTypes\": {\n                        \"defaultSessionType\": \"IPV4\",\n                        \"allowedSessionTypes\": [\n                            \"IPV4\"\n                        ]\n                    },\n                    \"sessionAmbr\": {\n                        \"uplink\": \"200 Mbps\",\n                        \"downlink\": \"100 Mbps\"\n                    },\n                    \"5gQosProfile\": {\n                        \"5qi\": 9,\n                        \"arp\": {\n                            \"priorityLevel\": 8\n                        },\n                        \"priorityLevel\": 8\n                    }\n                }\n            }\n        },\n        {\n            \"singleNssai\": {\n                \"sst\": 1,\n                \"sd\": \"112233\"\n            },\n            \"dnnConfigurations\": {\n                \"internet\": {\n                    \"sscModes\": {\n                        \"defaultSscMode\": \"SSC_MODE_1\",\n                        \"allowedSscModes\": [\n                            \"SSC_MODE_2\",\n                            \"SSC_MODE_3\"\n                        ]\n                    },\n                    \"pduSessionTypes\": {\n                        \"defaultSessionType\": \"IPV4\",\n                        \"allowedSessionTypes\": [\n                            \"IPV4\"\n                        ]\n                    },\n                    \"sessionAmbr\": {\n                        \"uplink\": \"200 Mbps\",\n                        \"downlink\": \"100 Mbps\"\n                    },\n                    \"5gQosProfile\": {\n                        \"5qi\": 9,\n                        \"arp\": {\n                            \"priorityLevel\": 8\n                        },\n                        \"priorityLevel\": 8\n                    }\n                },\n                \"internet2\": {\n                    \"sscModes\": {\n                        \"defaultSscMode\": \"SSC_MODE_1\",\n                        \"allowedSscModes\": [\n                            \"SSC_MODE_2\",\n                            \"SSC_MODE_3\"\n                        ]\n                    },\n                    \"pduSessionTypes\": {\n                        \"defaultSessionType\": \"IPV4\",\n                        \"allowedSessionTypes\": [\n                            \"IPV4\"\n                        ]\n                    },\n                    \"sessionAmbr\": {\n                        \"uplink\": \"200 Mbps\",\n                        \"downlink\": \"100 Mbps\"\n                    },\n                    \"5gQosProfile\": {\n                        \"5qi\": 9,\n                        \"arp\": {\n                            \"priorityLevel\": 8\n                        },\n                        \"priorityLevel\": 8\n                    }\n                }\n            }\n        }\n    ],\n    \"SmfSelectionSubscriptionData\": {\n        \"subscribedSnssaiInfos\": {\n            \"01010203\": {\n                \"dnnInfos\": [\n                    {\n                        \"dnn\": \"internet\"\n                    },\n                    {\n                        \"dnn\": \"internet2\"\n                    }\n                ]\n            },\n            \"01112233\": {\n                \"dnnInfos\": [\n                    {\n                        \"dnn\": \"internet\"\n                    },\n                    {\n                        \"dnn\": \"internet2\"\n                    }\n                ]\n            }\n        }\n    },\n    \"AmPolicyData\": {\n        \"subscCats\": [\n            \"free5gc\"\n        ]\n    },\n    \"SmPolicyData\": {\n        \"smPolicySnssaiData\": {\n            \"01010203\": {\n                \"snssai\": {\n                    \"sst\": 1,\n                    \"sd\": \"010203\"\n                },\n                \"smPolicyDnnData\": {\n                    \"internet\": {\n                        \"dnn\": \"internet\"\n                    },\n                    \"internet2\": {\n                        \"dnn\": \"internet2\"\n                    }\n                }\n            },\n            \"01112233\": {\n                \"snssai\": {\n                    \"sst\": 1,\n                    \"sd\": \"112233\"\n                },\n                \"smPolicyDnnData\": {\n                    \"internet\": {\n                        \"dnn\": \"internet\"\n                    },\n                    \"internet2\": {\n                        \"dnn\": \"internet2\"\n                    }\n                }\n            }\n        }\n    },\n    \"FlowRules\": [\n        {\n            \"snssai\": \"01010203\",\n            \"dnn\": \"internet\",\n            \"filter\": \"1.1.1.1/32\",\n            \"qfi\": 5\n        }\n    ],\n    \"QosFlows\": [\n        {\n            \"qfi\": 5, \n            \"5qi\": 5,\n            \"snssai\": \"01010203\",\n            \"dnn\": \"internet\",\n            \"gbrUL\": \"\",\n            \"gbrDL\": \"\",\n            \"mbrUL\": \"200 Mbps\",\n            \"mbrDL\": \"100 Mbps\"\n        }\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://{{WEB_URL}}/api/profile"
+			},
+			"response": []
+		},
+		{
+			"name": "Modify a Profile",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"profileName\": \"test\",\n    \"AccessAndMobilitySubscriptionData\": {\n        \"gpsis\": [\n            \"msisdn-0900000000\"\n        ],\n        \"nssai\": {\n            \"defaultSingleNssais\": [\n                {\n                    \"sst\": 1,\n                    \"sd\": \"010203\",\n                    \"isDefault\": true\n                },\n                {\n                    \"sst\": 1,\n                    \"sd\": \"112233\",\n                    \"isDefault\": true\n                }\n            ],\n            \"singleNssais\": []\n        },\n        \"subscribedUeAmbr\": {\n            \"downlink\": \"2 Gbps\",\n            \"uplink\": \"1 Gbps\"\n        }\n    },\n    \"SessionManagementSubscriptionData\": [\n        {\n            \"singleNssai\": {\n                \"sst\": 1,\n                \"sd\": \"010203\"\n            },\n            \"dnnConfigurations\": {\n                \"internet\": {\n                    \"sscModes\": {\n                        \"defaultSscMode\": \"SSC_MODE_1\",\n                        \"allowedSscModes\": [\n                            \"SSC_MODE_2\",\n                            \"SSC_MODE_3\"\n                        ]\n                    },\n                    \"pduSessionTypes\": {\n                        \"defaultSessionType\": \"IPV4\",\n                        \"allowedSessionTypes\": [\n                            \"IPV4\"\n                        ]\n                    },\n                    \"sessionAmbr\": {\n                        \"uplink\": \"200 Mbps\",\n                        \"downlink\": \"100 Mbps\"\n                    },\n                    \"5gQosProfile\": {\n                        \"5qi\": 9,\n                        \"arp\": {\n                            \"priorityLevel\": 8\n                        },\n                        \"priorityLevel\": 8\n                    }\n                },\n                \"internet2\": {\n                    \"sscModes\": {\n                        \"defaultSscMode\": \"SSC_MODE_1\",\n                        \"allowedSscModes\": [\n                            \"SSC_MODE_2\",\n                            \"SSC_MODE_3\"\n                        ]\n                    },\n                    \"pduSessionTypes\": {\n                        \"defaultSessionType\": \"IPV4\",\n                        \"allowedSessionTypes\": [\n                            \"IPV4\"\n                        ]\n                    },\n                    \"sessionAmbr\": {\n                        \"uplink\": \"200 Mbps\",\n                        \"downlink\": \"100 Mbps\"\n                    },\n                    \"5gQosProfile\": {\n                        \"5qi\": 9,\n                        \"arp\": {\n                            \"priorityLevel\": 8\n                        },\n                        \"priorityLevel\": 8\n                    }\n                }\n            }\n        },\n        {\n            \"singleNssai\": {\n                \"sst\": 1,\n                \"sd\": \"112233\"\n            },\n            \"dnnConfigurations\": {\n                \"internet\": {\n                    \"sscModes\": {\n                        \"defaultSscMode\": \"SSC_MODE_1\",\n                        \"allowedSscModes\": [\n                            \"SSC_MODE_2\",\n                            \"SSC_MODE_3\"\n                        ]\n                    },\n                    \"pduSessionTypes\": {\n                        \"defaultSessionType\": \"IPV4\",\n                        \"allowedSessionTypes\": [\n                            \"IPV4\"\n                        ]\n                    },\n                    \"sessionAmbr\": {\n                        \"uplink\": \"200 Mbps\",\n                        \"downlink\": \"100 Mbps\"\n                    },\n                    \"5gQosProfile\": {\n                        \"5qi\": 9,\n                        \"arp\": {\n                            \"priorityLevel\": 8\n                        },\n                        \"priorityLevel\": 8\n                    }\n                },\n                \"internet2\": {\n                    \"sscModes\": {\n                        \"defaultSscMode\": \"SSC_MODE_1\",\n                        \"allowedSscModes\": [\n                            \"SSC_MODE_2\",\n                            \"SSC_MODE_3\"\n                        ]\n                    },\n                    \"pduSessionTypes\": {\n                        \"defaultSessionType\": \"IPV4\",\n                        \"allowedSessionTypes\": [\n                            \"IPV4\"\n                        ]\n                    },\n                    \"sessionAmbr\": {\n                        \"uplink\": \"200 Mbps\",\n                        \"downlink\": \"100 Mbps\"\n                    },\n                    \"5gQosProfile\": {\n                        \"5qi\": 9,\n                        \"arp\": {\n                            \"priorityLevel\": 8\n                        },\n                        \"priorityLevel\": 8\n                    }\n                }\n            }\n        }\n    ],\n    \"SmfSelectionSubscriptionData\": {\n        \"subscribedSnssaiInfos\": {\n            \"01010203\": {\n                \"dnnInfos\": [\n                    {\n                        \"dnn\": \"internet\"\n                    },\n                    {\n                        \"dnn\": \"internet2\"\n                    }\n                ]\n            },\n            \"01112233\": {\n                \"dnnInfos\": [\n                    {\n                        \"dnn\": \"internet\"\n                    },\n                    {\n                        \"dnn\": \"internet2\"\n                    }\n                ]\n            }\n        }\n    },\n    \"AmPolicyData\": {\n        \"subscCats\": [\n            \"free5gc\"\n        ]\n    },\n    \"SmPolicyData\": {\n        \"smPolicySnssaiData\": {\n            \"01010203\": {\n                \"snssai\": {\n                    \"sst\": 1,\n                    \"sd\": \"010203\"\n                },\n                \"smPolicyDnnData\": {\n                    \"internet\": {\n                        \"dnn\": \"internet\"\n                    },\n                    \"internet2\": {\n                        \"dnn\": \"internet2\"\n                    }\n                }\n            },\n            \"01112233\": {\n                \"snssai\": {\n                    \"sst\": 1,\n                    \"sd\": \"112233\"\n                },\n                \"smPolicyDnnData\": {\n                    \"internet\": {\n                        \"dnn\": \"internet\"\n                    },\n                    \"internet2\": {\n                        \"dnn\": \"internet2\"\n                    }\n                }\n            }\n        }\n    },\n    \"FlowRules\": [\n        {\n            \"snssai\": \"01010203\",\n            \"dnn\": \"internet\",\n            \"filter\": \"permit out 17 from 192.168.0.0/24 8000 to 60.60.0.0/24 \",\n            \"qfi\": 5\n        }, {\n            \"snssai\": \"01010203\",\n            \"dnn\": \"internet\",\n            \"filter\": \"permit out 17 from 192.169.0.0/24 8000 to 60.60.0.0/24 \",\n            \"qfi\": 1\n        }\n    ],\n    \"QosFlows\": [\n        {\n            \"qfi\": 5, \n            \"5qi\": 5,\n            \"snssai\": \"01010203\",\n            \"dnn\": \"internet\",\n            \"gbrUL\": \"\",\n            \"gbrDL\": \"\",\n            \"mbrUL\": \"200 Mbps\",\n            \"mbrDL\": \"100 Mbps\"\n        }, {\n            \"qfi\": 1, \n            \"5qi\": 1,\n            \"snssai\": \"01010203\",\n            \"dnn\": \"internet\",\n            \"gbrUL\": \"200 Mbps\",\n            \"gbrDL\": \"100 Mbps\",\n            \"mbrUL\": \"200 Mbps\",\n            \"mbrDL\": \"100 Mbps\"\n        }\n    ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://{{WEB_URL}}/api/profile/{{PROFILE_NAME}}"
+			},
+			"response": []
+		},
+		{
+			"name": "Get all Profiles",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": "http://{WEB_URL}}/api/profile"
+			},
+			"response": []
+		},
+		{
+			"name": "Get a Profile",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": "http://{{WEB_URL}}/api/profile/{{PROFILE_NAME}}"
+			},
+			"response": []
 		}
 	],
 	"event": [
@@ -1613,6 +1706,11 @@
 		{
 			"key": "ChargingMethod",
 			"value": "Offline"
+		},
+		{
+			"key": "PROFILE_NAME",
+			"value": "test",
+			"type": "default"
 		}
 	]
 }
