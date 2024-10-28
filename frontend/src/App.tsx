@@ -17,7 +17,9 @@ import ChangePassword from "./pages/ChangePassword";
 import ChargingTable from "./pages/Charging/ChargingTable";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { LoginContext, User } from "./LoginContext";
-
+import ProfileList from "./pages/ProfileList";
+import ProfileCreate from "./pages/ProfileCreate";
+import ProfileRead from "./pages/ProfileRead";
 export default function App() {
   const [user, setUser] = useState<User | null>(() => {
     // retrieve from local storage on initial load (if available)
@@ -179,6 +181,38 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ChargingTable />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfileList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/create"
+            element={
+              <ProtectedRoute>
+                <ProfileCreate />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/create/:profileName"
+            element={
+              <ProtectedRoute>
+                <ProfileCreate />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/:profileName"
+            element={
+              <ProtectedRoute>
+                <ProfileRead />
               </ProtectedRoute>
             }
           />
