@@ -5,13 +5,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "../../axios";
 
 import Dashboard from "../../Dashboard";
-import { Button, Grid } from "@mui/material";
+import { Button, Grid, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import { SubscriberFormProvider, useSubscriptionForm } from "../../hooks/subscription-form";
 import SubscriberFormBasic from "./SubscriberFormBasic";
 import SubscriberFormUeAmbr from "./SubscriberFormUeAmbr";
 import SubscriberFormSessions from "./SubscriberFormSessions";
-import { FlowsMapperImpl, SubscriptionMapperImpl } from "../../lib/dtos/subscription";
-
+import { FlowsMapperImpl as SubscriptionFlowsMapperImpl, SubscriptionMapperImpl } from "../../lib/dtos/subscription";
+import { FlowsMapperImpl as ProfileFlowsMapperImpl, ProfileMapperImpl } from "../../lib/dtos/profile";
 function FormHOC(Component: React.ComponentType<any>) {
   return function (props: any) {
     return (
@@ -33,8 +33,19 @@ function SubscriberCreate() {
   const isNewSubscriber = id === undefined && plmn === undefined;
   const navigation = useNavigate();
   const [loading, setLoading] = useState(false);
-
+  const [profiles, setProfiles] = useState<any[]>([]);
+  const [selectedProfile, setSelectedProfile] = useState('');
   const { handleSubmit, getValues, reset } = useSubscriptionForm();
+
+  useEffect(() => {
+    axios.get('/api/profile')
+      .then((res) => {
+        setProfiles(res.data);
+      })
+      .catch((e) => {
+        console.log(e.message);
+      });
+  }, []);
 
   if (!isNewSubscriber) {
     useEffect(() => {
@@ -43,7 +54,7 @@ function SubscriberCreate() {
       axios
         .get("/api/subscriber/" + id + "/" + plmn)
         .then((res) => {
-          const subscriberMapper = new SubscriptionMapperImpl(new FlowsMapperImpl());
+          const subscriberMapper = new SubscriptionMapperImpl(new SubscriptionFlowsMapperImpl());
           const subscription = subscriberMapper.mapFromSubscription(res.data);
           reset(subscription);
         })
@@ -77,7 +88,7 @@ function SubscriberCreate() {
       return;
     }
 
-    const subscriberMapper = new SubscriptionMapperImpl(new FlowsMapperImpl());
+    const subscriberMapper = new SubscriptionMapperImpl(new SubscriptionFlowsMapperImpl());
     const subscription = subscriberMapper.mapFromDto(data);
 
     // Iterate subscriber data number.
@@ -113,7 +124,7 @@ function SubscriberCreate() {
     console.log("trace: onUpdate");
 
     const data = getValues();
-    const subscriberMapper = new SubscriptionMapperImpl(new FlowsMapperImpl());
+    const subscriberMapper = new SubscriptionMapperImpl(new SubscriptionFlowsMapperImpl());
     const subscription = subscriberMapper.mapFromDto(data);
 
     axios
@@ -140,6 +151,47 @@ function SubscriberCreate() {
   const formSubmitFn = isNewSubscriber ? onCreate : onUpdate;
   const formSubmitText = isNewSubscriber ? "CREATE" : "UPDATE";
 
+  const handleProfileChange = (event: any) => {
+    const profileName = event.target.value;
+    setSelectedProfile(profileName);
+
+    if (profileName) {
+      setLoading(true);
+      axios.get("/api/profile/" + profileName)
+        .then((res) => {
+          const profileMapper = new ProfileMapperImpl(new ProfileFlowsMapperImpl());
+          const profile = profileMapper.mapFromProfile(res.data);
+
+          const currentValues = getValues();
+          const basicInfo = {
+            userNumber: currentValues.userNumber,
+            ueId: currentValues.ueId,
+            plmnID: currentValues.plmnID,
+            gpsi: currentValues.gpsi,
+            auth: {
+              authenticationManagementField: currentValues.auth?.authenticationManagementField,
+              authenticationMethod: currentValues.auth?.authenticationMethod,
+              operatorCodeType: currentValues.auth?.operatorCodeType,
+              operatorCode: currentValues.auth?.operatorCode,
+              sequenceNumber: currentValues.auth?.sequenceNumber,
+              permanentKey: currentValues.auth?.permanentKey,
+            }
+          };
+
+          reset({
+            ...basicInfo,
+            ...profile
+          });
+        })
+        .catch((e) => {
+          console.log(e.message);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  };
+
   return (
     <Dashboard title="Subscription" refreshAction={() => {}}>
       <form
@@ -147,6 +199,27 @@ function SubscriberCreate() {
           console.log("form error: ", err);
         })}
       >
+        {profiles.length > 0 && (
+          <Grid item xs={12} sx={{ mb: 3 }}>
+            <FormControl fullWidth>
+              <InputLabel id="profile-select-label">Select Profile</InputLabel>
+              <Select
+                labelId="profile-select-label"
+                id="profile-select"
+                value={selectedProfile}
+                label="Select Profile"
+                onChange={handleProfileChange}
+              >
+                {profiles.map((profile) => (
+                  <MenuItem key={profile.profileName} value={profile.profileName}>
+                    {profile.profileName}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+        )}
+
         <SubscriberFormBasic />
 
         <h3>Subscribed UE AMBR</h3>
