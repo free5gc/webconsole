@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { config } from "../constants/config";
 import Dashboard from "../Dashboard";
 import axios from "../axios";
 import { Profile } from "../api/api";
@@ -10,7 +11,9 @@ import {
     TableBody,
     TableCell,
     TableHead,
+    TablePagination,
     TableRow,
+    TextField,
 } from "@mui/material";
 
 export default function ProfileList() {
@@ -19,6 +22,7 @@ export default function ProfileList() {
     const [data, setData] = useState<Profile[]>([]);
     const [limit, setLimit] = useState(50);
     const [page, setPage] = useState(0);
+    const [searchTerm, setSearchTerm] = useState<string>("");
 
     useEffect(() => {
         console.log("get profiles");
@@ -30,9 +34,42 @@ export default function ProfileList() {
             .catch((e) => {
                 console.log(e.message);
             });
-        // set data to empty array
-        // setData([]);
     }, [refresh, limit, page]);
+
+    const handlePageChange = (
+        _event: React.MouseEvent<HTMLButtonElement> | null,
+        newPage?: number,
+    ) => {
+        if (newPage !== null) {
+            setPage(newPage!);
+        }
+    };
+
+    const handleLimitChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setLimit(Number(event.target.value));
+    };
+    
+    const count = () => {
+        return 0;
+    };
+    
+    const pager = () => {
+        if (config.enablePagination) {
+            return (
+                <TablePagination
+                    component="div"
+                    count={count()}
+                    onPageChange={handlePageChange}
+                    onRowsPerPageChange={handleLimitChange}
+                    page={page}
+                    rowsPerPage={limit}
+                    rowsPerPageOptions={[50, 100, 200]}
+                />
+            );
+        } else {
+            return <br />;
+        }
+    };
 
     const onCreate = () => {
         navigation("/profile/create");
@@ -58,8 +95,24 @@ export default function ProfileList() {
         navigation("/profile/" + profile.profileName);
     };
 
+    const filteredData = data.filter((profile) =>
+        profile.profileName?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchTerm(event.target.value);
+    };
+
     const tableView = (
         <React.Fragment>
+            <TextField
+                label="Search Profile"
+                variant="outlined"
+                value={searchTerm}
+                onChange={handleSearch}
+                fullWidth
+                margin="normal"
+            />
             <Table>
                 <TableHead>
                     <TableRow>
@@ -69,7 +122,7 @@ export default function ProfileList() {
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {data.map((row, index) => (
+                    {filteredData.map((row, index) => (
                         <TableRow key={index}>
                             <TableCell>{row.profileName}</TableCell>
                             <TableCell>
@@ -86,6 +139,7 @@ export default function ProfileList() {
                     ))}
                 </TableBody>
             </Table>
+            {pager()}
             <Grid item xs={12}>
                 <Button color="primary" variant="contained" onClick={() => onCreate()} sx={{ m: 1 }}>
                     CREATE
