@@ -166,7 +166,7 @@ class FlowsMapperImpl implements FlowsMapper {
             this.chargingDatas.push({
                 ...dnn.sliceCharingData,
                 snssai: snssai,
-                dnn: dnn.dnn,
+                dnn: "",
                 filter: "",
             });
 
@@ -174,10 +174,10 @@ class FlowsMapperImpl implements FlowsMapper {
                 const qosRef = this.refNumber++;
 
                 this.flowRules.push({
-            filter: flow.filter,
-            precedence: flow.precedence,
-            snssai: snssai,
-            dnn: dnn.dnn,
+                    filter: flow.filter,
+                    precedence: flow.precedence,
+                    snssai: snssai,
+                    dnn: dnn.dnn,
                     qosRef,
                 });
 
@@ -197,6 +197,7 @@ class FlowsMapperImpl implements FlowsMapper {
                     snssai: snssai,
                     dnn: dnn.dnn,
                     filter: flow.filter,
+                    qosRef,
                 });
             });
         });
