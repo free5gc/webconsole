@@ -2051,7 +2051,7 @@ func PostProfile(c *gin.Context) {
 	}
 
 	var profile Profile
-	if err := c.ShouldBindJSON(&profile); err != nil {
+	if err = c.ShouldBindJSON(&profile); err != nil {
 		logger.ProcLog.Errorf("PostProfile err: %+v", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"cause": "JSON format incorrect",
