@@ -27,8 +27,6 @@ function ProfileCreate() {
   const { profileName } = useParams<{ profileName: string }>();
 
   const isNewProfile = profileName === undefined;
-  console.log("trace: name", name);
-  console.log("trace: isNewProfile", isNewProfile);
   const navigation = useNavigate();
   const [loading, setLoading] = useState(false);
 
@@ -39,7 +37,7 @@ function ProfileCreate() {
       setLoading(true);
 
       axios
-        .get("/api/profile/" + name)
+        .get("/api/profile/" + profileName)
         .then((res) => {
           const profileMapper = new ProfileMapperImpl(new FlowsMapperImpl());
           const profile = profileMapper.mapFromProfile(res.data);
@@ -48,7 +46,7 @@ function ProfileCreate() {
         .finally(() => {
           setLoading(false);
         });
-    }, [name]);
+    }, [profileName]);
   }
 
   if (loading) {
