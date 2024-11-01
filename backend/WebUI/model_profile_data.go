@@ -3,7 +3,7 @@ package WebUI
 import "github.com/free5gc/openapi/models"
 
 type Profile struct {
-	ProfileName string `json:"profileName"`
+	ProfileName                       string                                     `json:"profileName"`
 	AccessAndMobilitySubscriptionData models.AccessAndMobilitySubscriptionData   `json:"AccessAndMobilitySubscriptionData"`
 	SessionManagementSubscriptionData []models.SessionManagementSubscriptionData `json:"SessionManagementSubscriptionData"`
 	SmfSelectionSubscriptionData      models.SmfSelectionSubscriptionData        `json:"SmfSelectionSubscriptionData"`
@@ -11,5 +11,5 @@ type Profile struct {
 	SmPolicyData                      models.SmPolicyData                        `json:"SmPolicyData"`
 	FlowRules                         []FlowRule                                 `json:"FlowRules"`
 	QosFlows                          []QosFlow                                  `json:"QosFlows"`
-	ChargingDatas                     []ChargingData 
+	ChargingDatas                     []ChargingData
 }

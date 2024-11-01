@@ -2109,7 +2109,6 @@ func PutProfile(c *gin.Context) {
 	c.JSON(http.StatusNoContent, gin.H{})
 }
 
-
 func dbProfileOperation(profileName string, method string, profile *Profile) {
 	filter := bson.M{"profileName": profileName}
 
