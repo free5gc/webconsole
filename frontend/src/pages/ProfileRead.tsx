@@ -121,8 +121,6 @@ export default function ProfileRead() {
     };
 
     const flowRule = (dnn: string, snssai: Nssai) => {
-        console.log("in flowRule");
-        console.log(data?.FlowRules);
         const flowKey = toHex(snssai.sst) + snssai.sd;
         if (data?.FlowRules !== undefined) {
             return data.FlowRules.filter((flow) => flow.dnn === dnn && flow.snssai === flowKey).map(

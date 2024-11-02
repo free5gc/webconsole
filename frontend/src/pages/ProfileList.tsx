@@ -25,14 +25,13 @@ export default function ProfileList() {
     const [searchTerm, setSearchTerm] = useState<string>("");
 
     useEffect(() => {
-        console.log("get profiles");
         axios
             .get("/api/profile")
             .then((res) => {
                 setData(res.data);
             })
             .catch((e) => {
-                console.log(e.message);
+                alert(e.message);
             });
     }, [refresh, limit, page]);
 
@@ -83,11 +82,10 @@ export default function ProfileList() {
         axios
             .delete("/api/profile/" + profileName)
             .then((res) => {
-                console.log(res);
                 setRefresh(!refresh);
             })
             .catch((err) => {
-                console.log(err.response.data.message);
+                alert(err.response.data.message);
             });
     };
 
