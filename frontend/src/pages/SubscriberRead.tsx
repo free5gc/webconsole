@@ -24,7 +24,9 @@ import {
   TableCell,
   TableRow,
 } from "@mui/material";
-
+import FlowRule from "./Component/FlowRule";
+import ChargingCfg from "./Component/ChargingCfg";
+import UpSecurity from "./Component/UpSecurity";
 export default function SubscriberRead() {
   const { id, plmn } = useParams<{
     id: string;
@@ -132,43 +134,15 @@ export default function SubscriberRead() {
     }
   };
 
-  const chargingConfig = (dnn: string | undefined, snssai: Nssai, filter: string | undefined) => {
+  const chargingConfig = (dnn: string, snssai: Nssai, filter: string | undefined) => {
     const flowKey = toHex(snssai.sst) + snssai.sd;
     for (const chargingData of data?.ChargingDatas ?? []) {
-      const isOnlineCharging = chargingData.chargingMethod === "Online";
-
       if (
         chargingData.snssai === flowKey &&
         chargingData.dnn === dnn &&
         chargingData.filter === filter
       ) {
-        return (
-          <Box sx={{ m: 2 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <h4>Charging Config</h4>
-              </Grid>
-            </Grid>
-            <Table>
-              <TableBody>
-                <TableCell style={{ width: "40%" }}> Charging Method </TableCell>
-                <TableCell>{chargingData.chargingMethod}</TableCell>
-              </TableBody>
-              {isOnlineCharging ? (
-                <TableBody>
-                  <TableCell style={{ width: "40%" }}> Quota </TableCell>
-                  <TableCell>{chargingData.quota}</TableCell>
-                </TableBody>
-              ) : (
-                <></>
-              )}
-              <TableBody>
-                <TableCell style={{ width: "40%" }}> Unit Cost </TableCell>
-                <TableCell>{chargingData.unitCost}</TableCell>
-              </TableBody>
-            </Table>
-          </Box>
-        );
+        return <ChargingCfg chargingData={chargingData} />;
       }
     }
   };
@@ -176,100 +150,28 @@ export default function SubscriberRead() {
   const flowRule = (dnn: string, snssai: Nssai) => {
     const flowKey = toHex(snssai.sst) + snssai.sd;
     if (data?.FlowRules === undefined) {
-        return <div></div>;
+      return <div></div>;
     }
     return data.FlowRules.filter((flow) => flow.dnn === dnn && flow.snssai === flowKey).map(
-        (flow) => (
-            <div key={flow.snssai}>
-                <Box sx={{ m: 2 }}>
-                    <h4>Flow Rules</h4>
-                    <Card variant="outlined">
-                        <Table>
-                            <TableBody>
-                                <TableRow>
-                                    <TableCell style={{ width: "40%" }}>IP Filter</TableCell>
-                                    <TableCell>{flow.filter}</TableCell>
-                                </TableRow>
-                            </TableBody>
-                            <TableBody>
-                                <TableRow>
-                                    <TableCell style={{ width: "40%" }}>Precedence</TableCell>
-                                    <TableCell>{flow.precedence}</TableCell>
-                                </TableRow>
-                            </TableBody>
-                            <TableBody>
-                                <TableRow>
-                                    <TableCell style={{ width: "40%" }}>5QI</TableCell>
-                                    <TableCell>{qosFlow(flowKey, dnn, flow.qosRef)?.["5qi"]}</TableCell>
-                                </TableRow>
-                            </TableBody>
-                            <TableBody>
-                                <TableRow>
-                                    <TableCell style={{ width: "40%" }}>Uplink GBR</TableCell>
-                                    <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.gbrUL}</TableCell>
-                                </TableRow>
-                            </TableBody>
-                            <TableBody>
-                                <TableRow>
-                                    <TableCell style={{ width: "40%" }}>Downlink GBR</TableCell>
-                                    <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.gbrDL}</TableCell>
-                                </TableRow>
-                            </TableBody>
-                            <TableBody>
-                                <TableRow>
-                                    <TableCell style={{ width: "40%" }}>Uplink MBR</TableCell>
-                                    <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.mbrUL}</TableCell>
-                                </TableRow>
-                            </TableBody>
-                            <TableBody>
-                                <TableRow>
-                                    <TableCell style={{ width: "40%" }}>Downlink MBR</TableCell>
-                                    <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.mbrDL}</TableCell>
-                                </TableRow>
-                            </TableBody>
-                            <TableBody>
-                                <TableRow>
-                                    <TableCell style={{ width: "40%" }}>Charging Characteristics</TableCell>
-                                    <TableCell>{chargingConfig(dnn, snssai!, flow.filter)}</TableCell>
-                                </TableRow>
-                            </TableBody>
-                        </Table>
-                    </Card>
-                </Box>
-            </div>
-        ),
+      (flow) => (
+        <FlowRule
+          key={flow.snssai}
+          flow={flow}
+          dnn={dnn}
+          data={data}
+          chargingConfig={chargingConfig}
+          qosFlow={qosFlow}
+          />
+      ),
     );
-};
+  };
 
-const upSecurity = (dnn: DnnConfiguration | undefined) => {
+  const upSecurity = (dnn: DnnConfiguration | undefined) => {
     if (dnn === undefined || dnn.upSecurity === undefined) {
-        return <div></div>;
+      return <div></div>;
     }
-    const security = dnn!.upSecurity!;
-    return (
-        <div key={security.upIntegr}>
-            <Box sx={{ m: 2 }}>
-                <h4>UP Security</h4>
-                <Card variant="outlined">
-                    <Table>
-                        <TableBody>
-                            <TableRow>
-                                <TableCell style={{ width: "40%" }}>Integrity of UP Security</TableCell>
-                                <TableCell>{security.upIntegr}</TableCell>
-                            </TableRow>
-                        </TableBody>
-                        <TableBody>
-                            <TableRow>
-                                <TableCell style={{ width: "40%" }}>Confidentiality of UP Security</TableCell>
-                                <TableCell>{security.upConfid}</TableCell>
-                            </TableRow>
-                        </TableBody>
-                    </Table>
-                </Card>
-            </Box>
-        </div>
-    );
-};
+    return <UpSecurity dnn={dnn} />;
+  };
 
   return (
     <Dashboard title="Subscription" refreshAction={() => {}}>
