@@ -2059,6 +2059,14 @@ func PostProfile(c *gin.Context) {
 		return
 	}
 
+	tenantData, err := mongoapi.RestfulAPIGetOne(tenantDataColl, bson.M{"tenantName": "admin"})
+	if err != nil {
+		logger.ProcLog.Errorf("GetProfile err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
+	profile.TenantId = tenantData["tenantId"].(string)
+
 	pf, err := mongoapi.RestfulAPIGetOne(profileListColl, bson.M{"profileName": profile.ProfileName})
 	if err != nil {
 		logger.ProcLog.Errorf("GetProfile err: %+v", err)
@@ -2103,6 +2111,14 @@ func PutProfile(c *gin.Context) {
 		})
 		return
 	}
+
+	tenantData, err := mongoapi.RestfulAPIGetOne(tenantDataColl, bson.M{"tenantName": "admin"})
+	if err != nil {
+		logger.ProcLog.Errorf("GetProfile err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
+	profile.TenantId = tenantData["tenantId"].(string)
 
 	logger.ProcLog.Infof("PutProfile: %+v", profile.ProfileName)
 	dbProfileOperation(profileName, "put", &profile)

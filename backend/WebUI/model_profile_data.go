@@ -4,6 +4,7 @@ import "github.com/free5gc/openapi/models"
 
 type Profile struct {
 	ProfileName                       string                                     `json:"profileName"`
+	TenantId                          string                                     `json:"tenantId"`
 	AccessAndMobilitySubscriptionData models.AccessAndMobilitySubscriptionData   `json:"AccessAndMobilitySubscriptionData"`
 	SessionManagementSubscriptionData []models.SessionManagementSubscriptionData `json:"SessionManagementSubscriptionData"`
 	SmfSelectionSubscriptionData      models.SmfSelectionSubscriptionData        `json:"SmfSelectionSubscriptionData"`
