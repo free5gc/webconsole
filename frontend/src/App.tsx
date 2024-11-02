@@ -20,6 +20,7 @@ import { LoginContext, User } from "./LoginContext";
 import ProfileList from "./pages/ProfileList";
 import ProfileCreate from "./pages/ProfileCreate";
 import ProfileRead from "./pages/ProfileRead";
+
 export default function App() {
   const [user, setUser] = useState<User | null>(() => {
     // retrieve from local storage on initial load (if available)
