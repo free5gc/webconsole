@@ -174,102 +174,102 @@ export default function SubscriberRead() {
   };
 
   const flowRule = (dnn: string, snssai: Nssai) => {
-    console.log("in flowRule");
-    console.log(data?.FlowRules);
     const flowKey = toHex(snssai.sst) + snssai.sd;
-    if (data?.FlowRules !== undefined) {
-      return data.FlowRules.filter((flow) => flow.dnn === dnn && flow.snssai === flowKey).map(
+    if (data?.FlowRules === undefined) {
+        return <div></div>;
+    }
+    return data.FlowRules.filter((flow) => flow.dnn === dnn && flow.snssai === flowKey).map(
         (flow) => (
-          <div key={flow.snssai}>
-            <Box sx={{ m: 2 }}>
-              <h4>Flow Rules</h4>
-              <Card variant="outlined">
-                <Table>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell style={{ width: "40%" }}>IP Filter</TableCell>
-                      <TableCell>{flow.filter}</TableCell>
-                    </TableRow>
-                  </TableBody>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell style={{ width: "40%" }}>Precedence</TableCell>
-                      <TableCell>{flow.precedence}</TableCell>
-                    </TableRow>
-                  </TableBody>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell style={{ width: "40%" }}>5QI</TableCell>
-                      <TableCell>{qosFlow(flowKey, dnn, flow.qosRef)?.["5qi"]}</TableCell>
-                    </TableRow>
-                  </TableBody>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell style={{ width: "40%" }}>Uplink GBR</TableCell>
-                      <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.gbrUL}</TableCell>
-                    </TableRow>
-                  </TableBody>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell style={{ width: "40%" }}>Downlink GBR</TableCell>
-                      <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.gbrDL}</TableCell>
-                    </TableRow>
-                  </TableBody>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell style={{ width: "40%" }}>Uplink MBR</TableCell>
-                      <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.mbrUL}</TableCell>
-                    </TableRow>
-                  </TableBody>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell style={{ width: "40%" }}>Downlink MBR</TableCell>
-                      <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.mbrDL}</TableCell>
-                    </TableRow>
-                  </TableBody>
-                  <TableBody>
-                    <TableCell>{chargingConfig(dnn, snssai!, flow.filter)}</TableCell>
-                  </TableBody>
-                </Table>
-              </Card>
-            </Box>
-          </div>
+            <div key={flow.snssai}>
+                <Box sx={{ m: 2 }}>
+                    <h4>Flow Rules</h4>
+                    <Card variant="outlined">
+                        <Table>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell style={{ width: "40%" }}>IP Filter</TableCell>
+                                    <TableCell>{flow.filter}</TableCell>
+                                </TableRow>
+                            </TableBody>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell style={{ width: "40%" }}>Precedence</TableCell>
+                                    <TableCell>{flow.precedence}</TableCell>
+                                </TableRow>
+                            </TableBody>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell style={{ width: "40%" }}>5QI</TableCell>
+                                    <TableCell>{qosFlow(flowKey, dnn, flow.qosRef)?.["5qi"]}</TableCell>
+                                </TableRow>
+                            </TableBody>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell style={{ width: "40%" }}>Uplink GBR</TableCell>
+                                    <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.gbrUL}</TableCell>
+                                </TableRow>
+                            </TableBody>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell style={{ width: "40%" }}>Downlink GBR</TableCell>
+                                    <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.gbrDL}</TableCell>
+                                </TableRow>
+                            </TableBody>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell style={{ width: "40%" }}>Uplink MBR</TableCell>
+                                    <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.mbrUL}</TableCell>
+                                </TableRow>
+                            </TableBody>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell style={{ width: "40%" }}>Downlink MBR</TableCell>
+                                    <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.mbrDL}</TableCell>
+                                </TableRow>
+                            </TableBody>
+                            <TableBody>
+                                <TableRow>
+                                    <TableCell style={{ width: "40%" }}>Charging Characteristics</TableCell>
+                                    <TableCell>{chargingConfig(dnn, snssai!, flow.filter)}</TableCell>
+                                </TableRow>
+                            </TableBody>
+                        </Table>
+                    </Card>
+                </Box>
+            </div>
         ),
-      );
-    }
-    return <div></div>;
-  };
+    );
+};
 
-  const upSecurity = (dnn: DnnConfiguration | undefined) => {
-    if (dnn !== undefined && dnn!.upSecurity !== undefined) {
-      const security = dnn!.upSecurity!;
-      return (
-        <div key={security.upIntegr}>
-          <Box sx={{ m: 2 }}>
-            <h4>UP Security</h4>
-            <Card variant="outlined">
-              <Table>
-                <TableBody>
-                  <TableRow>
-                    <TableCell style={{ width: "40%" }}>Integrity of UP Security</TableCell>
-                    <TableCell>{security.upIntegr}</TableCell>
-                  </TableRow>
-                </TableBody>
-                <TableBody>
-                  <TableRow>
-                    <TableCell style={{ width: "40%" }}>Confidentiality of UP Security</TableCell>
-                    <TableCell>{security.upConfid}</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </Card>
-          </Box>
-        </div>
-      );
-    } else {
-      return <div></div>;
+const upSecurity = (dnn: DnnConfiguration | undefined) => {
+    if (dnn === undefined || dnn.upSecurity === undefined) {
+        return <div></div>;
     }
-  };
+    const security = dnn!.upSecurity!;
+    return (
+        <div key={security.upIntegr}>
+            <Box sx={{ m: 2 }}>
+                <h4>UP Security</h4>
+                <Card variant="outlined">
+                    <Table>
+                        <TableBody>
+                            <TableRow>
+                                <TableCell style={{ width: "40%" }}>Integrity of UP Security</TableCell>
+                                <TableCell>{security.upIntegr}</TableCell>
+                            </TableRow>
+                        </TableBody>
+                        <TableBody>
+                            <TableRow>
+                                <TableCell style={{ width: "40%" }}>Confidentiality of UP Security</TableCell>
+                                <TableCell>{security.upConfid}</TableCell>
+                            </TableRow>
+                        </TableBody>
+                    </Table>
+                </Card>
+            </Box>
+        </div>
+    );
+};
 
   return (
     <Dashboard title="Subscription" refreshAction={() => {}}>
