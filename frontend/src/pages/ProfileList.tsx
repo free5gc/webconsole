@@ -122,8 +122,27 @@ function ProfileList(props: Props) {
     setSearchTerm(event.target.value);
   };
 
-  const tableView = (
-    <React.Fragment>
+  if (data.length === 0) {
+    return (
+      <>
+        <br />
+        <div>
+          No Profiles
+          <br />
+          <br />
+          <Grid item xs={12}>
+            <Button color="primary" variant="contained" onClick={() => onCreate()} sx={{ m: 1 }}>
+              CREATE
+            </Button>
+          </Grid>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <br />
       <TextField
         label="Search Profile"
         variant="outlined"
@@ -177,26 +196,6 @@ function ProfileList(props: Props) {
       >
         <Alert severity="error">Failed to delete profile</Alert>
       </Snackbar>
-    </React.Fragment>
-  );
-
-  return (
-    <>
-      <br />
-      {data.length === 0 ? (
-        <div>
-          No Profiles
-          <br />
-          <br />
-          <Grid item xs={12}>
-            <Button color="primary" variant="contained" onClick={() => onCreate()} sx={{ m: 1 }}>
-              CREATE
-            </Button>
-          </Grid>
-        </div>
-      ) : (
-        tableView
-      )}
     </>
   );
 }
