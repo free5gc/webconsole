@@ -27,6 +27,7 @@ import {
 import FlowRule from "./Component/FlowRule";
 import ChargingCfg from "./Component/ChargingCfg";
 import UpSecurity from "./Component/UpSecurity";
+
 export default function SubscriberRead() {
   const { id, plmn } = useParams<{
     id: string;
@@ -161,7 +162,7 @@ export default function SubscriberRead() {
           data={data}
           chargingConfig={chargingConfig}
           qosFlow={qosFlow}
-          />
+        />
       ),
     );
   };
