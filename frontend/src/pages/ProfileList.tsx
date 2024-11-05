@@ -5,8 +5,12 @@ import Dashboard from "../Dashboard";
 import axios from "../axios";
 import { Profile } from "../api/api";
 import {
+  Alert,
+  Box,
   Button,
   Grid,
+  Snackbar,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -15,14 +19,21 @@ import {
   TableRow,
   TextField,
 } from "@mui/material";
+import { ReportProblemRounded } from "@mui/icons-material";
 
-export default function ProfileList() {
+interface Props {
+  refresh: boolean;
+  setRefresh: (v: boolean) => void;
+}
+
+function ProfileList(props: Props) {
   const navigation = useNavigate();
-  const [refresh, setRefresh] = useState<boolean>(false);
   const [data, setData] = useState<Profile[]>([]);
   const [limit, setLimit] = useState(50);
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [isLoadError, setIsLoadError] = useState(false);
+  const [isDeleteError, setIsDeleteError] = useState(false);
 
   useEffect(() => {
     axios
@@ -31,9 +42,18 @@ export default function ProfileList() {
         setData(res.data);
       })
       .catch((e) => {
-        alert(e.message);
+        setIsLoadError(true);
       });
-  }, [refresh, limit, page]);
+  }, [props.refresh, limit, page]);
+
+  if (isLoadError) {
+    return (
+      <Stack sx={{ mx: "auto", py: "2rem" }} spacing={2} alignItems={"center"}>
+        <ReportProblemRounded sx={{ fontSize: "3rem" }} />
+        <Box fontWeight={700}>Something went wrong</Box>
+      </Stack>
+    );
+  }
 
   const handlePageChange = (
     _event: React.MouseEvent<HTMLButtonElement> | null,
@@ -82,10 +102,11 @@ export default function ProfileList() {
     axios
       .delete("/api/profile/" + profileName)
       .then((res) => {
-        setRefresh(!refresh);
+        props.setRefresh(!props.refresh);
       })
       .catch((err) => {
-        alert(err.response.data.message);
+        setIsDeleteError(true);
+        console.error(err.response.data.message);
       });
   };
 
@@ -147,11 +168,20 @@ export default function ProfileList() {
           CREATE
         </Button>
       </Grid>
+
+      <Snackbar
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        open={isDeleteError}
+        autoHideDuration={6000}
+        onClose={() => setIsDeleteError(false)}
+      >
+        <Alert severity="error">Failed to delete profile</Alert>
+      </Snackbar>
     </React.Fragment>
   );
 
   return (
-    <Dashboard title="PROFILE" refreshAction={() => setRefresh(!refresh)}>
+    <>
       <br />
       {data.length === 0 ? (
         <div>
@@ -167,6 +197,20 @@ export default function ProfileList() {
       ) : (
         tableView
       )}
-    </Dashboard>
+    </>
   );
 }
+
+function WithDashboard(Component: React.ComponentType<any>) {
+  return function (props: any) {
+    const [refresh, setRefresh] = useState<boolean>(false);
+
+    return (
+      <Dashboard title="PROFILE" refreshAction={() => setRefresh(!refresh)}>
+        <Component {...props} refresh={refresh} setRefresh={(v: boolean) => setRefresh(v)} />
+      </Dashboard>
+    );
+  };
+}
+
+export default WithDashboard(ProfileList);
