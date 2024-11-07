@@ -7,8 +7,12 @@ import { Subscriber } from "../api/api";
 
 import Dashboard from "../Dashboard";
 import {
+  Alert,
+  Box,
   Button,
   Grid,
+  Snackbar,
+  Stack,
   Table,
   TableBody,
   TableCell,
@@ -17,14 +21,21 @@ import {
   TablePagination,
   TextField,
 } from "@mui/material";
+import { ReportProblemRounded } from "@mui/icons-material";
 
-export default function SubscriberList() {
+interface Props {
+  refresh: boolean;
+  setRefresh: (v: boolean) => void;
+}
+
+function SubscriberList(props: Props) {
   const navigation = useNavigate();
-  const [refresh, setRefresh] = useState<boolean>(false);
   const [data, setData] = useState<Subscriber[]>([]);
   const [limit, setLimit] = useState(50);
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [isLoadError, setIsLoadError] = useState(false);
+  const [isDeleteError, setIsDeleteError] = useState(false);
 
   useEffect(() => {
     console.log("get subscribers");
@@ -34,9 +45,18 @@ export default function SubscriberList() {
         setData(res.data);
       })
       .catch((e) => {
-        console.log(e.message);
+        setIsLoadError(true);
       });
-  }, [refresh, limit, page]);
+  }, [props.refresh, limit, page]);
+
+  if (isLoadError) {
+    return (
+      <Stack sx={{ mx: "auto", py: "2rem" }} spacing={2} alignItems={"center"}>
+        <ReportProblemRounded sx={{ fontSize: "3rem" }} />
+        <Box fontWeight={700}>Something went wrong</Box>
+      </Stack>
+    );
+  }
 
   const handlePageChange = (
     _event: React.MouseEvent<HTMLButtonElement> | null,
@@ -81,11 +101,11 @@ export default function SubscriberList() {
     axios
       .delete("/api/subscriber/" + id + "/" + plmn)
       .then((res) => {
-        console.log(res);
-        setRefresh(!refresh);
+        props.setRefresh(!props.refresh);
       })
       .catch((err) => {
-        alert(err.response.data.message);
+        setIsDeleteError(true);
+        console.error(err.response.data.message);
       });
   };
 
@@ -106,8 +126,27 @@ export default function SubscriberList() {
     setSearchTerm(event.target.value);
   };
 
-  const tableView = (
-    <React.Fragment>
+  if (data == null || data.length === 0) {
+    return (
+      <>
+        <br />
+        <div>
+          No Subscription
+          <br />
+          <br />
+          <Grid item xs={12}>
+            <Button color="primary" variant="contained" onClick={() => onCreate()} sx={{ m: 1 }}>
+              CREATE
+            </Button>
+          </Grid>
+        </div>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <br />
       <TextField
         label="Search Subscriber"
         variant="outlined"
@@ -154,26 +193,29 @@ export default function SubscriberList() {
           CREATE
         </Button>
       </Grid>
-    </React.Fragment>
-  );
 
-  return (
-    <Dashboard title="SUBSCRIBER" refreshAction={() => setRefresh(!refresh)}>
-      <br />
-      {data == null || data.length === 0 ? (
-        <div>
-          No Subscription
-          <br />
-          <br />
-          <Grid item xs={12}>
-            <Button color="primary" variant="contained" onClick={() => onCreate()} sx={{ m: 1 }}>
-              CREATE
-            </Button>
-          </Grid>
-        </div>
-      ) : (
-        tableView
-      )}
-    </Dashboard>
+      <Snackbar
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        open={isDeleteError}
+        autoHideDuration={6000}
+        onClose={() => setIsDeleteError(false)}
+      >
+        <Alert severity="error">Failed to delete subscriber</Alert>
+      </Snackbar>
+    </>
   );
 }
+
+function WithDashboard(Component: React.ComponentType<any>) {
+  return function (props: any) {
+    const [refresh, setRefresh] = useState<boolean>(false);
+
+    return (
+      <Dashboard title="SUBSCRIBER" refreshAction={() => setRefresh(!refresh)}>
+        <Component {...props} refresh={refresh} setRefresh={(v: boolean) => setRefresh(v)} />
+      </Dashboard>
+    );
+  };
+}
+
+export default WithDashboard(SubscriberList);
