@@ -1968,7 +1968,7 @@ func DeleteProfile(c *gin.Context) {
 		return
 	}
 	if len(pf) == 0 {
-		c.JSON(http.StatusNotFound, "Profile does not exist")
+		c.JSON(http.StatusNotFound, " "+profileName+" does not exist")
 		return
 	}
 
@@ -2066,7 +2066,7 @@ func PostProfile(c *gin.Context) {
 		return
 	}
 	if len(pf) != 0 {
-		c.JSON(http.StatusConflict, "Profile already exists")
+		c.JSON(http.StatusConflict, " "+profile.ProfileName+" already exists")
 		return
 	}
 
@@ -2096,7 +2096,7 @@ func PutProfile(c *gin.Context) {
 		return
 	}
 	if len(pf) == 0 {
-		c.JSON(http.StatusNotFound, "Profile does not exist")
+		c.JSON(http.StatusNotFound, " "+profileName+" does not exist")
 		return
 	}
 
