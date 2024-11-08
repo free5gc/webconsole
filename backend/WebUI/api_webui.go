@@ -1968,11 +1968,14 @@ func DeleteProfile(c *gin.Context) {
 		return
 	}
 	if len(pf) == 0 {
-		c.JSON(http.StatusNotFound, " "+profileName+" does not exist")
+		c.JSON(http.StatusNotFound, gin.H{"cause": profileName + " does not exist"})
 		return
 	}
 
-	dbProfileOperation(profileName, "delete", nil)
+	if err = dbProfileOperation(profileName, "delete", nil); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"success": profileName + " has already been deleted"})
 }
 
@@ -2066,13 +2069,16 @@ func PostProfile(c *gin.Context) {
 		return
 	}
 	if len(pf) != 0 {
-		c.JSON(http.StatusConflict, " "+profile.ProfileName+" already exists")
+		c.JSON(http.StatusConflict, gin.H{"cause": profile.ProfileName + " already exists"})
 		return
 	}
 
 	logger.ProcLog.Infof("PostProfile: %+v", profile.ProfileName)
-	dbProfileOperation(profile.ProfileName, "post", &profile)
-	c.JSON(http.StatusCreated, gin.H{})
+	if err = dbProfileOperation(profile.ProfileName, "post", &profile); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, profile)
 }
 
 // Put profile by profileName
@@ -2096,7 +2102,7 @@ func PutProfile(c *gin.Context) {
 		return
 	}
 	if len(pf) == 0 {
-		c.JSON(http.StatusNotFound, " "+profileName+" does not exist")
+		c.JSON(http.StatusNotFound, gin.H{"cause": profileName + " does not exist"})
 		return
 	}
 
@@ -2109,26 +2115,37 @@ func PutProfile(c *gin.Context) {
 	profile.TenantId = tenantData["tenantId"].(string)
 
 	logger.ProcLog.Infof("PutProfile: %+v", profile.ProfileName)
-	dbProfileOperation(profileName, "put", &profile)
-	c.JSON(http.StatusOK, gin.H{"success": profileName + " has already been updated"})
+	if err = dbProfileOperation(profileName, "put", &profile); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, profile)
 }
 
-func dbProfileOperation(profileName string, method string, profile *Profile) {
+func dbProfileOperation(profileName string, method string, profile *Profile) (err error) {
+	err = nil
 	filter := bson.M{"profileName": profileName}
 
 	// Replace all data with new one
 	if method == "put" {
-		if err := mongoapi.RestfulAPIDeleteOne(profileDataColl, filter); err != nil {
+		if err = mongoapi.RestfulAPIDeleteOne(profileDataColl, filter); err != nil {
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
 		}
 	} else if method == "delete" {
-		if err := mongoapi.RestfulAPIDeleteOne(profileListColl, filter); err != nil {
+		if err = mongoapi.RestfulAPIDeleteOne(profileListColl, filter); err != nil {
 			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
 		}
-		if err := mongoapi.RestfulAPIDeleteOne(profileDataColl, filter); err != nil {
+		if err = mongoapi.RestfulAPIDeleteOne(profileDataColl, filter); err != nil {
 			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
 		}
 	}
+
+	// Deal with error & early return
+	if err != nil {
+		return err
+	}
+
+	// Insert data
 	if method == "post" || method == "put" {
 		profileListIE := ProfileListIE{
 			ProfileName: profileName,
@@ -2136,11 +2153,13 @@ func dbProfileOperation(profileName string, method string, profile *Profile) {
 		}
 		profileListIEBsonM := toBsonM(profileListIE)
 		profileBsonM := toBsonM(profile)
-		if _, err := mongoapi.RestfulAPIPost(profileListColl, filter, profileListIEBsonM); err != nil {
+		if _, err = mongoapi.RestfulAPIPost(profileListColl, filter, profileListIEBsonM); err != nil {
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
 		}
-		if _, err := mongoapi.RestfulAPIPost(profileDataColl, filter, profileBsonM); err != nil {
+		if _, err = mongoapi.RestfulAPIPost(profileDataColl, filter, profileBsonM); err != nil {
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
 		}
 	}
+
+	return err
 }
