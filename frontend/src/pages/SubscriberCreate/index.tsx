@@ -33,7 +33,7 @@ function SubscriberCreate() {
   const isNewSubscriber = id === undefined && plmn === undefined;
   const navigation = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [profiles, setProfiles] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<string[]>([]);
   const [selectedProfile, setSelectedProfile] = useState('');
   const { handleSubmit, getValues, reset } = useSubscriptionForm();
 
@@ -211,8 +211,8 @@ function SubscriberCreate() {
                 onChange={handleProfileChange}
               >
                 {profiles.map((profile) => (
-                  <MenuItem key={profile.profileName} value={profile.profileName}>
-                    {profile.profileName}
+                  <MenuItem key={profile} value={profile}>
+                    {profile}
                   </MenuItem>
                 ))}
               </Select>

@@ -40,7 +40,6 @@ const (
 	userDataColl     = "userData"
 	tenantDataColl   = "tenantData"
 	identityDataColl = "subscriptionData.identityData"
-	profileListColl  = "profileList" // store profile name and gpsi
 	profileDataColl  = "profileData" // store profile data
 )
 
@@ -1961,7 +1960,7 @@ func DeleteProfile(c *gin.Context) {
 	logger.ProcLog.Infoln("Delete One Profile Data")
 
 	profileName := c.Param("profileName")
-	pf, err := mongoapi.RestfulAPIGetOne(profileListColl, bson.M{"profileName": profileName})
+	pf, err := mongoapi.RestfulAPIGetOne(profileDataColl, bson.M{"profileName": profileName})
 	if err != nil {
 		logger.ProcLog.Errorf("DeleteProfile err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
@@ -1991,8 +1990,8 @@ func GetProfiles(c *gin.Context) {
 		return
 	}
 
-	var pfList []ProfileListIE = make([]ProfileListIE, 0)
-	profileList, err := mongoapi.RestfulAPIGetMany(profileListColl, bson.M{})
+	pfs := make([]string, 0)
+	profileList, err := mongoapi.RestfulAPIGetMany(profileDataColl, bson.M{})
 	if err != nil {
 		logger.ProcLog.Errorf("GetProfiles err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
@@ -2000,15 +1999,10 @@ func GetProfiles(c *gin.Context) {
 	}
 	for _, profile := range profileList {
 		profileName := profile["profileName"]
-		gpsi := profile["gpsi"]
 
-		tmp := ProfileListIE{
-			ProfileName: profileName.(string),
-			Gpsi:        gpsi.(string),
-		}
-		pfList = append(pfList, tmp)
+		pfs = append(pfs, profileName.(string))
 	}
-	c.JSON(http.StatusOK, pfList)
+	c.JSON(http.StatusOK, pfs)
 }
 
 // Get profile by profileName
@@ -2062,7 +2056,7 @@ func PostProfile(c *gin.Context) {
 	}
 	profile.TenantId = tenantData["tenantId"].(string)
 
-	pf, err := mongoapi.RestfulAPIGetOne(profileListColl, bson.M{"profileName": profile.ProfileName})
+	pf, err := mongoapi.RestfulAPIGetOne(profileDataColl, bson.M{"profileName": profile.ProfileName})
 	if err != nil {
 		logger.ProcLog.Errorf("GetProfile err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
@@ -2095,7 +2089,7 @@ func PutProfile(c *gin.Context) {
 		return
 	}
 
-	pf, err := mongoapi.RestfulAPIGetOne(profileListColl, bson.M{"profileName": profile.ProfileName})
+	pf, err := mongoapi.RestfulAPIGetOne(profileDataColl, bson.M{"profileName": profile.ProfileName})
 	if err != nil {
 		logger.ProcLog.Errorf("PutProfile err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
@@ -2132,9 +2126,6 @@ func dbProfileOperation(profileName string, method string, profile *Profile) (er
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
 		}
 	} else if method == "delete" {
-		if err = mongoapi.RestfulAPIDeleteOne(profileListColl, filter); err != nil {
-			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
-		}
 		if err = mongoapi.RestfulAPIDeleteOne(profileDataColl, filter); err != nil {
 			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
 		}
@@ -2147,15 +2138,7 @@ func dbProfileOperation(profileName string, method string, profile *Profile) (er
 
 	// Insert data
 	if method == "post" || method == "put" {
-		profileListIE := ProfileListIE{
-			ProfileName: profileName,
-			Gpsi:        "",
-		}
-		profileListIEBsonM := toBsonM(profileListIE)
 		profileBsonM := toBsonM(profile)
-		if _, err = mongoapi.RestfulAPIPost(profileListColl, filter, profileListIEBsonM); err != nil {
-			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
-		}
 		if _, err = mongoapi.RestfulAPIPost(profileDataColl, filter, profileBsonM); err != nil {
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
 		}

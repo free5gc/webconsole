@@ -102,14 +102,12 @@ export const snssaiConfigurationDTOSchema = z.object({
 
 interface ProfileDTO {
     profileName: string;
-    gpsi?: string;
     subscribedUeAmbr: AmbrDTO;
     SnssaiConfigurations: SnssaiConfigurationDTO[];
 }
 
 export const profileDTOSchema = z.object({
     profileName: z.string(),
-    gpsi: z.string().optional(),
     subscribedUeAmbr: ambrDTOSchema,
     SnssaiConfigurations: z.array(snssaiConfigurationDTOSchema),
 })
@@ -224,7 +222,7 @@ class ProfileMapperImpl implements ProfileMapper {
         return {
             profileName: profile.profileName,
             AccessAndMobilitySubscriptionData: {
-                gpsis: [`msisdn-${profile.gpsi ?? ""}`],
+                gpsis: [`msisdn-`],
                 subscribedUeAmbr: this.buildSubscriberAmbr(profile.subscribedUeAmbr),
                 nssai: {
                     defaultSingleNssais: profile.SnssaiConfigurations.filter((s) => s.isDefault).map(
@@ -274,7 +272,6 @@ class ProfileMapperImpl implements ProfileMapper {
     mapFromProfile(profile: Profile): ProfileDTO {
         return {
             profileName: profile.profileName,
-            gpsi: profile.AccessAndMobilitySubscriptionData.gpsis?.[0]?.slice(7),
             subscribedUeAmbr: {
                 uplink: profile.AccessAndMobilitySubscriptionData.subscribedUeAmbr?.uplink ?? "",
                 downlink: profile.AccessAndMobilitySubscriptionData.subscribedUeAmbr?.downlink ?? "",
@@ -418,7 +415,6 @@ class ProfileMapperImpl implements ProfileMapper {
 
 export const defaultProfileDTO = (): ProfileDTO => ({
     profileName: "profile-1",
-    gpsi: "",
     subscribedUeAmbr: {
         uplink: "1 Gbps",
         downlink: "2 Gbps",

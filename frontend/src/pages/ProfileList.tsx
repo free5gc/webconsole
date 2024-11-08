@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { config } from "../constants/config";
 import Dashboard from "../Dashboard";
 import axios from "../axios";
-import { Profile } from "../api/api";
 import {
   Alert,
   Box,
@@ -28,7 +27,7 @@ interface Props {
 
 function ProfileList(props: Props) {
   const navigation = useNavigate();
-  const [data, setData] = useState<Profile[]>([]);
+  const [data, setData] = useState<string[]>([]);
   const [limit, setLimit] = useState(50);
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -110,12 +109,12 @@ function ProfileList(props: Props) {
       });
   };
 
-  const handleModify = (profile: Profile) => {
-    navigation("/profile/" + profile.profileName);
+  const handleModify = (profile: string) => {
+    navigation("/profile/" + profile);
   };
 
   const filteredData = data.filter((profile) =>
-    profile.profileName?.toLowerCase().includes(searchTerm.toLowerCase()),
+    profile.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,18 +161,18 @@ function ProfileList(props: Props) {
         <TableBody>
           {filteredData.map((row, index) => (
             <TableRow key={index}>
-              <TableCell>{row.profileName}</TableCell>
+              <TableCell>{row.toString()}</TableCell>
               <TableCell>
                 <Button
                   color="primary"
                   variant="contained"
-                  onClick={() => onDelete(row.profileName)}
+                  onClick={() => onDelete(row.toString())}
                 >
                   DELETE
                 </Button>
               </TableCell>
               <TableCell>
-                <Button color="primary" variant="contained" onClick={() => handleModify(row)}>
+                <Button color="primary" variant="contained" onClick={() => handleModify(row.toString())}>
                   VIEW
                 </Button>
               </TableCell>
