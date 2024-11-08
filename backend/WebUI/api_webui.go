@@ -1964,18 +1964,16 @@ func DeleteProfile(c *gin.Context) {
 	pf, err := mongoapi.RestfulAPIGetOne(profileListColl, bson.M{"profileName": profileName})
 	if err != nil {
 		logger.ProcLog.Errorf("DeleteProfile err: %+v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{})
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
 		return
 	}
 	if len(pf) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"cause": "Profile does not exist",
-		})
+		c.JSON(http.StatusNotFound, "Profile does not exist")
 		return
 	}
 
 	dbProfileOperation(profileName, "delete", nil)
-	c.JSON(http.StatusNoContent, gin.H{})
+	c.JSON(http.StatusOK, gin.H{"success": profileName + " has already been deleted"})
 }
 
 // Get profile list
@@ -1986,9 +1984,7 @@ func GetProfiles(c *gin.Context) {
 	_, err := GetTenantId(c)
 	if err != nil {
 		logger.ProcLog.Errorln(err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{
-			"cause": "Illegal Token",
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
@@ -1996,7 +1992,7 @@ func GetProfiles(c *gin.Context) {
 	profileList, err := mongoapi.RestfulAPIGetMany(profileListColl, bson.M{})
 	if err != nil {
 		logger.ProcLog.Errorf("GetProfiles err: %+v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{})
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
 		return
 	}
 	for _, profile := range profileList {
@@ -2022,14 +2018,14 @@ func GetProfile(c *gin.Context) {
 	profile, err := mongoapi.RestfulAPIGetOne(profileDataColl, bson.M{"profileName": profileName})
 	if err != nil {
 		logger.ProcLog.Errorf("GetProfile err: %+v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{})
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
 		return
 	}
 	var pf Profile
 	err = json.Unmarshal(mapToByte(profile), &pf)
 	if err != nil {
 		logger.ProcLog.Errorf("JSON Unmarshal err: %+v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{})
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, pf)
@@ -2044,25 +2040,21 @@ func PostProfile(c *gin.Context) {
 	_, err := ParseJWT(tokenStr)
 	if err != nil {
 		logger.ProcLog.Errorln(err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{
-			"cause": "Illegal Token",
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"cause": "Illegal Token"})
 		return
 	}
 
 	var profile Profile
 	if err = c.ShouldBindJSON(&profile); err != nil {
 		logger.ProcLog.Errorf("PostProfile err: %+v", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"cause": "JSON format incorrect",
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"cause": "JSON format incorrect"})
 		return
 	}
 
 	tenantData, err := mongoapi.RestfulAPIGetOne(tenantDataColl, bson.M{"tenantName": "admin"})
 	if err != nil {
 		logger.ProcLog.Errorf("GetProfile err: %+v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{})
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
 		return
 	}
 	profile.TenantId = tenantData["tenantId"].(string)
@@ -2070,13 +2062,11 @@ func PostProfile(c *gin.Context) {
 	pf, err := mongoapi.RestfulAPIGetOne(profileListColl, bson.M{"profileName": profile.ProfileName})
 	if err != nil {
 		logger.ProcLog.Errorf("GetProfile err: %+v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{})
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
 		return
 	}
 	if len(pf) != 0 {
-		c.JSON(http.StatusConflict, gin.H{
-			"cause": "Profile already exists",
-		})
+		c.JSON(http.StatusConflict, "Profile already exists")
 		return
 	}
 
@@ -2095,34 +2085,32 @@ func PutProfile(c *gin.Context) {
 	var profile Profile
 	if err := c.ShouldBindJSON(&profile); err != nil {
 		logger.ProcLog.Errorf("PutProfile err: %+v", err)
-		c.JSON(http.StatusBadRequest, gin.H{})
+		c.JSON(http.StatusBadRequest, gin.H{"cause": "JSON format incorrect"})
 		return
 	}
 
 	pf, err := mongoapi.RestfulAPIGetOne(profileListColl, bson.M{"profileName": profile.ProfileName})
 	if err != nil {
 		logger.ProcLog.Errorf("PutProfile err: %+v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{})
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
 		return
 	}
 	if len(pf) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"cause": "Profile does not exist",
-		})
+		c.JSON(http.StatusNotFound, "Profile does not exist")
 		return
 	}
 
 	tenantData, err := mongoapi.RestfulAPIGetOne(tenantDataColl, bson.M{"tenantName": "admin"})
 	if err != nil {
 		logger.ProcLog.Errorf("GetProfile err: %+v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{})
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
 		return
 	}
 	profile.TenantId = tenantData["tenantId"].(string)
 
 	logger.ProcLog.Infof("PutProfile: %+v", profile.ProfileName)
 	dbProfileOperation(profileName, "put", &profile)
-	c.JSON(http.StatusNoContent, gin.H{})
+	c.JSON(http.StatusOK, gin.H{"success": profileName + " has already been updated"})
 }
 
 func dbProfileOperation(profileName string, method string, profile *Profile) {
