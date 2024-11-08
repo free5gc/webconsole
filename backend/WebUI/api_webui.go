@@ -1335,10 +1335,8 @@ func PostSubscriberByID(c *gin.Context) {
 				return
 			}
 			if len(authSubsDataInterface) > 0 {
-				if authSubsDataInterface["tenantId"].(string) != claims["tenantId"].(string) {
-					c.JSON(http.StatusUnprocessableEntity, gin.H{})
-					return
-				}
+				c.JSON(http.StatusConflict, gin.H{"cause": ueId + " already exists"})
+				return
 			}
 		}
 		dbOperation(ueId, servingPlmnId, "post", &subsData, claims)
