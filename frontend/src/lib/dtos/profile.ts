@@ -222,7 +222,6 @@ class ProfileMapperImpl implements ProfileMapper {
         return {
             profileName: profile.profileName,
             AccessAndMobilitySubscriptionData: {
-                gpsis: [`msisdn-`],
                 subscribedUeAmbr: this.buildSubscriberAmbr(profile.subscribedUeAmbr),
                 nssai: {
                     defaultSingleNssais: profile.SnssaiConfigurations.filter((s) => s.isDefault).map(

@@ -15,7 +15,6 @@ import assert from "node:assert";
 const defaultProfile = (): Profile => ({
     profileName: "profile-1",
     AccessAndMobilitySubscriptionData: {
-        gpsis: ["msisdn-"],
         subscribedUeAmbr: {
             uplink: "1 Gbps",
             downlink: "2 Gbps",
