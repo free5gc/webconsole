@@ -40,6 +40,7 @@ const (
 	userDataColl     = "userData"
 	tenantDataColl   = "tenantData"
 	identityDataColl = "subscriptionData.identityData"
+	profileDataColl  = "profileData" // store profile data
 )
 
 var jwtKey = "" // for generating JWT
@@ -1334,10 +1335,8 @@ func PostSubscriberByID(c *gin.Context) {
 				return
 			}
 			if len(authSubsDataInterface) > 0 {
-				if authSubsDataInterface["tenantId"].(string) != claims["tenantId"].(string) {
-					c.JSON(http.StatusUnprocessableEntity, gin.H{})
-					return
-				}
+				c.JSON(http.StatusConflict, gin.H{"cause": ueId + " already exists"})
+				return
 			}
 		}
 		dbOperation(ueId, servingPlmnId, "post", &subsData, claims)
@@ -1951,4 +1950,197 @@ func OptionsSubscribers(c *gin.Context) {
 	setCorsHeader(c)
 
 	c.JSON(http.StatusNoContent, gin.H{})
+}
+
+// Delete profile by profileName
+func DeleteProfile(c *gin.Context) {
+	setCorsHeader(c)
+	logger.ProcLog.Infoln("Delete One Profile Data")
+
+	profileName := c.Param("profileName")
+	pf, err := mongoapi.RestfulAPIGetOne(profileDataColl, bson.M{"profileName": profileName})
+	if err != nil {
+		logger.ProcLog.Errorf("DeleteProfile err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
+		return
+	}
+	if len(pf) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"cause": profileName + " does not exist"})
+		return
+	}
+
+	if err = dbProfileOperation(profileName, "delete", nil); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": profileName + " has already been deleted"})
+}
+
+// Get profile list
+func GetProfiles(c *gin.Context) {
+	setCorsHeader(c)
+	logger.ProcLog.Infoln("Get All Profiles List")
+
+	_, err := GetTenantId(c)
+	if err != nil {
+		logger.ProcLog.Errorln(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"cause": "Illegal Token"})
+		return
+	}
+
+	pfs := make([]string, 0)
+	profileList, err := mongoapi.RestfulAPIGetMany(profileDataColl, bson.M{})
+	if err != nil {
+		logger.ProcLog.Errorf("GetProfiles err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
+		return
+	}
+	for _, profile := range profileList {
+		profileName := profile["profileName"]
+
+		pfs = append(pfs, profileName.(string))
+	}
+	c.JSON(http.StatusOK, pfs)
+}
+
+// Get profile by profileName
+func GetProfile(c *gin.Context) {
+	setCorsHeader(c)
+	logger.ProcLog.Infoln("Get One Profile Data")
+
+	profileName := c.Param("profileName")
+
+	profile, err := mongoapi.RestfulAPIGetOne(profileDataColl, bson.M{"profileName": profileName})
+	if err != nil {
+		logger.ProcLog.Errorf("GetProfile err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
+		return
+	}
+	var pf Profile
+	err = json.Unmarshal(mapToByte(profile), &pf)
+	if err != nil {
+		logger.ProcLog.Errorf("JSON Unmarshal err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, pf)
+}
+
+// Post profile
+func PostProfile(c *gin.Context) {
+	setCorsHeader(c)
+	logger.ProcLog.Infoln("Post One Profile Data")
+
+	tokenStr := c.GetHeader("Token")
+	_, err := ParseJWT(tokenStr)
+	if err != nil {
+		logger.ProcLog.Errorln(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"cause": "Illegal Token"})
+		return
+	}
+
+	var profile Profile
+	if err = c.ShouldBindJSON(&profile); err != nil {
+		logger.ProcLog.Errorf("PostProfile err: %+v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"cause": "JSON format incorrect"})
+		return
+	}
+
+	tenantData, err := mongoapi.RestfulAPIGetOne(tenantDataColl, bson.M{"tenantName": "admin"})
+	if err != nil {
+		logger.ProcLog.Errorf("GetProfile err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
+		return
+	}
+	profile.TenantId = tenantData["tenantId"].(string)
+
+	pf, err := mongoapi.RestfulAPIGetOne(profileDataColl, bson.M{"profileName": profile.ProfileName})
+	if err != nil {
+		logger.ProcLog.Errorf("GetProfile err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
+		return
+	}
+	if len(pf) != 0 {
+		c.JSON(http.StatusConflict, gin.H{"cause": profile.ProfileName + " already exists"})
+		return
+	}
+
+	logger.ProcLog.Infof("PostProfile: %+v", profile.ProfileName)
+	if err = dbProfileOperation(profile.ProfileName, "post", &profile); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, profile)
+}
+
+// Put profile by profileName
+func PutProfile(c *gin.Context) {
+	setCorsHeader(c)
+	logger.ProcLog.Infoln("Put One Profile Data")
+
+	profileName := c.Param("profileName")
+
+	var profile Profile
+	if err := c.ShouldBindJSON(&profile); err != nil {
+		logger.ProcLog.Errorf("PutProfile err: %+v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"cause": "JSON format incorrect"})
+		return
+	}
+
+	pf, err := mongoapi.RestfulAPIGetOne(profileDataColl, bson.M{"profileName": profile.ProfileName})
+	if err != nil {
+		logger.ProcLog.Errorf("PutProfile err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
+		return
+	}
+	if len(pf) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"cause": profileName + " does not exist"})
+		return
+	}
+
+	tenantData, err := mongoapi.RestfulAPIGetOne(tenantDataColl, bson.M{"tenantName": "admin"})
+	if err != nil {
+		logger.ProcLog.Errorf("GetProfile err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
+		return
+	}
+	profile.TenantId = tenantData["tenantId"].(string)
+
+	logger.ProcLog.Infof("PutProfile: %+v", profile.ProfileName)
+	if err = dbProfileOperation(profileName, "put", &profile); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, profile)
+}
+
+func dbProfileOperation(profileName string, method string, profile *Profile) (err error) {
+	err = nil
+	filter := bson.M{"profileName": profileName}
+
+	// Replace all data with new one
+	if method == "put" {
+		if err = mongoapi.RestfulAPIDeleteOne(profileDataColl, filter); err != nil {
+			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
+		}
+	} else if method == "delete" {
+		if err = mongoapi.RestfulAPIDeleteOne(profileDataColl, filter); err != nil {
+			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
+		}
+	}
+
+	// Deal with error & early return
+	if err != nil {
+		return err
+	}
+
+	// Insert data
+	if method == "post" || method == "put" {
+		profileBsonM := toBsonM(profile)
+		if _, err = mongoapi.RestfulAPIPost(profileDataColl, filter, profileBsonM); err != nil {
+			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
+		}
+	}
+
+	return err
 }

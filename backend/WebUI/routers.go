@@ -250,4 +250,39 @@ var routes = Routes{
 		"/verify-staticip",
 		VerifyStaticIP,
 	},
+
+	{
+		"Delete Profile",
+		http.MethodDelete,
+		"/profile/:profileName",
+		DeleteProfile,
+	},
+
+	{
+		"Get Profile List",
+		http.MethodGet,
+		"/profile",
+		GetProfiles,
+	},
+
+	{
+		"Get Profile",
+		http.MethodGet,
+		"/profile/:profileName",
+		GetProfile,
+	},
+
+	{
+		"Post Profile",
+		http.MethodPost,
+		"/profile",
+		PostProfile,
+	},
+
+	{
+		"Put Profile",
+		http.MethodPut,
+		"/profile/:profileName",
+		PutProfile,
+	},
 }

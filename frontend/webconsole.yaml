@@ -36,6 +36,32 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Subscriber"
+  /api/profile:
+    get:
+      tags:
+        - webconsole
+      summary: Get all profiles
+      description: Returns an array of profile.
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            format: int64
+        - in: query
+          name: page
+          schema:
+            type: integer
+            format: int64
+      responses:
+        "200":
+          description: Returns an array of profile.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProfileListIE"
 components:
   schemas:
     # Meta object
@@ -64,6 +90,15 @@ components:
         plmnID:
           type: string
         ueId:
+          type: string
+        gpsi:
+          type: string
+    # ProfileListIE
+    # github.com/free5gc/webconsole/backend/WebUI/model_profile_list_ie.go:ProfileListIE
+    ProfileListIE:
+      type: object
+      properties:
+        profileName:
           type: string
         gpsi:
           type: string
@@ -712,3 +747,44 @@ components:
           type: string
         DlVol:
           type: string
+    # Profile
+    # github.com/free5gc/webconsole/backend/WebUI/model_profile_data.go:ProfileData
+    Profile:
+      type: object
+      required:
+        - profileName
+        - AccessAndMobilitySubscriptionData
+        - SessionManagementSubscriptionData
+        - SmfSelectionSubscriptionData
+        - AmPolicyData
+        - SmPolicyData
+        - FlowRules
+        - QosFlows
+        - ChargingDatas
+      properties:
+        profileName:
+          type: string
+        AccessAndMobilitySubscriptionData:
+          $ref: "#/components/schemas/AccessAndMobilitySubscriptionData"
+        SessionManagementSubscriptionData:
+          type: array
+          items:
+            $ref: "#/components/schemas/SessionManagementSubscriptionData"
+        SmfSelectionSubscriptionData:
+          $ref: "#/components/schemas/SmfSelectionSubscriptionData"
+        AmPolicyData:
+          $ref: "#/components/schemas/AmPolicyData"
+        SmPolicyData:
+          $ref: "#/components/schemas/SmPolicyData"
+        FlowRules:
+          type: array
+          items:
+            $ref: "#/components/schemas/FlowRules"
+        QosFlows:
+          type: array
+          items:
+            $ref: "#/components/schemas/QosFlows"
+        ChargingDatas:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChargingData"

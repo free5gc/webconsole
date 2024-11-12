@@ -1,16 +1,9 @@
 import React from "react";
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 import axios from "../axios";
-import {
-  Subscription,
-  Nssai,
-  AuthenticationSubscription,
-  AccessAndMobilitySubscriptionData,
-  DnnConfiguration,
-  QosFlows,
-} from "../api/api";
+import { Nssai, Profile, QosFlows, DnnConfiguration } from "../api/api";
 
 import Dashboard from "../Dashboard";
 import {
@@ -28,28 +21,24 @@ import FlowRule from "./Component/FlowRule";
 import ChargingCfg from "./Component/ChargingCfg";
 import UpSecurity from "./Component/UpSecurity";
 
-export default function SubscriberRead() {
-  const { id, plmn } = useParams<{
-    id: string;
-    plmn: string;
-  }>();
+export default function ProfileRead() {
+  const { profileName } = useParams<{ profileName: string }>();
   const navigation = useNavigate();
 
-  const [data, setData] = useState<Subscription | null>(null);
-  // const [update, setUpdate] = useState<boolean>(false);
+  const [data, setData] = useState<Profile | null>(null);
 
   function toHex(v: number | undefined): string {
     return ("00" + v?.toString(16).toUpperCase()).substr(-2);
   }
 
   useEffect(() => {
-    axios.get("/api/subscriber/" + id + "/" + plmn).then((res) => {
+    axios.get("/api/profile/" + profileName).then((res) => {
       setData(res.data);
     });
-  }, [id]);
+  }, [profileName]);
 
   const handleEdit = () => {
-    navigation("/subscriber/create/" + id + "/" + plmn);
+    navigation("/profile/create/" + profileName);
   };
 
   const isDefaultNssai = (nssai: Nssai | undefined) => {
@@ -58,67 +47,16 @@ export default function SubscriberRead() {
     } else {
       for (
         let i = 0;
-        i < data.AccessAndMobilitySubscriptionData!.nssai!.defaultSingleNssais!.length;
+        i < data.AccessAndMobilitySubscriptionData.nssai!.defaultSingleNssais!.length;
         i++
       ) {
-        const defaultNssai = data.AccessAndMobilitySubscriptionData!.nssai!.defaultSingleNssais![i];
+        const defaultNssai = data.AccessAndMobilitySubscriptionData.nssai!.defaultSingleNssais![i];
         if (defaultNssai.sd === nssai.sd && defaultNssai.sst === nssai.sst) {
           return true;
         }
       }
       return false;
     }
-  };
-
-  const imsiValue = (imsi: string | undefined) => {
-    if (imsi === undefined) {
-      return "";
-    } else {
-      return imsi.replace("imsi-", "");
-    }
-  };
-
-  const msisdnValue = (subData: AccessAndMobilitySubscriptionData | undefined) => {
-    if (subData === undefined) {
-      return "";
-    } else {
-      if (subData.gpsis !== undefined && subData.gpsis!.length !== 0) {
-        return subData.gpsis[0].replaceAll("msisdn-", "");
-      } else {
-        return "";
-      }
-    }
-  };
-
-  const operationCodeType = (auth: AuthenticationSubscription | undefined) => {
-    if (auth !== undefined) {
-      if (
-        auth.milenage !== undefined &&
-        auth.milenage.op !== undefined &&
-        auth.milenage.op.opValue !== ""
-      ) {
-        return "OP";
-      } else {
-        return "OPc";
-      }
-    }
-    return "";
-  };
-
-  const operationCodeValue = (auth: AuthenticationSubscription | undefined) => {
-    if (auth !== undefined) {
-      if (
-        auth.milenage !== undefined &&
-        auth.milenage.op !== undefined &&
-        auth.milenage.op.opValue !== ""
-      ) {
-        return auth.milenage.op.opValue;
-      }
-      if (auth.opc !== undefined && auth.opc.opcValue !== "") {
-        return auth.opc.opcValue;
-      }
-    }
-    return "";
   };
 
   const qosFlow = (
@@ -133,6 +71,7 @@ export default function SubscriberRead() {
         }
       }
     }
+    return undefined;
   };
 
   const chargingConfig = (dnn: string, snssai: Nssai, filter: string | undefined) => {
@@ -175,69 +114,18 @@ export default function SubscriberRead() {
   };
 
   return (
-    <Dashboard title="Subscription" refreshAction={() => {}}>
+    <Dashboard title="Profile" refreshAction={() => {}}>
       <Card variant="outlined">
         <Table>
           <TableBody>
             <TableRow>
-              <TableCell>PLMN ID</TableCell>
-              <TableCell>{data?.plmnID}</TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody>
-            <TableRow>
-              <TableCell style={{ width: "40%" }}>SUPI (IMSI)</TableCell>
-              <TableCell>{imsiValue(data?.ueId)}</TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody>
-            <TableRow>
-              <TableCell style={{ width: "40%" }}>GPSI (MSISDN)</TableCell>
-              <TableCell>{msisdnValue(data?.AccessAndMobilitySubscriptionData)}</TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody>
-            <TableRow>
-              <TableCell style={{ width: "40%" }}>Authentication Management Field (AMF)</TableCell>
-              <TableCell>
-                {data?.AuthenticationSubscription?.authenticationManagementField}
-              </TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody>
-            <TableRow>
-              <TableCell style={{ width: "40%" }}>Authentication Method</TableCell>
-              <TableCell>{data?.AuthenticationSubscription?.authenticationMethod}</TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody>
-            <TableRow>
-              <TableCell style={{ width: "40%" }}>K</TableCell>
-              <TableCell>
-                {data?.AuthenticationSubscription?.permanentKey?.permanentKeyValue}
-              </TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody>
-            <TableRow>
-              <TableCell style={{ width: "40%" }}>Operator Code Type</TableCell>
-              <TableCell>{operationCodeType(data?.AuthenticationSubscription)}</TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody>
-            <TableRow>
-              <TableCell style={{ width: "40%" }}>Operator Code Value</TableCell>
-              <TableCell>{operationCodeValue(data?.AuthenticationSubscription)}</TableCell>
-            </TableRow>
-          </TableBody>
-          <TableBody>
-            <TableRow>
-              <TableCell style={{ width: "40%" }}>SQN</TableCell>
-              <TableCell>{data?.AuthenticationSubscription?.sequenceNumber}</TableCell>
+              <TableCell style={{ width: "40%" }}>Profile Name</TableCell>
+              <TableCell>{data?.profileName}</TableCell>
             </TableRow>
           </TableBody>
         </Table>
       </Card>
+
       <h3>Subscribed UE AMBR</h3>
       <Card variant="outlined">
         <Table>
@@ -245,7 +133,7 @@ export default function SubscriberRead() {
             <TableRow>
               <TableCell style={{ width: "40%" }}>Uplink</TableCell>
               <TableCell>
-                {data?.AccessAndMobilitySubscriptionData?.subscribedUeAmbr?.uplink}
+                {data?.AccessAndMobilitySubscriptionData.subscribedUeAmbr?.uplink}
               </TableCell>
             </TableRow>
           </TableBody>
@@ -253,12 +141,14 @@ export default function SubscriberRead() {
             <TableRow>
               <TableCell style={{ width: "40%" }}>Downlink</TableCell>
               <TableCell>
-                {data?.AccessAndMobilitySubscriptionData?.subscribedUeAmbr?.downlink}
+                {data?.AccessAndMobilitySubscriptionData.subscribedUeAmbr?.downlink}
               </TableCell>
             </TableRow>
           </TableBody>
         </Table>
       </Card>
+
+      {/* S-NSSAI Configurations */}
       {data?.SessionManagementSubscriptionData?.map((row, index) => (
         <div key={index}>
           <h3>S-NSSAI Configuration</h3>
@@ -301,7 +191,10 @@ export default function SubscriberRead() {
                         <TableBody>
                           <TableRow>
                             <TableCell style={{ width: "40%" }}>Uplink AMBR</TableCell>
-                            <TableCell>{row.dnnConfigurations![dnn].sessionAmbr?.uplink}</TableCell>
+                            <TableCell>
+                              {row.dnnConfigurations![dnn].sessionAmbr?.uplink} /{" "}
+                              {row.dnnConfigurations![dnn].sessionAmbr?.downlink}
+                            </TableCell>
                           </TableRow>
                         </TableBody>
                         <TableBody>
@@ -343,6 +236,7 @@ export default function SubscriberRead() {
           </Card>
         </div>
       ))}
+
       <br />
       <Grid item xs={12}>
         <Button color="primary" variant="contained" onClick={handleEdit} sx={{ m: 1 }}>

@@ -7,6 +7,7 @@ import PhoneAndroid from "@mui/icons-material/PhoneAndroid";
 import FontDownload from "@mui/icons-material/FontDownload";
 import SupervisorAccountOutlinedIcon from "@mui/icons-material/SupervisorAccountOutlined";
 import AttachMoneyOutlinedIcon from "@mui/icons-material/AttachMoneyOutlined";
+import PersonIcon from "@mui/icons-material/Person";
 
 import { Link } from "react-router-dom";
 import { LoginContext } from "./LoginContext";
@@ -41,6 +42,14 @@ export const MainListItems = () => {
             <PhoneAndroid />
           </ListItemIcon>
           <ListItemText primary="SUBSCRIBERS" />
+        </ListItemButton>
+      </Link>
+      <Link to="/profile" style={{ color: "inherit", textDecoration: "inherit" }}>
+        <ListItemButton>
+          <ListItemIcon>
+            <PersonIcon />
+          </ListItemIcon>
+          <ListItemText primary="PROFILE" />
         </ListItemButton>
       </Link>
       <Link to="/analysis" style={{ color: "inherit", textDecoration: "inherit" }}>

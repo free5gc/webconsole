@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { config } from "../constants/config";
-
-import axios from "../axios";
-import { Subscriber } from "../api/api";
-
 import Dashboard from "../Dashboard";
+import axios from "../axios";
 import {
   Alert,
   Box,
@@ -17,8 +14,8 @@ import {
   TableBody,
   TableCell,
   TableHead,
-  TableRow,
   TablePagination,
+  TableRow,
   TextField,
 } from "@mui/material";
 import { ReportProblemRounded } from "@mui/icons-material";
@@ -28,9 +25,9 @@ interface Props {
   setRefresh: (v: boolean) => void;
 }
 
-function SubscriberList(props: Props) {
+function ProfileList(props: Props) {
   const navigation = useNavigate();
-  const [data, setData] = useState<Subscriber[]>([]);
+  const [data, setData] = useState<string[]>([]);
   const [limit, setLimit] = useState(50);
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -38,9 +35,8 @@ function SubscriberList(props: Props) {
   const [isDeleteError, setIsDeleteError] = useState(false);
 
   useEffect(() => {
-    console.log("get subscribers");
     axios
-      .get("/api/subscriber")
+      .get("/api/profile")
       .then((res) => {
         setData(res.data);
       })
@@ -93,13 +89,17 @@ function SubscriberList(props: Props) {
     }
   };
 
-  const onDelete = (id: string, plmn: string) => {
-    const result = window.confirm("Delete subscriber?");
+  const onCreate = () => {
+    navigation("/profile/create");
+  };
+
+  const onDelete = (profileName: string) => {
+    const result = window.confirm("Delete profile?");
     if (!result) {
       return;
     }
     axios
-      .delete("/api/subscriber/" + id + "/" + plmn)
+      .delete("/api/profile/" + profileName)
       .then((res) => {
         props.setRefresh(!props.refresh);
       })
@@ -109,29 +109,24 @@ function SubscriberList(props: Props) {
       });
   };
 
-  const onCreate = () => {
-    navigation("/subscriber/create");
+  const handleModify = (profile: string) => {
+    navigation("/profile/" + profile);
   };
 
-  const handleModify = (subscriber: Subscriber) => {
-    navigation("/subscriber/" + subscriber.ueId + "/" + subscriber.plmnID);
-  };
-
-  const filteredData = data.filter((subscriber) =>
-    subscriber.ueId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    subscriber.plmnID?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredData = data.filter((profile) =>
+    profile.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
   };
 
-  if (data == null || data.length === 0) {
+  if (data.length === 0) {
     return (
       <>
         <br />
         <div>
-          No Subscription
+          No Profiles
           <br />
           <br />
           <Grid item xs={12}>
@@ -141,14 +136,14 @@ function SubscriberList(props: Props) {
           </Grid>
         </div>
       </>
-    )
+    );
   }
 
   return (
     <>
       <br />
       <TextField
-        label="Search Subscriber"
+        label="Search Profile"
         variant="outlined"
         value={searchTerm}
         onChange={handleSearch}
@@ -158,8 +153,7 @@ function SubscriberList(props: Props) {
       <Table>
         <TableHead>
           <TableRow>
-            <TableCell>PLMN</TableCell>
-            <TableCell>UE ID</TableCell>
+            <TableCell>Name</TableCell>
             <TableCell>Delete</TableCell>
             <TableCell>View</TableCell>
           </TableRow>
@@ -167,19 +161,18 @@ function SubscriberList(props: Props) {
         <TableBody>
           {filteredData.map((row, index) => (
             <TableRow key={index}>
-              <TableCell>{row.plmnID}</TableCell>
-              <TableCell>{row.ueId}</TableCell>
+              <TableCell>{row.toString()}</TableCell>
               <TableCell>
                 <Button
                   color="primary"
                   variant="contained"
-                  onClick={() => onDelete(row.ueId!, row.plmnID!)}
+                  onClick={() => onDelete(row.toString())}
                 >
                   DELETE
                 </Button>
               </TableCell>
               <TableCell>
-                <Button color="primary" variant="contained" onClick={() => handleModify(row)}>
+                <Button color="primary" variant="contained" onClick={() => handleModify(row.toString())}>
                   VIEW
                 </Button>
               </TableCell>
@@ -200,7 +193,7 @@ function SubscriberList(props: Props) {
         autoHideDuration={6000}
         onClose={() => setIsDeleteError(false)}
       >
-        <Alert severity="error">Failed to delete subscriber</Alert>
+        <Alert severity="error">Failed to delete profile</Alert>
       </Snackbar>
     </>
   );
@@ -211,11 +204,11 @@ function WithDashboard(Component: React.ComponentType<any>) {
     const [refresh, setRefresh] = useState<boolean>(false);
 
     return (
-      <Dashboard title="SUBSCRIBER" refreshAction={() => setRefresh(!refresh)}>
+      <Dashboard title="PROFILE" refreshAction={() => setRefresh(!refresh)}>
         <Component {...props} refresh={refresh} setRefresh={(v: boolean) => setRefresh(v)} />
       </Dashboard>
     );
   };
 }
 
-export default WithDashboard(SubscriberList);
+export default WithDashboard(ProfileList);

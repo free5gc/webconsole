@@ -30,6 +30,7 @@ func verifyDestPath(requestedURI string) string {
 		"status",
 		"analysis",
 		"subscriber",
+		"profile",
 		"tenant",
 		"charging",
 		"login",

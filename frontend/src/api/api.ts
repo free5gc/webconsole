@@ -702,6 +702,86 @@ export interface PermanentKey {
 /**
  * 
  * @export
+ * @interface Profile
+ */
+export interface Profile {
+    /**
+     * 
+     * @type {string}
+     * @memberof Profile
+     */
+    'profileName': string;
+    /**
+     * 
+     * @type {AccessAndMobilitySubscriptionData}
+     * @memberof Profile
+     */
+    'AccessAndMobilitySubscriptionData': AccessAndMobilitySubscriptionData;
+    /**
+     * 
+     * @type {Array<SessionManagementSubscriptionData>}
+     * @memberof Profile
+     */
+    'SessionManagementSubscriptionData': Array<SessionManagementSubscriptionData>;
+    /**
+     * 
+     * @type {SmfSelectionSubscriptionData}
+     * @memberof Profile
+     */
+    'SmfSelectionSubscriptionData': SmfSelectionSubscriptionData;
+    /**
+     * 
+     * @type {AmPolicyData}
+     * @memberof Profile
+     */
+    'AmPolicyData': AmPolicyData;
+    /**
+     * 
+     * @type {SmPolicyData}
+     * @memberof Profile
+     */
+    'SmPolicyData': SmPolicyData;
+    /**
+     * 
+     * @type {Array<FlowRules>}
+     * @memberof Profile
+     */
+    'FlowRules': Array<FlowRules>;
+    /**
+     * 
+     * @type {Array<QosFlows>}
+     * @memberof Profile
+     */
+    'QosFlows': Array<QosFlows>;
+    /**
+     * 
+     * @type {Array<ChargingData>}
+     * @memberof Profile
+     */
+    'ChargingDatas': Array<ChargingData>;
+}
+/**
+ * 
+ * @export
+ * @interface ProfileListIE
+ */
+export interface ProfileListIE {
+    /**
+     * 
+     * @type {string}
+     * @memberof ProfileListIE
+     */
+    'profileName'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ProfileListIE
+     */
+    'gpsi'?: string;
+}
+/**
+ * 
+ * @export
  * @interface QosFlows
  */
 export interface QosFlows {
@@ -1162,6 +1242,46 @@ export interface User {
 export const WebconsoleApiAxiosParamCreator = function (configuration?: Configuration) {
     return {
         /**
+         * Returns an array of profile.
+         * @summary Get all profiles
+         * @param {number} [limit] 
+         * @param {number} [page] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiProfileGet: async (limit?: number, page?: number, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/profile`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            if (limit !== undefined) {
+                localVarQueryParameter['limit'] = limit;
+            }
+
+            if (page !== undefined) {
+                localVarQueryParameter['page'] = page;
+            }
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
          * Returns an array of subscriber.
          * @summary Get all subscribers
          * @param {number} [limit] 
@@ -1212,6 +1332,20 @@ export const WebconsoleApiFp = function(configuration?: Configuration) {
     const localVarAxiosParamCreator = WebconsoleApiAxiosParamCreator(configuration)
     return {
         /**
+         * Returns an array of profile.
+         * @summary Get all profiles
+         * @param {number} [limit] 
+         * @param {number} [page] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiProfileGet(limit?: number, page?: number, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<Array<ProfileListIE>>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiProfileGet(limit, page, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['WebconsoleApi.apiProfileGet']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
+        /**
          * Returns an array of subscriber.
          * @summary Get all subscribers
          * @param {number} [limit] 
@@ -1236,6 +1370,17 @@ export const WebconsoleApiFactory = function (configuration?: Configuration, bas
     const localVarFp = WebconsoleApiFp(configuration)
     return {
         /**
+         * Returns an array of profile.
+         * @summary Get all profiles
+         * @param {number} [limit] 
+         * @param {number} [page] 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiProfileGet(limit?: number, page?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<ProfileListIE>> {
+            return localVarFp.apiProfileGet(limit, page, options).then((request) => request(axios, basePath));
+        },
+        /**
          * Returns an array of subscriber.
          * @summary Get all subscribers
          * @param {number} [limit] 
@@ -1243,7 +1388,7 @@ export const WebconsoleApiFactory = function (configuration?: Configuration, bas
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiSubscriberGet(limit?: number, page?: number, options?: any): AxiosPromise<Array<Subscriber>> {
+        apiSubscriberGet(limit?: number, page?: number, options?: RawAxiosRequestConfig): AxiosPromise<Array<Subscriber>> {
             return localVarFp.apiSubscriberGet(limit, page, options).then((request) => request(axios, basePath));
         },
     };
@@ -1256,6 +1401,19 @@ export const WebconsoleApiFactory = function (configuration?: Configuration, bas
  * @extends {BaseAPI}
  */
 export class WebconsoleApi extends BaseAPI {
+    /**
+     * Returns an array of profile.
+     * @summary Get all profiles
+     * @param {number} [limit] 
+     * @param {number} [page] 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof WebconsoleApi
+     */
+    public apiProfileGet(limit?: number, page?: number, options?: RawAxiosRequestConfig) {
+        return WebconsoleApiFp(this.configuration).apiProfileGet(limit, page, options).then((request) => request(this.axios, this.basePath));
+    }
+
     /**
      * Returns an array of subscriber.
      * @summary Get all subscribers
