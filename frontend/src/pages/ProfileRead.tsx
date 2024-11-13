@@ -115,6 +115,19 @@ export default function ProfileRead() {
 
   return (
     <Dashboard title="Profile" refreshAction={() => {}}>
+      <Grid 
+        item 
+        xs={12} 
+        sx={{ 
+          display: 'flex', 
+          justifyContent: 'flex-end' 
+        }}
+      >
+        <Button color="primary" variant="contained" onClick={handleEdit} sx={{ m: 1 }}>
+          EDIT
+        </Button>
+      </Grid>
+      <br />
       <Card variant="outlined">
         <Table>
           <TableBody>
@@ -236,13 +249,6 @@ export default function ProfileRead() {
           </Card>
         </div>
       ))}
-
-      <br />
-      <Grid item xs={12}>
-        <Button color="primary" variant="contained" onClick={handleEdit} sx={{ m: 1 }}>
-          EDIT
-        </Button>
-      </Grid>
     </Dashboard>
   );
 }
