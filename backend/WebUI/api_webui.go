@@ -41,7 +41,7 @@ const (
 	userDataColl        = "userData"
 	tenantDataColl      = "tenantData"
 	identityDataColl    = "subscriptionData.identityData"
-	profileDataColl  = "profileData" // store profile data
+	profileDataColl     = "profileData" // store profile data
 )
 
 var jwtKey = "" // for generating JWT
