@@ -176,6 +176,19 @@ export default function SubscriberRead() {
 
   return (
     <Dashboard title="Subscription" refreshAction={() => {}}>
+      <Grid 
+        item 
+        xs={12} 
+        sx={{ 
+          display: 'flex', 
+          justifyContent: 'flex-end' 
+        }}
+      >
+        <Button color="primary" variant="contained" onClick={handleEdit} sx={{ m: 1 }}>
+          EDIT
+        </Button>
+      </Grid>
+      <br />
       <Card variant="outlined">
         <Table>
           <TableBody>
@@ -343,12 +356,6 @@ export default function SubscriberRead() {
           </Card>
         </div>
       ))}
-      <br />
-      <Grid item xs={12}>
-        <Button color="primary" variant="contained" onClick={handleEdit} sx={{ m: 1 }}>
-          EDIT
-        </Button>
-      </Grid>
     </Dashboard>
   );
 }

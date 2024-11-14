@@ -113,6 +113,10 @@ function ProfileList(props: Props) {
     navigation("/profile/" + profile);
   };
 
+  const handleEdit = (profile: string) => {
+    navigation("/profile/create/" + profile);
+  };
+
   const filteredData = data.filter((profile) =>
     profile.toLowerCase().includes(searchTerm.toLowerCase()),
   );
@@ -156,6 +160,7 @@ function ProfileList(props: Props) {
             <TableCell>Name</TableCell>
             <TableCell>Delete</TableCell>
             <TableCell>View</TableCell>
+            <TableCell>Edit</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -174,6 +179,11 @@ function ProfileList(props: Props) {
               <TableCell>
                 <Button color="primary" variant="contained" onClick={() => handleModify(row.toString())}>
                   VIEW
+                </Button>
+              </TableCell>
+              <TableCell>
+                <Button color="primary" variant="contained" onClick={() => handleEdit(row.toString())}>
+                  EDIT
                 </Button>
               </TableCell>
             </TableRow>

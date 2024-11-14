@@ -117,6 +117,10 @@ function SubscriberList(props: Props) {
     navigation("/subscriber/" + subscriber.ueId + "/" + subscriber.plmnID);
   };
 
+  const handleEdit = (subscriber: Subscriber) => {
+    navigation("/subscriber/create/" + subscriber.ueId + "/" + subscriber.plmnID);
+  };
+
   const filteredData = data.filter((subscriber) =>
     subscriber.ueId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     subscriber.plmnID?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -162,6 +166,7 @@ function SubscriberList(props: Props) {
             <TableCell>UE ID</TableCell>
             <TableCell>Delete</TableCell>
             <TableCell>View</TableCell>
+            <TableCell>Edit</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -181,6 +186,11 @@ function SubscriberList(props: Props) {
               <TableCell>
                 <Button color="primary" variant="contained" onClick={() => handleModify(row)}>
                   VIEW
+                </Button>
+              </TableCell>
+              <TableCell>
+                <Button color="primary" variant="contained" onClick={() => handleEdit(row)}>
+                  EDIT
                 </Button>
               </TableCell>
             </TableRow>
