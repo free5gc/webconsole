@@ -7,23 +7,31 @@ import {
     TableRow,
     TableCell,
 } from "@mui/material";
-import { QosFlows, Nssai } from "../../api/api";
+import { Nssai } from "../../api/api";
+
+const qosFlow = (qosflows: any, sstSd: string, dnn: string, qosRef: number | undefined) => {
+    if (qosflows === null) {
+        return undefined;
+    }
+    for (const qos of qosflows) {
+        if (qos.snssai === sstSd && qos.dnn === dnn && qos.qosRef === qosRef) {
+            return qos;
+        }
+    }
+    return undefined;
+}
 
 const FlowRule = ({
     dnn,
     flow,
     data,
     chargingConfig,
-    qosFlow,
 }: {
     dnn: string;
     flow: any;
     data: any;
     chargingConfig: (dnn: string, snssai: Nssai, filter: string | undefined) => JSX.Element | undefined;
-    qosFlow: (sstSd: string, dnn: string, qosRef: number | undefined) => QosFlows | undefined;
 }) => {
-    const flowKey = toHex(flow.sst) + flow.sd;
-
     return (
         <div key={flow.snssai}>
             <Box sx={{ m: 2 }}>
@@ -41,23 +49,23 @@ const FlowRule = ({
                             </TableRow>
                             <TableRow>
                                 <TableCell style={{ width: "40%" }}>5QI</TableCell>
-                                <TableCell>{qosFlow(flowKey, dnn, flow.qosRef)?.["5qi"]}</TableCell>
+                                <TableCell>{qosFlow(data.QosFlows, flow.snssai, dnn, flow.qosRef!)?.["5qi"]}</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell style={{ width: "40%" }}>Uplink GBR</TableCell>
-                                <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.gbrUL}</TableCell>
+                                <TableCell>{qosFlow(data.QosFlows, flow.snssai, dnn, flow.qosRef!)?.gbrUL}</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell style={{ width: "40%" }}>Downlink GBR</TableCell>
-                                <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.gbrDL}</TableCell>
+                                <TableCell>{qosFlow(data.QosFlows, flow.snssai, dnn, flow.qosRef!)?.gbrDL}</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell style={{ width: "40%" }}>Uplink MBR</TableCell>
-                                <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.mbrUL}</TableCell>
+                                <TableCell>{qosFlow(data.QosFlows, flow.snssai, dnn, flow.qosRef!)?.mbrUL}</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell style={{ width: "40%" }}>Downlink MBR</TableCell>
-                                <TableCell>{qosFlow(flowKey, dnn, flow.qosRef!)?.mbrDL}</TableCell>
+                                <TableCell>{qosFlow(data.QosFlows, flow.snssai, dnn, flow.qosRef!)?.mbrDL}</TableCell>
                             </TableRow>
                             <TableRow>
                                 <TableCell style={{ width: "40%" }}>Charging Characteristics</TableCell>
@@ -69,10 +77,6 @@ const FlowRule = ({
             </Box>
         </div>
     );
-};
-
-const toHex = (v: number | undefined): string => {
-    return ("00" + v?.toString(16).toUpperCase()).substr(-2);
 };
 
 export default FlowRule;
