@@ -3,7 +3,11 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 import axios from "../axios";
-import { Nssai, Profile, QosFlows, DnnConfiguration } from "../api/api";
+import {
+  Nssai,
+  Profile,
+  DnnConfiguration,
+} from "../api/api";
 
 import Dashboard from "../Dashboard";
 import {
@@ -59,21 +63,6 @@ export default function ProfileRead() {
     }
   };
 
-  const qosFlow = (
-    sstSd: string,
-    dnn: string,
-    qosRef: number | undefined,
-  ): QosFlows | undefined => {
-    if (data != null) {
-      for (const qos of data.QosFlows) {
-        if (qos.snssai === sstSd && qos.dnn === dnn && qos.qosRef === qosRef) {
-          return qos;
-        }
-      }
-    }
-    return undefined;
-  };
-
   const chargingConfig = (dnn: string, snssai: Nssai, filter: string | undefined) => {
     const flowKey = toHex(snssai.sst) + snssai.sd;
     for (const chargingData of data?.ChargingDatas ?? []) {
@@ -95,12 +84,10 @@ export default function ProfileRead() {
     return data.FlowRules.filter((flow) => flow.dnn === dnn && flow.snssai === flowKey).map(
       (flow) => (
         <FlowRule
-          key={flow.snssai}
           flow={flow}
           dnn={dnn}
           data={data}
-          chargingConfig={chargingConfig}
-          qosFlow={qosFlow}
+          chargingConfig={() => chargingConfig(dnn, snssai, flow.filter)}
         />
       ),
     );

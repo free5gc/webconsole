@@ -9,7 +9,6 @@ import {
   AuthenticationSubscription,
   AccessAndMobilitySubscriptionData,
   DnnConfiguration,
-  QosFlows,
 } from "../api/api";
 
 import Dashboard from "../Dashboard";
@@ -25,8 +24,9 @@ import {
   TableRow,
 } from "@mui/material";
 import FlowRule from "./Component/FlowRule";
-import ChargingCfg from "./Component/ChargingCfg";
 import UpSecurity from "./Component/UpSecurity";
+import { toHex } from "../lib/utils";
+import ChargingCfg from "./Component/ChargingCfg";
 
 export default function SubscriberRead() {
   const { id, plmn } = useParams<{
@@ -37,10 +37,6 @@ export default function SubscriberRead() {
 
   const [data, setData] = useState<Subscription | null>(null);
   // const [update, setUpdate] = useState<boolean>(false);
-
-  function toHex(v: number | undefined): string {
-    return ("00" + v?.toString(16).toUpperCase()).substr(-2);
-  }
 
   useEffect(() => {
     axios.get("/api/subscriber/" + id + "/" + plmn).then((res) => {
@@ -121,20 +117,6 @@ export default function SubscriberRead() {
     return "";
   };
 
-  const qosFlow = (
-    sstSd: string,
-    dnn: string,
-    qosRef: number | undefined,
-  ): QosFlows | undefined => {
-    if (data != null) {
-      for (const qos of data.QosFlows) {
-        if (qos.snssai === sstSd && qos.dnn === dnn && qos.qosRef === qosRef) {
-          return qos;
-        }
-      }
-    }
-  };
-
   const chargingConfig = (dnn: string, snssai: Nssai, filter: string | undefined) => {
     const flowKey = toHex(snssai.sst) + snssai.sd;
     for (const chargingData of data?.ChargingDatas ?? []) {
@@ -160,8 +142,7 @@ export default function SubscriberRead() {
           flow={flow}
           dnn={dnn}
           data={data}
-          chargingConfig={chargingConfig}
-          qosFlow={qosFlow}
+          chargingConfig={() => chargingConfig(dnn, snssai, flow.filter)}
         />
       ),
     );
