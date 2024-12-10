@@ -11,6 +11,30 @@ import ProfileFormBasic from "./ProfileFormBasic";
 import ProfileFormUeAmbr from "./ProfileFormUeAmbr";
 import ProfileFormSessions from "./ProfileFormSessions";
 import { ProfileMapperImpl, FlowsMapperImpl } from "../../lib/dtos/profile";
+
+function parseDataRate(rate: string | undefined): number {
+    if (!rate) return 0;
+    
+    const match = rate.match(/^(\d+)\s*(Gbps|Mbps|Kbps|bps)$/i);
+    if (!match) return 0;
+    
+    const [, value, unit] = match;
+    const numValue = parseFloat(value);
+    
+    switch (unit.toLowerCase()) {
+        case 'gbps':
+            return numValue * 1000000;
+        case 'mbps':
+            return numValue * 1000;
+        case 'kbps':
+            return numValue;
+        case 'bps':
+            return numValue / 1000;
+        default:
+            return 0;
+    }
+}
+
 function FormHOC(Component: React.ComponentType<any>) {
     return function (props: any) {
         return (
@@ -66,6 +90,23 @@ function ProfileCreate() {
     const profileMapper = new ProfileMapperImpl(new FlowsMapperImpl());
     const profile = profileMapper.mapFromDto(data);
 
+    for (const qosFlow of profile.QosFlows) {
+      const gbrDL = parseDataRate(qosFlow.gbrDL);
+      const mbrDL = parseDataRate(qosFlow.mbrDL);
+      const gbrUL = parseDataRate(qosFlow.gbrUL);
+      const mbrUL = parseDataRate(qosFlow.mbrUL);
+
+      if (gbrDL && mbrDL && gbrDL >= mbrDL) {
+          alert("Downlink MBR must be greater than Downlink GBR");
+          return;
+      }
+
+      if (gbrUL && mbrUL && gbrUL >= mbrUL) {
+          alert("Uplink MBR must be greater than Uplink GBR");
+          return;
+      }
+    }
+
     axios
       .post("/api/profile", profile)
       .then(() => {
@@ -95,6 +136,23 @@ function ProfileCreate() {
     const data = getValues();
     const profileMapper = new ProfileMapperImpl(new FlowsMapperImpl());
     const profile = profileMapper.mapFromDto(data);
+
+    for (const qosFlow of profile.QosFlows) {
+        const gbrDL = parseDataRate(qosFlow.gbrDL);
+        const mbrDL = parseDataRate(qosFlow.mbrDL);
+        const gbrUL = parseDataRate(qosFlow.gbrUL);
+        const mbrUL = parseDataRate(qosFlow.mbrUL);
+
+        if (gbrDL && mbrDL && gbrDL >= mbrDL) {
+            alert("Downlink MBR must be greater than Downlink GBR");
+            return;
+        }
+
+        if (gbrUL && mbrUL && gbrUL >= mbrUL) {
+            alert("Uplink MBR must be greater than Uplink GBR");
+            return;
+        }
+    }
 
     axios
       .put("/api/profile/" + profile.profileName, profile)
