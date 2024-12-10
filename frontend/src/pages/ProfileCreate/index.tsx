@@ -90,19 +90,20 @@ function ProfileCreate() {
     const profileMapper = new ProfileMapperImpl(new FlowsMapperImpl());
     const profile = profileMapper.mapFromDto(data);
 
-    for (const qosFlow of profile.QosFlows) {
+    for (let i = 0; i < profile.QosFlows.length; i++) {
+      const qosFlow = profile.QosFlows[i];
       const gbrDL = parseDataRate(qosFlow.gbrDL);
       const mbrDL = parseDataRate(qosFlow.mbrDL);
       const gbrUL = parseDataRate(qosFlow.gbrUL);
       const mbrUL = parseDataRate(qosFlow.mbrUL);
 
       if (gbrDL && mbrDL && gbrDL >= mbrDL) {
-          alert("Downlink MBR must be greater than Downlink GBR");
+          alert("In S-NSSAI " + qosFlow.snssai + "'s Flow Rule " + (i+1) + "\nDownlink MBR must be greater than Downlink GBR");
           return;
       }
 
       if (gbrUL && mbrUL && gbrUL >= mbrUL) {
-          alert("Uplink MBR must be greater than Uplink GBR");
+          alert("In S-NSSAI " + qosFlow.snssai + "'s Flow Rule " + (i+1) + "\nUplink MBR must be greater than Uplink GBR");
           return;
       }
     }
@@ -137,21 +138,22 @@ function ProfileCreate() {
     const profileMapper = new ProfileMapperImpl(new FlowsMapperImpl());
     const profile = profileMapper.mapFromDto(data);
 
-    for (const qosFlow of profile.QosFlows) {
-        const gbrDL = parseDataRate(qosFlow.gbrDL);
-        const mbrDL = parseDataRate(qosFlow.mbrDL);
-        const gbrUL = parseDataRate(qosFlow.gbrUL);
-        const mbrUL = parseDataRate(qosFlow.mbrUL);
+    for (let i = 0; i < profile.QosFlows.length; i++) {
+      const qosFlow = profile.QosFlows[i];
+      const gbrDL = parseDataRate(qosFlow.gbrDL);
+      const mbrDL = parseDataRate(qosFlow.mbrDL);
+      const gbrUL = parseDataRate(qosFlow.gbrUL);
+      const mbrUL = parseDataRate(qosFlow.mbrUL);
 
-        if (gbrDL && mbrDL && gbrDL >= mbrDL) {
-            alert("Downlink MBR must be greater than Downlink GBR");
-            return;
-        }
+      if (gbrDL && mbrDL && gbrDL >= mbrDL) {
+          alert("In S-NSSAI " + qosFlow.snssai + "'s Flow Rule " + (i+1) + "\nDownlink MBR must be greater than Downlink GBR");
+          return;
+      }
 
-        if (gbrUL && mbrUL && gbrUL >= mbrUL) {
-            alert("Uplink MBR must be greater than Uplink GBR");
-            return;
-        }
+      if (gbrUL && mbrUL && gbrUL >= mbrUL) {
+          alert("In S-NSSAI " + qosFlow.snssai + "'s Flow Rule " + (i+1) + "\nUplink MBR must be greater than Uplink GBR");
+          return;
+      }
     }
 
     axios

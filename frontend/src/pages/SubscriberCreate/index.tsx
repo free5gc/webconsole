@@ -115,19 +115,20 @@ function SubscriberCreate() {
     const subscriberMapper = new SubscriptionMapperImpl(new SubscriptionFlowsMapperImpl());
     const subscription = subscriberMapper.mapFromDto(data);
 
-    for (const qosFlow of subscription.QosFlows) {
+    for (let i = 0; i < subscription.QosFlows.length; i++) {
+      const qosFlow = subscription.QosFlows[i];
       const gbrDL = parseDataRate(qosFlow.gbrDL);
       const mbrDL = parseDataRate(qosFlow.mbrDL);
       const gbrUL = parseDataRate(qosFlow.gbrUL);
       const mbrUL = parseDataRate(qosFlow.mbrUL);
 
       if (gbrDL && mbrDL && gbrDL >= mbrDL) {
-          alert("Downlink MBR must be greater than Downlink GBR");
+          alert("In S-NSSAI " + qosFlow.snssai + "'s Flow Rule " + (i+1) + "\nDownlink MBR must be greater than Downlink GBR");
           return;
       }
 
       if (gbrUL && mbrUL && gbrUL >= mbrUL) {
-          alert("Uplink MBR must be greater than Uplink GBR");
+          alert("In S-NSSAI " + qosFlow.snssai + "'s Flow Rule " + (i+1) + "\nUplink MBR must be greater than Uplink GBR");
           return;
       }
     }
@@ -168,19 +169,20 @@ function SubscriberCreate() {
     const subscriberMapper = new SubscriptionMapperImpl(new SubscriptionFlowsMapperImpl());
     const subscription = subscriberMapper.mapFromDto(data);
 
-    for (const qosFlow of subscription.QosFlows) {
+    for (let i = 0; i < subscription.QosFlows.length; i++) {
+      const qosFlow = subscription.QosFlows[i];
       const gbrDL = parseDataRate(qosFlow.gbrDL);
       const mbrDL = parseDataRate(qosFlow.mbrDL);
       const gbrUL = parseDataRate(qosFlow.gbrUL);
       const mbrUL = parseDataRate(qosFlow.mbrUL);
 
       if (gbrDL && mbrDL && gbrDL >= mbrDL) {
-          alert("Downlink MBR must be greater than Downlink GBR");
+          alert("In S-NSSAI " + qosFlow.snssai + "'s Flow Rule " + (i+1) + "\nDownlink MBR must be greater than Downlink GBR");
           return;
       }
 
       if (gbrUL && mbrUL && gbrUL >= mbrUL) {
-          alert("Uplink MBR must be greater than Uplink GBR");
+          alert("In S-NSSAI " + qosFlow.snssai + "'s Flow Rule " + (i+1) + "\nUplink MBR must be greater than Uplink GBR");
           return;
       }
     }
