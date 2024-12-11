@@ -12,29 +12,7 @@ import SubscriberFormUeAmbr from "./SubscriberFormUeAmbr";
 import SubscriberFormSessions from "./SubscriberFormSessions";
 import { FlowsMapperImpl as SubscriptionFlowsMapperImpl, SubscriptionMapperImpl } from "../../lib/dtos/subscription";
 import { FlowsMapperImpl as ProfileFlowsMapperImpl, ProfileMapperImpl } from "../../lib/dtos/profile";
-
-function parseDataRate(rate: string | undefined): number {
-  if (!rate) return 0;
-  
-  const match = rate.match(/^(\d+)\s*(Gbps|Mbps|Kbps|bps)$/i);
-  if (!match) return 0;
-  
-  const [, value, unit] = match;
-  const numValue = parseFloat(value);
-  
-  switch (unit.toLowerCase()) {
-      case 'gbps':
-          return numValue * 1000000;
-      case 'mbps':
-          return numValue * 1000;
-      case 'kbps':
-          return numValue;
-      case 'bps':
-          return numValue / 1000;
-      default:
-          return 0;
-  }
-}
+import { parseDataRate } from "../../lib/utils";
 
 function FormHOC(Component: React.ComponentType<any>) {
   return function (props: any) {
