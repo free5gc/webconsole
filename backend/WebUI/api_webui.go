@@ -1404,7 +1404,15 @@ func sendRechargeNotification(ueId string, rg int32) {
 	}
 }
 
-func dbOperation(ueId string, servingPlmnId string, method string, subsData *SubsData, subsDatas []*SubsListIE, claims jwt.MapClaims, multiple bool) {
+func dbOperation(
+	ueId string,
+	servingPlmnId string,
+	method string,
+	subsData *SubsData,
+	subsDatas []*SubsListIE,
+	claims jwt.MapClaims,
+	multiple bool,
+) {
 	filterUeIdOnly := bson.M{"ueId": ueId}
 	filter := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId}
 
@@ -1432,7 +1440,11 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 				})
 			}
 
-			multipleFliterUeIdOnly, multipleFliter := bson.M{"$or": multipleFilterUeIdOnlyConditions}, bson.M{"$or": multipleFliterConditions}
+			multipleFliterUeIdOnly, multipleFliter := bson.M{
+				"$or": multipleFilterUeIdOnlyConditions,
+			}, bson.M{
+				"$or": multipleFliterConditions,
+			}
 
 			if err := mongoapi.RestfulAPIDeleteMany(authSubsDataColl, multipleFliterUeIdOnly); err != nil {
 				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
@@ -2055,7 +2067,10 @@ func DeleteMultipleProfiles(c *gin.Context) {
 		return
 	}
 
-	dbProfileOperation("", "delete", nil, profileDatas, true)
+	if err := dbProfileOperation("", "delete", nil, profileDatas, true); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusNoContent, gin.H{})
 }
@@ -2198,7 +2213,13 @@ func PutProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, profile)
 }
 
-func dbProfileOperation(profileName string, method string, profile *Profile, profileDatas []*Profile, multiple bool) (err error) {
+func dbProfileOperation(
+	profileName string,
+	method string,
+	profile *Profile,
+	profileDatas []*Profile,
+	multiple bool,
+) (err error) {
 	err = nil
 	filter := bson.M{"profileName": profileName}
 
