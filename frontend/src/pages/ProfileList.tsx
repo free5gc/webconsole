@@ -20,7 +20,7 @@ import {
   Checkbox,
 } from "@mui/material";
 import { ReportProblemRounded } from "@mui/icons-material";
-import { formatMultipleDeleteProfileToJson } from "../lib/utils";
+import { formatMultipleDeleteProfileToJson } from "../lib/multipleDeleteFormating";
 
 interface Props {
   refresh: boolean;
