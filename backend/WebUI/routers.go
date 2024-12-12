@@ -196,6 +196,13 @@ var routes = Routes{
 	},
 
 	{
+		"DeleteMultipleSubscribers",
+		http.MethodDelete,
+		"/subscriber",
+		DeleteMultipleSubscribers,
+	},
+
+	{
 		"PatchSubscriberByID",
 		http.MethodPatch,
 		"/subscriber/:ueId/:servingPlmnId",
