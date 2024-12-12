@@ -13,3 +13,13 @@ export function formatMultipleDeleteSubscriberToJson(subscribers: MultipleDelete
     plmnID: sub.plmnID
   }));
 }
+
+interface MultipleDeleteProfileData {
+  profileName: string;
+}
+
+export function formatMultipleDeleteProfileToJson(profiles: MultipleDeleteProfileData[]) {
+  return profiles.map(profile => ({
+    profileName: profile.profileName
+  }));
+}

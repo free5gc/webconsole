@@ -266,6 +266,13 @@ var routes = Routes{
 	},
 
 	{
+		"Delete Multiple Profiles",
+		http.MethodDelete,
+		"/profile",
+		DeleteMultipleProfiles,
+	},
+
+	{
 		"Get Profile List",
 		http.MethodGet,
 		"/profile",

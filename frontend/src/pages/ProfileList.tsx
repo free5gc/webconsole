@@ -17,12 +17,18 @@ import {
   TablePagination,
   TableRow,
   TextField,
+  Checkbox,
 } from "@mui/material";
 import { ReportProblemRounded } from "@mui/icons-material";
+import { formatMultipleDeleteProfileToJson } from "../lib/utils";
 
 interface Props {
   refresh: boolean;
   setRefresh: (v: boolean) => void;
+}
+
+interface SelectedItem {
+  profileName: string;
 }
 
 function ProfileList(props: Props) {
@@ -33,6 +39,7 @@ function ProfileList(props: Props) {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [isLoadError, setIsLoadError] = useState(false);
   const [isDeleteError, setIsDeleteError] = useState(false);
+  const [selected, setSelected] = useState<SelectedItem[]>([]);
 
   useEffect(() => {
     axios
@@ -125,6 +132,76 @@ function ProfileList(props: Props) {
     setSearchTerm(event.target.value);
   };
 
+  const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      const newSelected = filteredData.map(row => ({
+        profileName: row.toString()
+      }));
+      setSelected(newSelected);
+      return;
+    }
+    setSelected([]);
+  };
+
+  const handleClick = (item: SelectedItem) => {
+    const selectedIndex = selected.findIndex(
+      s => s.profileName === item.profileName
+    );
+    let newSelected: SelectedItem[] = [];
+
+    if (selectedIndex === -1) {
+      newSelected = newSelected.concat(selected, item);
+    } else if (selectedIndex === 0) {
+      newSelected = newSelected.concat(selected.slice(1));
+    } else if (selectedIndex === selected.length - 1) {
+      newSelected = newSelected.concat(selected.slice(0, -1));
+    } else if (selectedIndex > 0) {
+      newSelected = newSelected.concat(
+        selected.slice(0, selectedIndex),
+        selected.slice(selectedIndex + 1),
+      );
+    }
+
+    setSelected(newSelected);
+  };
+
+  const isSelected = (item: SelectedItem) => 
+    selected.some(s => s.profileName === item.profileName);
+
+  const onDeleteSelected = () => {
+    const selectedItems = selected.map(item => 
+      `Profile Name: ${item.profileName}`
+    );
+
+    const confirmMessage = `Are you sure you want to delete the following profiles?\n\n${selectedItems.join('\n')}`;
+    const result = window.confirm(confirmMessage);
+    if (!result) {
+      return;
+    }
+
+    const data = formatMultipleDeleteProfileToJson(selected);
+    axios.delete("/api/profile", { data })
+      .then(() => {
+        props.setRefresh(!props.refresh);
+        setSelected([]);
+      })
+      .catch((err) => {
+        setIsDeleteError(true);
+        if (err.response) {
+          const msg = "Status: " + err.response.status;
+          if (err.response.data.cause) {
+            alert(msg + ", cause: " + err.response.data.cause);
+          } else {
+            alert(msg);
+          }
+        } else {
+          alert(err.message);
+        }
+        console.log(err);
+        return;
+      });
+  };
+
   if (data.length === 0) {
     return (
       <>
@@ -154,9 +231,28 @@ function ProfileList(props: Props) {
         fullWidth
         margin="normal"
       />
+      {selected.length > 0 && (
+        <Box sx={{ mb: 2 }}>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={onDeleteSelected}
+          >
+            Delete Selected ({selected.length})
+          </Button>
+        </Box>
+      )}
       <Table>
         <TableHead>
           <TableRow>
+            <TableCell padding="checkbox">
+              <Checkbox
+                color="primary"
+                indeterminate={selected.length > 0 && selected.length < filteredData.length}
+                checked={filteredData.length > 0 && selected.length === filteredData.length}
+                onChange={handleSelectAllClick}
+              />
+            </TableCell>
             <TableCell>Name</TableCell>
             <TableCell>Delete</TableCell>
             <TableCell>View</TableCell>
@@ -164,30 +260,47 @@ function ProfileList(props: Props) {
           </TableRow>
         </TableHead>
         <TableBody>
-          {filteredData.map((row, index) => (
-            <TableRow key={index}>
-              <TableCell>{row.toString()}</TableCell>
-              <TableCell>
-                <Button
-                  color="primary"
-                  variant="contained"
-                  onClick={() => onDelete(row.toString())}
-                >
-                  DELETE
-                </Button>
-              </TableCell>
-              <TableCell>
-                <Button color="primary" variant="contained" onClick={() => handleModify(row.toString())}>
-                  VIEW
-                </Button>
-              </TableCell>
-              <TableCell>
-                <Button color="primary" variant="contained" onClick={() => handleEdit(row.toString())}>
-                  EDIT
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
+          {filteredData.map((row, index) => {
+            const item = { profileName: row.toString() };
+            const isItemSelected = isSelected(item);
+            return (
+              <TableRow 
+                key={index}
+                hover
+                onClick={() => handleClick(item)}
+                role="checkbox"
+                aria-checked={isItemSelected}
+                selected={isItemSelected}
+              >
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    color="primary"
+                    checked={isItemSelected}
+                  />
+                </TableCell>
+                <TableCell>{row.toString()}</TableCell>
+                <TableCell>
+                  <Button
+                    color="primary"
+                    variant="contained"
+                    onClick={() => onDelete(row.toString())}
+                  >
+                    DELETE
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <Button color="primary" variant="contained" onClick={() => handleModify(row.toString())}>
+                    VIEW
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <Button color="primary" variant="contained" onClick={() => handleEdit(row.toString())}>
+                    EDIT
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
       {pager()}

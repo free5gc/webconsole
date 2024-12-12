@@ -596,7 +596,7 @@ func CheckAuth(c *gin.Context) bool {
 func GetTenantId(c *gin.Context) (string, error) {
 	tokenStr := c.GetHeader("Token")
 	if tokenStr == "" {
-		return "", fmt.Errorf("No token in header")
+		return "", fmt.Errorf("no token in header")
 	}
 	claims, err := ParseJWT(tokenStr)
 	if err != nil {
@@ -2035,11 +2035,29 @@ func DeleteProfile(c *gin.Context) {
 		return
 	}
 
-	if err = dbProfileOperation(profileName, "delete", nil); err != nil {
+	if err = dbProfileOperation(profileName, "delete", nil, nil, false); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": profileName + " has already been deleted"})
+}
+
+// Delete multiple profiles
+func DeleteMultipleProfiles(c *gin.Context) {
+	setCorsHeader(c)
+	logger.ProcLog.Infoln("Delete Multiple Profiles")
+	var profileDatas []*Profile
+	if err := c.ShouldBindJSON(&profileDatas); err != nil {
+		logger.ProcLog.Errorf("DeleteMultipleProfiles err: %+v", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"cause": "JSON format incorrect",
+		})
+		return
+	}
+
+	dbProfileOperation("", "delete", nil, profileDatas, true)
+
+	c.JSON(http.StatusNoContent, gin.H{})
 }
 
 // Get profile list
@@ -2132,7 +2150,7 @@ func PostProfile(c *gin.Context) {
 	}
 
 	logger.ProcLog.Infof("PostProfile: %+v", profile.ProfileName)
-	if err = dbProfileOperation(profile.ProfileName, "post", &profile); err != nil {
+	if err = dbProfileOperation(profile.ProfileName, "post", &profile, nil, false); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
 		return
 	}
@@ -2173,25 +2191,38 @@ func PutProfile(c *gin.Context) {
 	profile.TenantId = tenantData["tenantId"].(string)
 
 	logger.ProcLog.Infof("PutProfile: %+v", profile.ProfileName)
-	if err = dbProfileOperation(profileName, "put", &profile); err != nil {
+	if err = dbProfileOperation(profileName, "put", &profile, nil, false); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, profile)
 }
 
-func dbProfileOperation(profileName string, method string, profile *Profile) (err error) {
+func dbProfileOperation(profileName string, method string, profile *Profile, profileDatas []*Profile, multiple bool) (err error) {
 	err = nil
 	filter := bson.M{"profileName": profileName}
 
 	// Replace all data with new one
 	if method == "put" {
 		if err = mongoapi.RestfulAPIDeleteOne(profileDataColl, filter); err != nil {
-			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
+			logger.ProcLog.Errorf("DeleteProfile err: %+v", err)
 		}
 	} else if method == "delete" {
-		if err = mongoapi.RestfulAPIDeleteOne(profileDataColl, filter); err != nil {
-			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
+		if multiple {
+			multipleFilterConditions := []bson.M{}
+			for _, profileData := range profileDatas {
+				multipleFilterConditions = append(multipleFilterConditions, bson.M{
+					"profileName": profileData.ProfileName,
+				})
+			}
+			multipleFilter := bson.M{ "$or": multipleFilterConditions }
+			if err = mongoapi.RestfulAPIDeleteMany(profileDataColl, multipleFilter); err != nil {
+				logger.ProcLog.Errorf("DeleteMultipleProfiles err: %+v", err)
+			}
+		} else {
+			if err = mongoapi.RestfulAPIDeleteOne(profileDataColl, filter); err != nil {
+				logger.ProcLog.Errorf("DeleteProfile err: %+v", err)
+			}
 		}
 	}
 
@@ -2204,7 +2235,7 @@ func dbProfileOperation(profileName string, method string, profile *Profile) (er
 	if method == "post" || method == "put" {
 		profileBsonM := toBsonM(profile)
 		if _, err = mongoapi.RestfulAPIPost(profileDataColl, filter, profileBsonM); err != nil {
-			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
+			logger.ProcLog.Errorf("PostProfile err: %+v", err)
 		}
 	}
 
