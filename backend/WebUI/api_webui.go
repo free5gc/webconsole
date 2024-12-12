@@ -1427,12 +1427,12 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 					"ueId": subsData.UeId,
 				})
 				multipleFliterConditions = append(multipleFliterConditions, bson.M{
-					"ueId": subsData.UeId,
+					"ueId":          subsData.UeId,
 					"servingPlmnId": subsData.PlmnID,
 				})
 			}
 
-			multipleFliterUeIdOnly, multipleFliter := bson.M{ "$or": multipleFilterUeIdOnlyConditions }, bson.M{ "$or": multipleFliterConditions }
+			multipleFliterUeIdOnly, multipleFliter := bson.M{"$or": multipleFilterUeIdOnlyConditions}, bson.M{"$or": multipleFliterConditions}
 
 			if err := mongoapi.RestfulAPIDeleteMany(authSubsDataColl, multipleFliterUeIdOnly); err != nil {
 				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
@@ -2215,7 +2215,7 @@ func dbProfileOperation(profileName string, method string, profile *Profile, pro
 					"profileName": profileData.ProfileName,
 				})
 			}
-			multipleFilter := bson.M{ "$or": multipleFilterConditions }
+			multipleFilter := bson.M{"$or": multipleFilterConditions}
 			if err = mongoapi.RestfulAPIDeleteMany(profileDataColl, multipleFilter); err != nil {
 				logger.ProcLog.Errorf("DeleteMultipleProfiles err: %+v", err)
 			}
