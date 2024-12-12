@@ -20,15 +20,11 @@ import {
   Checkbox,
 } from "@mui/material";
 import { ReportProblemRounded } from "@mui/icons-material";
-import { formatMultipleDeleteProfileToJson } from "../lib/jsonFormating";
+import { MultipleDeleteProfileData, formatMultipleDeleteProfileToJson } from "../lib/jsonFormating";
 
 interface Props {
   refresh: boolean;
   setRefresh: (v: boolean) => void;
-}
-
-interface SelectedItem {
-  profileName: string;
 }
 
 function ProfileList(props: Props) {
@@ -39,7 +35,7 @@ function ProfileList(props: Props) {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [isLoadError, setIsLoadError] = useState(false);
   const [isDeleteError, setIsDeleteError] = useState(false);
-  const [selected, setSelected] = useState<SelectedItem[]>([]);
+  const [selected, setSelected] = useState<MultipleDeleteProfileData[]>([]);
 
   useEffect(() => {
     axios
@@ -143,11 +139,11 @@ function ProfileList(props: Props) {
     setSelected([]);
   };
 
-  const handleClick = (item: SelectedItem) => {
+  const handleClick = (item: MultipleDeleteProfileData) => {
     const selectedIndex = selected.findIndex(
       s => s.profileName === item.profileName
     );
-    let newSelected: SelectedItem[] = [];
+    let newSelected: MultipleDeleteProfileData[] = [];
 
     if (selectedIndex === -1) {
       newSelected = newSelected.concat(selected, item);
@@ -165,7 +161,7 @@ function ProfileList(props: Props) {
     setSelected(newSelected);
   };
 
-  const isSelected = (item: SelectedItem) => 
+  const isSelected = (item: MultipleDeleteProfileData) => 
     selected.some(s => s.profileName === item.profileName);
 
   const onDeleteSelected = () => {

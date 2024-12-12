@@ -23,16 +23,11 @@ import {
   Checkbox,
 } from "@mui/material";
 import { ReportProblemRounded } from "@mui/icons-material";
-import { formatMultipleDeleteSubscriberToJson } from "../lib/jsonFormating";
+import { MultipleDeleteSubscriberData, formatMultipleDeleteSubscriberToJson } from "../lib/jsonFormating";
 
 interface Props {
   refresh: boolean;
   setRefresh: (v: boolean) => void;
-}
-
-interface SelectedItem {
-  ueId: string;
-  plmnID: string;
 }
 
 function SubscriberList(props: Props) {
@@ -43,7 +38,7 @@ function SubscriberList(props: Props) {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [isLoadError, setIsLoadError] = useState(false);
   const [isDeleteError, setIsDeleteError] = useState(false);
-  const [selected, setSelected] = useState<SelectedItem[]>([]);
+  const [selected, setSelected] = useState<MultipleDeleteSubscriberData[]>([]);
 
   useEffect(() => {
     console.log("get subscribers");
@@ -150,11 +145,11 @@ function SubscriberList(props: Props) {
     setSelected([]);
   };
 
-  const handleClick = (item: SelectedItem) => {
+  const handleClick = (item: MultipleDeleteSubscriberData) => {
     const selectedIndex = selected.findIndex(
       s => s.ueId === item.ueId && s.plmnID === item.plmnID
     );
-    let newSelected: SelectedItem[] = [];
+    let newSelected: MultipleDeleteSubscriberData[] = [];
 
     if (selectedIndex === -1) {
       newSelected = newSelected.concat(selected, item);
@@ -172,7 +167,7 @@ function SubscriberList(props: Props) {
     setSelected(newSelected);
   };
 
-  const isSelected = (item: SelectedItem) => 
+  const isSelected = (item: MultipleDeleteSubscriberData) => 
     selected.some(s => s.ueId === item.ueId && s.plmnID === item.plmnID);
 
   const onDeleteSelected = () => {

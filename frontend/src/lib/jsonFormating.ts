@@ -1,4 +1,4 @@
-interface MultipleDeleteSubscriberData {
+export interface MultipleDeleteSubscriberData {
   ueId: string;
   plmnID: string;
 }
@@ -10,7 +10,7 @@ export function formatMultipleDeleteSubscriberToJson(subscribers: MultipleDelete
   }));
 }
 
-interface MultipleDeleteProfileData {
+export interface MultipleDeleteProfileData {
   profileName: string;
 }
 
