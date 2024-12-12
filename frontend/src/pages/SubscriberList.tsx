@@ -24,7 +24,6 @@ import {
 } from "@mui/material";
 import { ReportProblemRounded } from "@mui/icons-material";
 import { formatMultipleDeleteSubscriberToJson } from "../lib/utils";
-import { log } from "console";
 
 interface Props {
   refresh: boolean;
@@ -187,10 +186,8 @@ function SubscriberList(props: Props) {
     if (!result) {
       return;
     }
-    console.error(selected);
-    const data = formatMultipleDeleteSubscriberToJson(selected);
 
-    console.error(data);
+    const data = formatMultipleDeleteSubscriberToJson(selected);
 
     axios.delete("/api/subscriber", { data })
       .then(() => {
