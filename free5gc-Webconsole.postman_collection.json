@@ -71,6 +71,35 @@
 			]
 		},
 		{
+			"name": "Delete multiple subscriptions",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Token",
+						"value": "{{TOKEN}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n    {\n        \"ueId\": \"imsi-208930000000100\",\n        \"plmnID\": \"20893\"\n    },\n    {\n        \"ueId\": \"imsi-208930000000200\",\n        \"plmnID\": \"20893\"\n    },\n    {\n        \"ueId\": \"imsi-208930000000300\",\n        \"plmnID\": \"20893\"\n    }\n]\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://{{WEB_URL}}/api/subscriber"
+			},
+			"response": []
+		},
+		{
 			"name": "Add a subscription",
 			"request": {
 				"method": "POST",
@@ -1583,6 +1612,30 @@
 					}
 				],
 				"url": "http://{{WEB_URL}}/api/profile/{{PROFILE_NAME}}"
+			},
+			"response": []
+		},
+		{
+			"name": "Delete multiple profiles",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n    {\n        \"profileName\": \"profile-1\"\n    },\n    {\n        \"profileName\": \"profile-2\"\n    },\n    {\n        \"profileName\": \"profile-3\"\n    }\n]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://{{WEB_URL}}/api/profile"
 			},
 			"response": []
 		},
