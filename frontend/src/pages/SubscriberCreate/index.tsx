@@ -12,7 +12,7 @@ import SubscriberFormUeAmbr from "./SubscriberFormUeAmbr";
 import SubscriberFormSessions from "./SubscriberFormSessions";
 import { FlowsMapperImpl as SubscriptionFlowsMapperImpl, SubscriptionMapperImpl } from "../../lib/dtos/subscription";
 import { FlowsMapperImpl as ProfileFlowsMapperImpl, ProfileMapperImpl } from "../../lib/dtos/profile";
-import { parseDataRate } from "../../lib/utils";
+import { validateMBRGreaterThanGBR } from "../../lib/utils";
 
 function FormHOC(Component: React.ComponentType<any>) {
   return function (props: any) {
@@ -93,22 +93,10 @@ function SubscriberCreate() {
     const subscriberMapper = new SubscriptionMapperImpl(new SubscriptionFlowsMapperImpl());
     const subscription = subscriberMapper.mapFromDto(data);
 
-    for (let i = 0; i < subscription.QosFlows.length; i++) {
-      const qosFlow = subscription.QosFlows[i];
-      const gbrDL = parseDataRate(qosFlow.gbrDL);
-      const mbrDL = parseDataRate(qosFlow.mbrDL);
-      const gbrUL = parseDataRate(qosFlow.gbrUL);
-      const mbrUL = parseDataRate(qosFlow.mbrUL);
-
-      if (gbrDL && mbrDL && gbrDL >= mbrDL) {
-          alert("In S-NSSAI " + qosFlow.snssai + "'s Flow Rule " + (i+1) + "\nDownlink MBR must be greater than Downlink GBR");
-          return;
-      }
-
-      if (gbrUL && mbrUL && gbrUL >= mbrUL) {
-          alert("In S-NSSAI " + qosFlow.snssai + "'s Flow Rule " + (i+1) + "\nUplink MBR must be greater than Uplink GBR");
-          return;
-      }
+    const validation = validateMBRGreaterThanGBR(subscription.QosFlows);
+    if (!validation.isValid) {
+      alert(validation.error);
+      return;
     }
 
     // Iterate subscriber data number.
@@ -147,22 +135,10 @@ function SubscriberCreate() {
     const subscriberMapper = new SubscriptionMapperImpl(new SubscriptionFlowsMapperImpl());
     const subscription = subscriberMapper.mapFromDto(data);
 
-    for (let i = 0; i < subscription.QosFlows.length; i++) {
-      const qosFlow = subscription.QosFlows[i];
-      const gbrDL = parseDataRate(qosFlow.gbrDL);
-      const mbrDL = parseDataRate(qosFlow.mbrDL);
-      const gbrUL = parseDataRate(qosFlow.gbrUL);
-      const mbrUL = parseDataRate(qosFlow.mbrUL);
-
-      if (gbrDL && mbrDL && gbrDL >= mbrDL) {
-          alert("In S-NSSAI " + qosFlow.snssai + "'s Flow Rule " + (i+1) + "\nDownlink MBR must be greater than Downlink GBR");
-          return;
-      }
-
-      if (gbrUL && mbrUL && gbrUL >= mbrUL) {
-          alert("In S-NSSAI " + qosFlow.snssai + "'s Flow Rule " + (i+1) + "\nUplink MBR must be greater than Uplink GBR");
-          return;
-      }
+    const validation = validateMBRGreaterThanGBR(subscription.QosFlows);
+    if (!validation.isValid) {
+      alert(validation.error);
+      return;
     }
 
     axios
