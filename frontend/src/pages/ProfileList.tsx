@@ -183,18 +183,7 @@ function ProfileList(props: Props) {
       })
       .catch((err) => {
         setIsDeleteError(true);
-        if (err.response) {
-          const msg = "Status: " + err.response.status;
-          if (err.response.data.cause) {
-            alert(msg + ", cause: " + err.response.data.cause);
-          } else {
-            alert(msg);
-          }
-        } else {
-          alert(err.message);
-        }
-        console.log(err);
-        return;
+        console.error(err.response.data.message);
       });
   };
 
