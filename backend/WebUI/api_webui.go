@@ -596,7 +596,7 @@ func CheckAuth(c *gin.Context) bool {
 func GetTenantId(c *gin.Context) (string, error) {
 	tokenStr := c.GetHeader("Token")
 	if tokenStr == "" {
-		return "", fmt.Errorf("No token in header")
+		return "", fmt.Errorf("no token in header")
 	}
 	claims, err := ParseJWT(tokenStr)
 	if err != nil {
@@ -1339,7 +1339,7 @@ func PostSubscriberByID(c *gin.Context) {
 				return
 			}
 		}
-		dbOperation(ueId, servingPlmnId, "post", &subsData, claims)
+		dbOperation(ueId, servingPlmnId, "post", &subsData, nil, claims, false)
 	}
 	c.JSON(http.StatusCreated, gin.H{})
 }
@@ -1404,7 +1404,15 @@ func sendRechargeNotification(ueId string, rg int32) {
 	}
 }
 
-func dbOperation(ueId string, servingPlmnId string, method string, subsData *SubsData, claims jwt.MapClaims) {
+func dbOperation(
+	ueId string,
+	servingPlmnId string,
+	method string,
+	subsData *SubsData,
+	subsDatas []*SubsListIE,
+	claims jwt.MapClaims,
+	multiple bool,
+) {
 	filterUeIdOnly := bson.M{"ueId": ueId}
 	filter := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId}
 
@@ -1420,35 +1428,85 @@ func dbOperation(ueId string, servingPlmnId string, method string, subsData *Sub
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
 		}
 	} else if method == "delete" {
-		if err := mongoapi.RestfulAPIDeleteOne(authSubsDataColl, filterUeIdOnly); err != nil {
-			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
-		}
-		if err := mongoapi.RestfulAPIDeleteOne(amDataColl, filter); err != nil {
-			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
-		}
-		if err := mongoapi.RestfulAPIDeleteMany(smDataColl, filter); err != nil {
-			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
-		}
-		if err := mongoapi.RestfulAPIDeleteMany(flowRuleDataColl, filter); err != nil {
-			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
-		}
-		if err := mongoapi.RestfulAPIDeleteOne(smfSelDataColl, filter); err != nil {
-			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
-		}
-		if err := mongoapi.RestfulAPIDeleteOne(amPolicyDataColl, filterUeIdOnly); err != nil {
-			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
-		}
-		if err := mongoapi.RestfulAPIDeleteOne(smPolicyDataColl, filterUeIdOnly); err != nil {
-			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
-		}
-		if err := mongoapi.RestfulAPIDeleteMany(qosFlowDataColl, filter); err != nil {
-			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
-		}
-		if err := mongoapi.RestfulAPIDeleteMany(chargingDataColl, filter); err != nil {
-			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
-		}
-		if err := mongoapi.RestfulAPIDeleteOne(identityDataColl, filterUeIdOnly); err != nil {
-			logger.ProcLog.Errorf("DeleteIdnetityData err: %+v", err)
+		if multiple {
+			multipleFilterUeIdOnlyConditions, multipleFliterConditions := []bson.M{}, []bson.M{}
+			for _, subsData := range subsDatas {
+				multipleFilterUeIdOnlyConditions = append(multipleFilterUeIdOnlyConditions, bson.M{
+					"ueId": subsData.UeId,
+				})
+				multipleFliterConditions = append(multipleFliterConditions, bson.M{
+					"ueId":          subsData.UeId,
+					"servingPlmnId": subsData.PlmnID,
+				})
+			}
+
+			multipleFliterUeIdOnly, multipleFliter := bson.M{
+				"$or": multipleFilterUeIdOnlyConditions,
+			}, bson.M{
+				"$or": multipleFliterConditions,
+			}
+
+			if err := mongoapi.RestfulAPIDeleteMany(authSubsDataColl, multipleFliterUeIdOnly); err != nil {
+				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteMany(amDataColl, multipleFliter); err != nil {
+				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteMany(smDataColl, multipleFliter); err != nil {
+				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteMany(flowRuleDataColl, multipleFliter); err != nil {
+				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteMany(smfSelDataColl, multipleFliter); err != nil {
+				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteMany(amPolicyDataColl, multipleFliterUeIdOnly); err != nil {
+				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteMany(smPolicyDataColl, multipleFliterUeIdOnly); err != nil {
+				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteMany(qosFlowDataColl, multipleFliter); err != nil {
+				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteMany(chargingDataColl, multipleFliter); err != nil {
+				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteMany(identityDataColl, multipleFliterUeIdOnly); err != nil {
+				logger.ProcLog.Errorf("DeleteMultipleIdnetityDatas err: %+v", err)
+			}
+		} else {
+			if err := mongoapi.RestfulAPIDeleteOne(authSubsDataColl, filterUeIdOnly); err != nil {
+				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteOne(amDataColl, filter); err != nil {
+				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteMany(smDataColl, filter); err != nil {
+				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteMany(flowRuleDataColl, filter); err != nil {
+				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteOne(smfSelDataColl, filter); err != nil {
+				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteOne(amPolicyDataColl, filterUeIdOnly); err != nil {
+				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteOne(smPolicyDataColl, filterUeIdOnly); err != nil {
+				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteMany(qosFlowDataColl, filter); err != nil {
+				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteMany(chargingDataColl, filter); err != nil {
+				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteOne(identityDataColl, filterUeIdOnly); err != nil {
+				logger.ProcLog.Errorf("DeleteIdnetityData err: %+v", err)
+			}
 		}
 	}
 	if method == "post" || method == "put" {
@@ -1634,7 +1692,7 @@ func PutSubscriberByID(c *gin.Context) {
 	identityDataOperation(ueId, gpsi, "put")
 
 	var claims jwt.MapClaims = nil
-	dbOperation(ueId, servingPlmnId, "put", &subsData, claims)
+	dbOperation(ueId, servingPlmnId, "put", &subsData, nil, claims, false)
 	c.JSON(http.StatusNoContent, gin.H{})
 }
 
@@ -1759,10 +1817,30 @@ func DeleteSubscriberByID(c *gin.Context) {
 		return
 	}
 	var claims jwt.MapClaims = nil
-	dbOperation(supi, servingPlmnId, "delete", nil, claims)
+	dbOperation(supi, servingPlmnId, "delete", nil, nil, claims, false)
 
 	CdrFilePath := "/tmp/webconsole/"
 	removeCdrFile(CdrFilePath)
+
+	c.JSON(http.StatusNoContent, gin.H{})
+}
+
+// Delete multiple subscribers
+func DeleteMultipleSubscribers(c *gin.Context) {
+	setCorsHeader(c)
+	logger.ProcLog.Infoln("Delete Multiple Subscribers")
+	var subsDatas []*SubsListIE
+	if err := c.ShouldBindJSON(&subsDatas); err != nil {
+		logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"cause": "JSON format incorrect",
+		})
+		return
+	}
+
+	var claims jwt.MapClaims = nil
+
+	dbOperation("", "", "delete", nil, subsDatas, claims, true)
 
 	c.JSON(http.StatusNoContent, gin.H{})
 }
@@ -1969,11 +2047,32 @@ func DeleteProfile(c *gin.Context) {
 		return
 	}
 
-	if err = dbProfileOperation(profileName, "delete", nil); err != nil {
+	if err = dbProfileOperation(profileName, "delete", nil, nil, false); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": profileName + " has already been deleted"})
+}
+
+// Delete multiple profiles
+func DeleteMultipleProfiles(c *gin.Context) {
+	setCorsHeader(c)
+	logger.ProcLog.Infoln("Delete Multiple Profiles")
+	var profileDatas []*Profile
+	if err := c.ShouldBindJSON(&profileDatas); err != nil {
+		logger.ProcLog.Errorf("DeleteMultipleProfiles err: %+v", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"cause": "JSON format incorrect",
+		})
+		return
+	}
+
+	if err := dbProfileOperation("", "delete", nil, profileDatas, true); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{})
 }
 
 // Get profile list
@@ -2066,7 +2165,7 @@ func PostProfile(c *gin.Context) {
 	}
 
 	logger.ProcLog.Infof("PostProfile: %+v", profile.ProfileName)
-	if err = dbProfileOperation(profile.ProfileName, "post", &profile); err != nil {
+	if err = dbProfileOperation(profile.ProfileName, "post", &profile, nil, false); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
 		return
 	}
@@ -2107,25 +2206,44 @@ func PutProfile(c *gin.Context) {
 	profile.TenantId = tenantData["tenantId"].(string)
 
 	logger.ProcLog.Infof("PutProfile: %+v", profile.ProfileName)
-	if err = dbProfileOperation(profileName, "put", &profile); err != nil {
+	if err = dbProfileOperation(profileName, "put", &profile, nil, false); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"cause": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, profile)
 }
 
-func dbProfileOperation(profileName string, method string, profile *Profile) (err error) {
+func dbProfileOperation(
+	profileName string,
+	method string,
+	profile *Profile,
+	profileDatas []*Profile,
+	multiple bool,
+) (err error) {
 	err = nil
 	filter := bson.M{"profileName": profileName}
 
 	// Replace all data with new one
 	if method == "put" {
 		if err = mongoapi.RestfulAPIDeleteOne(profileDataColl, filter); err != nil {
-			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
+			logger.ProcLog.Errorf("DeleteProfile err: %+v", err)
 		}
 	} else if method == "delete" {
-		if err = mongoapi.RestfulAPIDeleteOne(profileDataColl, filter); err != nil {
-			logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
+		if multiple {
+			multipleFilterConditions := []bson.M{}
+			for _, profileData := range profileDatas {
+				multipleFilterConditions = append(multipleFilterConditions, bson.M{
+					"profileName": profileData.ProfileName,
+				})
+			}
+			multipleFilter := bson.M{"$or": multipleFilterConditions}
+			if err = mongoapi.RestfulAPIDeleteMany(profileDataColl, multipleFilter); err != nil {
+				logger.ProcLog.Errorf("DeleteMultipleProfiles err: %+v", err)
+			}
+		} else {
+			if err = mongoapi.RestfulAPIDeleteOne(profileDataColl, filter); err != nil {
+				logger.ProcLog.Errorf("DeleteProfile err: %+v", err)
+			}
 		}
 	}
 
@@ -2138,7 +2256,7 @@ func dbProfileOperation(profileName string, method string, profile *Profile) (er
 	if method == "post" || method == "put" {
 		profileBsonM := toBsonM(profile)
 		if _, err = mongoapi.RestfulAPIPost(profileDataColl, filter, profileBsonM); err != nil {
-			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
+			logger.ProcLog.Errorf("PostProfile err: %+v", err)
 		}
 	}
 

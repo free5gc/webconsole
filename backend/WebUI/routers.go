@@ -196,6 +196,13 @@ var routes = Routes{
 	},
 
 	{
+		"DeleteMultipleSubscribers",
+		http.MethodDelete,
+		"/subscriber",
+		DeleteMultipleSubscribers,
+	},
+
+	{
 		"PatchSubscriberByID",
 		http.MethodPatch,
 		"/subscriber/:ueId/:servingPlmnId",
@@ -256,6 +263,13 @@ var routes = Routes{
 		http.MethodDelete,
 		"/profile/:profileName",
 		DeleteProfile,
+	},
+
+	{
+		"Delete Multiple Profiles",
+		http.MethodDelete,
+		"/profile",
+		DeleteMultipleProfiles,
 	},
 
 	{
