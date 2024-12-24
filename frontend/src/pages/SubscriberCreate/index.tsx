@@ -12,6 +12,8 @@ import SubscriberFormUeAmbr from "./SubscriberFormUeAmbr";
 import SubscriberFormSessions from "./SubscriberFormSessions";
 import { FlowsMapperImpl as SubscriptionFlowsMapperImpl, SubscriptionMapperImpl } from "../../lib/dtos/subscription";
 import { FlowsMapperImpl as ProfileFlowsMapperImpl, ProfileMapperImpl } from "../../lib/dtos/profile";
+import { validateMBRGreaterThanGBR } from "../../lib/utils";
+
 function FormHOC(Component: React.ComponentType<any>) {
   return function (props: any) {
     return (
@@ -91,6 +93,12 @@ function SubscriberCreate() {
     const subscriberMapper = new SubscriptionMapperImpl(new SubscriptionFlowsMapperImpl());
     const subscription = subscriberMapper.mapFromDto(data);
 
+    const validation = validateMBRGreaterThanGBR(subscription.QosFlows);
+    if (!validation.isValid) {
+      alert(validation.error);
+      return;
+    }
+
     // Iterate subscriber data number.
     let supi = subscription.ueId;
     for (let i = 0; i < subscription.userNumber!; i++) {
@@ -126,6 +134,12 @@ function SubscriberCreate() {
     const data = getValues();
     const subscriberMapper = new SubscriptionMapperImpl(new SubscriptionFlowsMapperImpl());
     const subscription = subscriberMapper.mapFromDto(data);
+
+    const validation = validateMBRGreaterThanGBR(subscription.QosFlows);
+    if (!validation.isValid) {
+      alert(validation.error);
+      return;
+    }
 
     axios
       .put("/api/subscriber/" + subscription.ueId + "/" + subscription.plmnID, subscription)
