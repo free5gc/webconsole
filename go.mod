@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/fclairamb/go-log v0.4.1
-	github.com/free5gc/chf v1.0.1
+	github.com/free5gc/chf v1.0.5-0.20241224083457-ad38fc8dfa7d
 	github.com/free5gc/openapi v1.0.9-0.20240730084323-449098e08462
 	github.com/free5gc/util v1.0.6
 	github.com/gin-contrib/cors v1.6.0
@@ -80,7 +80,7 @@ require (
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/arch v0.7.0 // indirect
-	golang.org/x/net v0.23.0 // indirect
+	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
