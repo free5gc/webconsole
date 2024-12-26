@@ -20,8 +20,10 @@ import {
   TableRow,
   TablePagination,
   TextField,
+  Checkbox,
 } from "@mui/material";
 import { ReportProblemRounded } from "@mui/icons-material";
+import { MultipleDeleteSubscriberData, formatMultipleDeleteSubscriberToJson } from "../lib/jsonFormating";
 
 interface Props {
   refresh: boolean;
@@ -36,6 +38,7 @@ function SubscriberList(props: Props) {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [isLoadError, setIsLoadError] = useState(false);
   const [isDeleteError, setIsDeleteError] = useState(false);
+  const [selected, setSelected] = useState<MultipleDeleteSubscriberData[]>([]);
 
   useEffect(() => {
     console.log("get subscribers");
@@ -130,6 +133,68 @@ function SubscriberList(props: Props) {
     setSearchTerm(event.target.value);
   };
 
+  const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      const newSelected = filteredData.map(row => ({
+        ueId: row.ueId!,
+        plmnID: row.plmnID!
+      }));
+      setSelected(newSelected);
+      return;
+    }
+    setSelected([]);
+  };
+
+  const handleClick = (item: MultipleDeleteSubscriberData) => {
+    const selectedIndex = selected.findIndex(
+      s => s.ueId === item.ueId && s.plmnID === item.plmnID
+    );
+    let newSelected: MultipleDeleteSubscriberData[] = [];
+
+    if (selectedIndex === -1) {
+      newSelected = newSelected.concat(selected, item);
+    } else if (selectedIndex === 0) {
+      newSelected = newSelected.concat(selected.slice(1));
+    } else if (selectedIndex === selected.length - 1) {
+      newSelected = newSelected.concat(selected.slice(0, -1));
+    } else if (selectedIndex > 0) {
+      newSelected = newSelected.concat(
+        selected.slice(0, selectedIndex),
+        selected.slice(selectedIndex + 1),
+      );
+    }
+
+    setSelected(newSelected);
+  };
+
+  const isSelected = (item: MultipleDeleteSubscriberData) => 
+    selected.some(s => s.ueId === item.ueId && s.plmnID === item.plmnID);
+
+  const onDeleteSelected = () => {
+    const selectedItems = selected.map(item => 
+      `PLMN: ${item.plmnID}\tUE ID: ${item.ueId}`
+    );
+
+    const confirmMessage = `Are you sure you want to delete the following subscribers?\n\n${selectedItems.join('\n')}`;
+    
+    const result = window.confirm(confirmMessage);
+    if (!result) {
+      return;
+    }
+
+    const data = formatMultipleDeleteSubscriberToJson(selected);
+
+    axios.delete("/api/subscriber", { data })
+      .then(() => {
+        props.setRefresh(!props.refresh);
+        setSelected([]);
+      })
+      .catch((err) => {
+        setIsDeleteError(true);
+        console.log(err.response.data.message);
+      });
+  };
+
   if (data == null || data.length === 0) {
     return (
       <>
@@ -159,9 +224,28 @@ function SubscriberList(props: Props) {
         fullWidth
         margin="normal"
       />
+      {selected.length > 0 && (
+        <Box sx={{ mb: 2 }}>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={onDeleteSelected}
+          >
+            Delete Selected ({selected.length})
+          </Button>
+        </Box>
+      )}
       <Table>
         <TableHead>
           <TableRow>
+            <TableCell padding="checkbox">
+              <Checkbox
+                color="primary"
+                indeterminate={selected.length > 0 && selected.length < filteredData.length}
+                checked={filteredData.length > 0 && selected.length === filteredData.length}
+                onChange={handleSelectAllClick}
+              />
+            </TableCell>
             <TableCell>PLMN</TableCell>
             <TableCell>UE ID</TableCell>
             <TableCell>Delete</TableCell>
@@ -170,31 +254,48 @@ function SubscriberList(props: Props) {
           </TableRow>
         </TableHead>
         <TableBody>
-          {filteredData.map((row, index) => (
-            <TableRow key={index}>
-              <TableCell>{row.plmnID}</TableCell>
-              <TableCell>{row.ueId}</TableCell>
-              <TableCell>
-                <Button
-                  color="primary"
-                  variant="contained"
-                  onClick={() => onDelete(row.ueId!, row.plmnID!)}
-                >
-                  DELETE
-                </Button>
-              </TableCell>
-              <TableCell>
-                <Button color="primary" variant="contained" onClick={() => handleModify(row)}>
-                  VIEW
-                </Button>
-              </TableCell>
-              <TableCell>
-                <Button color="primary" variant="contained" onClick={() => handleEdit(row)}>
-                  EDIT
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
+          {filteredData.map((row, index) => {
+            const item = { ueId: row.ueId!, plmnID: row.plmnID! };
+            const isItemSelected = isSelected(item);
+            return (
+              <TableRow 
+                key={index}
+                hover
+                onClick={() => handleClick(item)}
+                role="checkbox"
+                aria-checked={isItemSelected}
+                selected={isItemSelected}
+              >
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    color="primary"
+                    checked={isItemSelected}
+                  />
+                </TableCell>
+                <TableCell>{row.plmnID}</TableCell>
+                <TableCell>{row.ueId}</TableCell>
+                <TableCell>
+                  <Button
+                    color="primary"
+                    variant="contained"
+                    onClick={() => onDelete(row.ueId!, row.plmnID!)}
+                  >
+                    DELETE
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <Button color="primary" variant="contained" onClick={() => handleModify(row)}>
+                    VIEW
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <Button color="primary" variant="contained" onClick={() => handleEdit(row)}>
+                    EDIT
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
       {pager()}
