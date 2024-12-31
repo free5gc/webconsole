@@ -2,6 +2,7 @@ name: Build Frontend
 
 on:
   push:
+    branches: [ main ]
   pull_request:
 
 jobs:
@@ -20,9 +21,11 @@ jobs:
       - name: Install dependencies
         run: |
           cd frontend
+          corepack enable
           yarn install
+
 
       - name: Build frontend
         run: |
           cd frontend
-          yarn install && yarn build
+          yarn build
