@@ -28,7 +28,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "format": "prettier --write 'src/**/*.{js,jsx,tsx,css,md,json}' --config ./.prettierrc",
-    "test": "vitest"
+    "test": "vitest",
+    "dev:trace": "VITE_CJS_TRACE=true vite dev"
   },
   "eslintConfig": {
     "extends": [
