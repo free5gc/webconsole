@@ -1,13 +1,11 @@
 package WebUI
 
-import (
-	"github.com/free5gc/openapi/models"
-)
+import "github.com/free5gc/openapi/models"
 
 type SubsData struct {
 	PlmnID                            string                                     `json:"plmnID"`
 	UeId                              string                                     `json:"ueId"`
-	AuthenticationSubscription        models.AuthenticationSubscription          `json:"AuthenticationSubscription"`
+	WebAuthenticationSubscription     WebAuthenticationSubscription              `json:"AuthenticationSubscription"`
 	AccessAndMobilitySubscriptionData models.AccessAndMobilitySubscriptionData   `json:"AccessAndMobilitySubscriptionData"`
 	SessionManagementSubscriptionData []models.SessionManagementSubscriptionData `json:"SessionManagementSubscriptionData"`
 	SmfSelectionSubscriptionData      models.SmfSelectionSubscriptionData        `json:"SmfSelectionSubscriptionData"`

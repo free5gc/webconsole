@@ -121,10 +121,11 @@ func GetChargingRecord(c *gin.Context) {
 
 	// Get supi of UEs
 	var uesJsonData interface{}
-	if amfUris := webuiSelf.GetOamUris(models.NfType_AMF); amfUris != nil {
+	if amfUris := webuiSelf.GetOamUris(models.NrfNfManagementNfType_AMF); amfUris != nil {
 		requestUri := fmt.Sprintf("%s/namf-oam/v1/registered-ue-context", amfUris[0])
 
-		ctx, pd, tokerErr := webui_context.GetSelf().GetTokenCtx(models.ServiceName_NAMF_OAM, models.NfType_AMF)
+		ctx, pd, tokerErr := webui_context.GetSelf().GetTokenCtx(
+			models.ServiceName_NAMF_OAM, models.NrfNfManagementNfType_AMF)
 		if tokerErr != nil {
 			logger.ProcLog.Errorf("GetTokenCtx error: %+v", tokerErr)
 			c.JSON(http.StatusInternalServerError, pd)
