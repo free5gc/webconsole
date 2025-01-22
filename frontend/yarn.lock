@@ -3767,7 +3767,7 @@ __metadata:
     react-hook-form: "npm:^7.51.5"
     react-router-dom: "npm:^6.22.2"
     typescript: "npm:^5.3.3"
-    vite: "npm:^5.2.14"
+    vite: "npm:^5.4.12"
     vitest: "npm:^2.0.2"
     web-vitals: "npm:^3.5.2"
     zod: "npm:^3.23.8"
@@ -5095,9 +5095,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite@npm:^5.2.14":
-  version: 5.4.10
-  resolution: "vite@npm:5.4.10"
+"vite@npm:^5.4.12":
+  version: 5.4.14
+  resolution: "vite@npm:5.4.14"
   dependencies:
     esbuild: "npm:^0.21.3"
     fsevents: "npm:~2.3.3"
@@ -5134,7 +5134,7 @@ __metadata:
       optional: true
   bin:
     vite: bin/vite.js
-  checksum: 10c0/4ef4807d2fd166a920de244dbcec791ba8a903b017a7d8e9f9b4ac40d23f8152c1100610583d08f542b47ca617a0505cfc5f8407377d610599d58296996691ed
+  checksum: 10c0/8842933bd70ca6a98489a0bb9c8464bec373de00f9a97c8c7a4e64b24d15c88bfaa8c1acb38a68c3e5eb49072ffbccb146842c2d4edcdd036a9802964cffe3d1
   languageName: node
   linkType: hard
 
