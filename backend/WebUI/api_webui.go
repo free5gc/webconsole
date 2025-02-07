@@ -1793,7 +1793,7 @@ func removeCdrFile(cdrFilePath string) {
 
 	for _, file := range files {
 		if _, err = os.Stat(file); err == nil {
-			logger.BillingLog.Infof("Remove CDR file: " + file)
+			logger.BillingLog.Infof("Remove CDR file: %s", file)
 			if err = os.Remove(file); err != nil {
 				logger.BillingLog.Warnf("Failed to remove CDR file: %s\n", file)
 			}
@@ -1952,6 +1952,12 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{})
 			return
 		}
+		if err = webui_context.GetSelf().RequestBindToken(req, ctx); err != nil {
+			logger.ProcLog.Error(err)
+			c.JSON(http.StatusInternalServerError, gin.H{})
+			return
+		}
+
 		resp, err := httpsClient.Do(req)
 		if err != nil {
 			logger.ProcLog.Error(err)
@@ -1963,7 +1969,6 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 				logger.ProcLog.Error(closeErr)
 			}
 		}()
-
 		sendResponseToClient(c, resp)
 	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{
