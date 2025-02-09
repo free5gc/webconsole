@@ -9,50 +9,15 @@ import {
   TableCell,
   TableRow,
   TextField,
-  Switch,
 } from "@mui/material";
 import { useProfileForm } from "../../hooks/profile-form";
 import { toHex } from "../../lib/utils";
 import FormChargingConfig from "./FormCharingConfig";
 import FormFlowRule from "./FormFlowRule";
 import FormUpSecurity from "./FormUpSecurity";
-import axios from "../../axios";
 import { Controller, useFieldArray } from "react-hook-form";
 import { defaultDnnConfig, defaultSnssaiConfiguration } from "../../lib/dtos/profile";
 import { useState } from "react";
-
-interface VerifyScope {
-  supi: string;
-  sd: string;
-  sst: number;
-  dnn: string;
-  ipaddr: string;
-}
-
-interface VerifyResult {
-  ipaddr: string;
-  valid: boolean;
-  cause: string;
-}
-
-const handleVerifyStaticIp = (sd: string, sst: number, dnn: string, ipaddr: string) => {
-  const scope: VerifyScope = {
-    supi: "",
-    sd: sd,
-    sst: sst,
-    dnn: dnn,
-    ipaddr: ipaddr,
-  };
-  axios.post("/api/verify-staticip", scope).then((res) => {
-    const result = res.data as VerifyResult;
-    console.log(result);
-    if (result["valid"] === true) {
-      alert("OK\n" + result.ipaddr);
-    } else {
-      alert("NO!\nCause: " + result["cause"]);
-    }
-  });
-};
 
 export default function ProfileFormSessions() {
   const { register, validationErrors, watch, control, setFocus } = useProfileForm();
