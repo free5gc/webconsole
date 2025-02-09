@@ -258,7 +258,7 @@ export default function ProfileFormSessions() {
                       </TableBody>
                     </Table>
 
-                    <Table>
+                    {/* <Table>
                       <TableBody>
                         <TableRow>
                           <TableCell style={{ width: "10%" }}>
@@ -269,26 +269,26 @@ export default function ProfileFormSessions() {
                             />
                           </TableCell>
 
-                          {/* <TableCell style={{ width: "70%" }}>
-                                        <TextField
-                                            {...register(
-                                                `SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.staticIpv4Address`,
-                                            )}
-                                            error={
-                                                validationErrors.SnssaiConfigurations?.[index]?.dnnConfigurations?.[
-                                                    dnn
-                                                ]?.staticIpv4Address !== undefined
-                                            }
-                                            disabled={
-                                                !watch(
-                                                    `SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.enableStaticIpv4Address`,
-                                                )
-                                            }
-                                            label="IPv4 Address"
-                                            variant="outlined"
-                                            fullWidth
-                                        />
-                                    </TableCell> */}
+                          <TableCell style={{ width: "70%" }}>
+                            <TextField
+                              {...register(
+                                `SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.staticIpv4Address`,
+                              )}
+                              error={
+                                validationErrors.SnssaiConfigurations?.[index]?.dnnConfigurations?.[
+                                  dnn
+                                ]?.staticIpv4Address !== undefined
+                              }
+                              disabled={
+                                !watch(
+                                  `SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.enableStaticIpv4Address`,
+                                )
+                              }
+                              label="IPv4 Address"
+                              variant="outlined"
+                              fullWidth
+                            />
+                          </TableCell>
                           <TableCell style={{ width: "20%" }}>
                             <Button
                               color="secondary"
@@ -315,7 +315,7 @@ export default function ProfileFormSessions() {
                           </TableCell>
                         </TableRow>
                       </TableBody>
-                    </Table>
+                    </Table> */}
 
                     <FormFlowRule
                       snssaiIndex={index}
