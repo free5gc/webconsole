@@ -262,9 +262,14 @@ export default function SubscriberFormSessions() {
                       <TableBody>
                         <TableRow>
                           <TableCell style={{ width: "10%" }}>
-                            <Switch
-                              {...register(
-                                `SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.enableStaticIpv4Address`,
+                            <Controller
+                              control={control}
+                              name={`SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.enableStaticIpv4Address`}
+                              render={({ field }) => (
+                                <Switch
+                                  checked={field.value}
+                                  onChange={(e) => field.onChange(e.target.checked)}
+                                />
                               )}
                             />
                           </TableCell>
