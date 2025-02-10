@@ -9,50 +9,15 @@ import {
   TableCell,
   TableRow,
   TextField,
-  Switch,
 } from "@mui/material";
 import { useProfileForm } from "../../hooks/profile-form";
 import { toHex } from "../../lib/utils";
 import FormChargingConfig from "./FormCharingConfig";
 import FormFlowRule from "./FormFlowRule";
 import FormUpSecurity from "./FormUpSecurity";
-import axios from "../../axios";
 import { Controller, useFieldArray } from "react-hook-form";
 import { defaultDnnConfig, defaultSnssaiConfiguration } from "../../lib/dtos/profile";
 import { useState } from "react";
-
-interface VerifyScope {
-  supi: string;
-  sd: string;
-  sst: number;
-  dnn: string;
-  ipaddr: string;
-}
-
-interface VerifyResult {
-  ipaddr: string;
-  valid: boolean;
-  cause: string;
-}
-
-const handleVerifyStaticIp = (sd: string, sst: number, dnn: string, ipaddr: string) => {
-  const scope: VerifyScope = {
-    supi: "",
-    sd: sd,
-    sst: sst,
-    dnn: dnn,
-    ipaddr: ipaddr,
-  };
-  axios.post("/api/verify-staticip", scope).then((res) => {
-    const result = res.data as VerifyResult;
-    console.log(result);
-    if (result["valid"] === true) {
-      alert("OK\n" + result.ipaddr);
-    } else {
-      alert("NO!\nCause: " + result["cause"]);
-    }
-  });
-};
 
 export default function ProfileFormSessions() {
   const { register, validationErrors, watch, control, setFocus } = useProfileForm();
@@ -253,65 +218,6 @@ export default function ProfileFormSessions() {
                               fullWidth
                               type="number"
                             />
-                          </TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-
-                    <Table>
-                      <TableBody>
-                        <TableRow>
-                          <TableCell style={{ width: "10%" }}>
-                            <Switch
-                              {...register(
-                                `SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.enableStaticIpv4Address`,
-                              )}
-                            />
-                          </TableCell>
-
-                          {/* <TableCell style={{ width: "70%" }}>
-                                        <TextField
-                                            {...register(
-                                                `SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.staticIpv4Address`,
-                                            )}
-                                            error={
-                                                validationErrors.SnssaiConfigurations?.[index]?.dnnConfigurations?.[
-                                                    dnn
-                                                ]?.staticIpv4Address !== undefined
-                                            }
-                                            disabled={
-                                                !watch(
-                                                    `SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.enableStaticIpv4Address`,
-                                                )
-                                            }
-                                            label="IPv4 Address"
-                                            variant="outlined"
-                                            fullWidth
-                                        />
-                                    </TableCell> */}
-                          <TableCell style={{ width: "20%" }}>
-                            <Button
-                              color="secondary"
-                              variant="contained"
-                              onClick={() =>
-                                handleVerifyStaticIp(
-                                  row.sd,
-                                  row.sst,
-                                  dnn,
-                                  watch(
-                                    `SnssaiConfigurations.${index}.dnnConfigurations.${dnn}.staticIpv4Address`,
-                                  ) ?? "",
-                                )
-                              }
-                              sx={{
-                                m: 2,
-                                backgroundColor: "blue",
-                                "&:hover": { backgroundColor: "#7496c2" },
-                              }}
-                              disabled={row.dnnConfigurations[dnn].staticIpv4Address?.length == 0}
-                            >
-                              Verify
-                            </Button>
                           </TableCell>
                         </TableRow>
                       </TableBody>
