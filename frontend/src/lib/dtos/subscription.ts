@@ -345,6 +345,7 @@ class SubscriptionMapperImpl implements SubscriptionMapper {
                 downlink: value.sessionAmbr?.downlink ?? "",
               },
               enableStaticIpv4Address: value.staticIpAddress?.length !== 0,
+              staticIpv4Address: value.staticIpAddress?.[0]?.ipv4Addr ?? "",
               flowRules: this.parseDnnFlowRules(s.singleNssai, key, subscription),
               upSecurity: value.upSecurity,
             } satisfies DnnConfigurationDTO,
