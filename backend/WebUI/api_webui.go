@@ -840,6 +840,7 @@ func GetSubscribers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
+
 	for _, amData := range amDataList {
 		ueId := amData["ueId"]
 		servingPlmnId := amData["servingPlmnId"]
@@ -870,6 +871,7 @@ func GetSubscribers(c *gin.Context) {
 			subsList = append(subsList, tmp)
 		}
 	}
+
 	c.JSON(http.StatusOK, subsList)
 }
 
@@ -1261,6 +1263,9 @@ func dbOperation(
 			if err := mongoapi.RestfulAPIDeleteMany(authSubsDataColl, multipleFliterUeIdOnly); err != nil {
 				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
 			}
+			if err := mongoapi.RestfulAPIDeleteMany(authWebSubsDataColl, multipleFliterUeIdOnly); err != nil {
+				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
+			}
 			if err := mongoapi.RestfulAPIDeleteMany(amDataColl, multipleFliter); err != nil {
 				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
 			}
@@ -1290,6 +1295,9 @@ func dbOperation(
 			}
 		} else {
 			if err := mongoapi.RestfulAPIDeleteOne(authSubsDataColl, filterUeIdOnly); err != nil {
+				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
+			}
+			if err := mongoapi.RestfulAPIDeleteOne(authWebSubsDataColl, filterUeIdOnly); err != nil {
 				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
 			}
 			if err := mongoapi.RestfulAPIDeleteOne(amDataColl, filter); err != nil {
