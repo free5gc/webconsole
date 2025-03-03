@@ -33,10 +33,10 @@ func GetSmfUserPlaneInfo() (interface{}, error) {
 	var jsonData interface{}
 
 	// TODO: support fetching data from multiple SMF
-	if smfUris := webuiSelf.GetOamUris(models.NfType_SMF); smfUris != nil {
+	if smfUris := webuiSelf.GetOamUris(models.NrfNfManagementNfType_SMF); smfUris != nil {
 		requestUri := fmt.Sprintf("%s/nsmf-oam/v1/user-plane-info/", smfUris[0])
 
-		ctx, pd, err := webuiSelf.GetTokenCtx(models.ServiceName_NSMF_OAM, models.NfType_SMF)
+		ctx, pd, err := webuiSelf.GetTokenCtx(models.ServiceName_NSMF_OAM, models.NrfNfManagementNfType_SMF)
 		if err != nil {
 			logger.ConsumerLog.Infof("GetTokenCtx: service %v, err: %+v", models.ServiceName_NSMF_OAM, err)
 			return pd, err

@@ -539,6 +539,7 @@ export const defaultSubscriptionDTO = (): SubscriptionDTO => ({
             uplink: "1000 Mbps",
             downlink: "1000 Mbps",
           },
+          staticIpv4Address: "",
           flowRules: [
             {
               filter: "1.1.1.1/32",
@@ -575,6 +576,7 @@ export const defaultSubscriptionDTO = (): SubscriptionDTO => ({
             uplink: "1000 Mbps",
             downlink: "1000 Mbps",
           },
+          staticIpv4Address: "",
           flowRules: [
             {
               filter: "1.1.1.1/32",
