@@ -4,13 +4,15 @@ export function toHex(v: number | undefined): string {
 
 export function parseDataRate(rate: string | undefined): number {
     if (!rate) return 0;
-    
+
+    if (!/^\d+\s*(Gbps|Mbps|Kbps|bps)$/i.test(rate)) return -1;
+
     const match = rate.match(/^(\d+)\s*(Gbps|Mbps|Kbps|bps)$/i);
     if (!match) return 0;
-    
+
     const [, value, unit] = match;
     const numValue = parseFloat(value);
-    
+
     switch (unit.toLowerCase()) {
         case 'gbps':
             return numValue * 1000000;
