@@ -1,4 +1,15 @@
+import { Subscription } from "../../api";
 import { parseDataRate } from "../utils";
+
+export function validateSUPIPrefixSameToPLMN(subscription: Subscription): { isValid: boolean; error?: string } {
+    const supi = subscription.ueId;
+    const plmn = subscription.plmnID;
+    const supiPrefix = supi.substring(0, 5);
+    if (supiPrefix !== plmn) {
+        return { isValid: false, error: "SUPI Prefix must be same as PLMN" };
+    }
+    return { isValid: true };
+}
 
 export function validateMBRGreaterThanGBR(QosFlows: any[]): { isValid: boolean; error?: string } {
     for (let i = 0; i < QosFlows.length; i++) {
