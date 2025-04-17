@@ -155,8 +155,8 @@ github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db/go.mod h1:7dvUGVsVBjqR7JHJk0brhHOZYGmfBYOrK0ZhYMEtBr4=
 github.com/franela/goreq v0.0.0-20171204163338-bcd34c9993f8/go.mod h1:ZhphrRTfi2rbfLwlschooIH4+wKKDR4Pdxhh+TRoA20=
-github.com/free5gc/chf v1.0.5-0.20241224083457-ad38fc8dfa7d h1:erFtoYCCD4Ix4783dsrEV3Rks9djSiAkmHDgOwWrkh8=
-github.com/free5gc/chf v1.0.5-0.20241224083457-ad38fc8dfa7d/go.mod h1:iSf2baY4BLGqX3s6vWFBHzOE7m2BqWqXIjvkIfIfLn4=
+github.com/free5gc/chf v1.1.1 h1:b1SCyRg+nRYIqNCj6fAM0zSg5oRMOejBFpS5o644p9s=
+github.com/free5gc/chf v1.1.1/go.mod h1:SWzWu3lL8lqhZlTuDIQ1B0VkYJTb+a3art9gySkvMM8=
 github.com/free5gc/openapi v1.0.9-0.20250102055216-bb5814d1e736 h1:TIEUa/PaEdzXh47vQEMV7jOSmKd2ugP/4NjeBDPK0OM=
 github.com/free5gc/openapi v1.0.9-0.20250102055216-bb5814d1e736/go.mod h1:ATF7/Id4loKIDCX3DYwePBUxIdOBixxNKBVL1s5xYlU=
 github.com/free5gc/smf v1.2.4 h1:tYB/6UKWlUCEzWrg7icM7vxXkGlWKo2WixLtYmf2qW4=

@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/fclairamb/go-log v0.4.1
-	github.com/free5gc/chf v1.0.5-0.20241224083457-ad38fc8dfa7d
+	github.com/free5gc/chf v1.1.1
 	github.com/free5gc/openapi v1.0.9-0.20250102055216-bb5814d1e736
 	github.com/free5gc/util v1.0.7-0.20240911054252-194b3b49aba9
 	github.com/gin-contrib/cors v1.6.0
