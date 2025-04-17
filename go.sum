@@ -157,8 +157,8 @@ github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db/go.mod h1:7dvUGVsVB
 github.com/franela/goreq v0.0.0-20171204163338-bcd34c9993f8/go.mod h1:ZhphrRTfi2rbfLwlschooIH4+wKKDR4Pdxhh+TRoA20=
 github.com/free5gc/chf v1.1.1 h1:b1SCyRg+nRYIqNCj6fAM0zSg5oRMOejBFpS5o644p9s=
 github.com/free5gc/chf v1.1.1/go.mod h1:SWzWu3lL8lqhZlTuDIQ1B0VkYJTb+a3art9gySkvMM8=
-github.com/free5gc/openapi v1.0.9-0.20250102055216-bb5814d1e736 h1:TIEUa/PaEdzXh47vQEMV7jOSmKd2ugP/4NjeBDPK0OM=
-github.com/free5gc/openapi v1.0.9-0.20250102055216-bb5814d1e736/go.mod h1:ATF7/Id4loKIDCX3DYwePBUxIdOBixxNKBVL1s5xYlU=
+github.com/free5gc/openapi v1.1.0 h1:bOTp6vKC2MxupEXD76qeUL1MppV/SmXnka09JQJADZ0=
+github.com/free5gc/openapi v1.1.0/go.mod h1:Q2vSmc1xpSE9Dy8rbNSWQwv7cFLHbZvKhq528vj6Wbg=
 github.com/free5gc/smf v1.2.4 h1:tYB/6UKWlUCEzWrg7icM7vxXkGlWKo2WixLtYmf2qW4=
 github.com/free5gc/smf v1.2.4/go.mod h1:ggQ9oJ/m9rfQOjb2piz00O5S6629pHhv8AsE9Xvk5oA=
 github.com/free5gc/util v1.0.7-0.20240911054252-194b3b49aba9 h1:7mejUKjXHmfVL4LK2ns6ug/QNRuAuyVQhdDRuAXlb8k=
@@ -209,8 +209,6 @@ github.com/goccy/go-json v0.10.2/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MG
 github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/gogo/protobuf v1.1.1/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
 github.com/gogo/protobuf v1.3.2/go.mod h1:P1XiOD3dCwIKUDQYPy72D8LYyHL2YPYrpS2s69NZV8Q=
-github.com/golang-jwt/jwt v3.2.1+incompatible h1:73Z+4BJcrTC+KczS6WvTPvRGOp1WmfEP4Q1lOd9Z/+c=
-github.com/golang-jwt/jwt v3.2.1+incompatible/go.mod h1:8pz2t5EyA70fFQQSrl6XZXzqecmYZeUEB8OUGHkxJ+I=
 github.com/golang-jwt/jwt/v5 v5.2.2 h1:Rl4B7itRWVtYIHFrSNd7vhTiz9UpLdi6gZhZ3wEeDy8=
 github.com/golang-jwt/jwt/v5 v5.2.2/go.mod h1:pqrtFR0X4osieyHYxtmOUWsAWrfe1Q5UVIyoH402zdk=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
