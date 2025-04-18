@@ -11,7 +11,7 @@ import ProfileFormBasic from "./ProfileFormBasic";
 import ProfileFormUeAmbr from "./ProfileFormUeAmbr";
 import ProfileFormSessions from "./ProfileFormSessions";
 import { ProfileMapperImpl, FlowsMapperImpl } from "../../lib/dtos/profile";
-import { validateMBRGreaterThanGBR } from "../../lib/utils";
+import { validateProfile } from "../../lib/validator/profileValidator";
 
 function FormHOC(Component: React.ComponentType<any>) {
     return function (props: any) {
@@ -68,7 +68,7 @@ function ProfileCreate() {
     const profileMapper = new ProfileMapperImpl(new FlowsMapperImpl());
     const profile = profileMapper.mapFromDto(data);
 
-    const validation = validateMBRGreaterThanGBR(profile.QosFlows);
+    const validation = validateProfile(profile);
     if (!validation.isValid) {
       alert(validation.error);
       return;
@@ -104,7 +104,7 @@ function ProfileCreate() {
     const profileMapper = new ProfileMapperImpl(new FlowsMapperImpl());
     const profile = profileMapper.mapFromDto(data);
 
-    const validation = validateMBRGreaterThanGBR(profile.QosFlows);
+    const validation = validateProfile(profile);
     if (!validation.isValid) {
       alert(validation.error);
       return;
