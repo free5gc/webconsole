@@ -6,22 +6,14 @@ export function validateSubscription(subscription: Subscription): { isValid: boo
 
     validation = validateSUPIPrefixSameToPLMN(subscription);
     if (!validation.isValid) {
-        validation.isValid = false;
-        validation.error = validation.error;
         return validation;
     }
-
     validation = validateDNNAMBR(subscription.SessionManagementSubscriptionData);
     if (!validation.isValid) {
-        validation.isValid = false;
-        validation.error = validation.error;
         return validation;
     }
-
     validation = validateMBRGreaterThanGBR(subscription.QosFlows);
     if (!validation.isValid) {
-        validation.isValid = false;
-        validation.error = validation.error;
         return validation;
     }
 

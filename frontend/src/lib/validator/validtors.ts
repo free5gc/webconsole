@@ -15,22 +15,26 @@ export function validateDNNAMBR(sessionManagementSubscriptionDatas: SessionManag
     for (let i = 0; i < sessionManagementSubscriptionDatas.length; i++) {
         const sessionManagementSubscriptionData = sessionManagementSubscriptionDatas[i];
         if (!sessionManagementSubscriptionData.dnnConfigurations) {
-            return { isValid: true};
+            return { isValid: true };
         }
+
         for (const dnn in sessionManagementSubscriptionData.dnnConfigurations) {
             const dnnConfiguration = sessionManagementSubscriptionData.dnnConfigurations[dnn];
             if (!dnnConfiguration.sessionAmbr) {
-                return { isValid: true};
+                return { isValid: true };
             }
+
             const uplinkAmbr = dnnConfiguration.sessionAmbr.uplink;
             const downlinkAmbr = dnnConfiguration.sessionAmbr.downlink;
             const uplinkFlow = parseDataRate(uplinkAmbr);
+
             if (uplinkFlow === -1) {
                 return {
                     isValid: false,
                     error: "In S-NSSAI " + sessionManagementSubscriptionData.singleNssai.sd + "'s DNN: " + dnn + "\nuplink AMBR is invalid"
                 };
             }
+
             const downlinkFlow = parseDataRate(downlinkAmbr);
             if (downlinkFlow === -1) {
                 return {
@@ -40,6 +44,7 @@ export function validateDNNAMBR(sessionManagementSubscriptionDatas: SessionManag
             }
         }
     }
+
     return { isValid: true };
 }
 
@@ -53,6 +58,7 @@ export function validateMBRGreaterThanGBR(QosFlows: any[]): { isValid: boolean; 
                 error: `In S-NSSAI ${qosFlow.snssai}'s Flow Rule\nDownlink GBR is invalid`
             };
         }
+
         const mbrDL = parseDataRate(qosFlow.mbrDL);
         if (mbrDL === -1) {
             return {
@@ -60,6 +66,7 @@ export function validateMBRGreaterThanGBR(QosFlows: any[]): { isValid: boolean; 
                 error: `In S-NSSAI ${qosFlow.snssai}'s Flow Rule\nDownlink MBR is invalid`
             };
         }
+
         const gbrUL = parseDataRate(qosFlow.gbrUL);
         if (gbrUL === -1) {
             return {
@@ -67,6 +74,7 @@ export function validateMBRGreaterThanGBR(QosFlows: any[]): { isValid: boolean; 
                 error: `In S-NSSAI ${qosFlow.snssai}'s Flow Rule\nUplink GBR is invalid`
             };
         }
+
         const mbrUL = parseDataRate(qosFlow.mbrUL);
         if (mbrUL === -1) {
             return {
@@ -74,21 +82,7 @@ export function validateMBRGreaterThanGBR(QosFlows: any[]): { isValid: boolean; 
                 error: `In S-NSSAI ${qosFlow.snssai}'s Flow Rule\nUplink MBR is invalid`
             };
         }
-
-        if (gbrDL && mbrDL && gbrDL >= mbrDL) {
-            return {
-                isValid: false,
-                error: `In S-NSSAI ${qosFlow.snssai}'s Flow Rule\nDownlink MBR must be greater than Downlink GBR`
-            };
-        }
-
-        if (gbrUL && mbrUL && gbrUL >= mbrUL) {
-            return {
-                isValid: false,
-                error: `In S-NSSAI ${qosFlow.snssai}'s Flow Rule\nUplink MBR must be greater than Uplink GBR`
-            };
-        }
     }
-    
+
     return { isValid: true };
 }

@@ -6,15 +6,10 @@ export function validateProfile(profile: Profile): { isValid: boolean; error?: s
 
     validation = validateDNNAMBR(profile.SessionManagementSubscriptionData);
     if (!validation.isValid) {
-        validation.isValid = false;
-        validation.error = validation.error;
         return validation;
     }
-
     validation = validateMBRGreaterThanGBR(profile.QosFlows);
     if (!validation.isValid) {
-        validation.isValid = false;
-        validation.error = validation.error;
         return validation;
     }
 
