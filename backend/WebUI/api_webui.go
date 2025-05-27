@@ -17,8 +17,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/free5gc/openapi/models"
@@ -1419,7 +1418,7 @@ func dbOperation(
 		} else {
 			for _, chargingData := range subsData.ChargingDatas {
 				var previousChargingData ChargingData
-				var chargingFilter primitive.M
+				var chargingFilter bson.M
 
 				chargingDataBsonM := toBsonM(chargingData)
 				// Clear quota for offline charging flow
