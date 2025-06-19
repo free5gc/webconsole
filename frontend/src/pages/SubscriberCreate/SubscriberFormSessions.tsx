@@ -117,7 +117,7 @@ export default function SubscriberFormSessions() {
         <div key={row.id} id={toHex(row.sst) + row.sd}>
           <Grid container spacing={2}>
             <Grid item xs={10}>
-              <h3>S-NSSAI Configuragtion ({toHex(row.sst) + row.sd})</h3>
+              <h3>S-NSSAI Configuration ({toHex(row.sst) + row.sd})</h3>
             </Grid>
             <Grid item xs={2}>
               <Box display="flex" justifyContent="flex-end">
@@ -134,7 +134,7 @@ export default function SubscriberFormSessions() {
           </Grid>
           <Card variant="outlined">
             <Table>
-              <TableBody id={"S-NSSAI Configuragtion" + toHex(row.sst) + row.sd}>
+              <TableBody id={"S-NSSAI Configuration" + toHex(row.sst) + row.sd}>
                 <TableRow>
                   <TableCell style={{ width: "50%" }}>
                     <TextField
