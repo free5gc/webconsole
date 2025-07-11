@@ -12,7 +12,7 @@ import SubscriberFormUeAmbr from "./SubscriberFormUeAmbr";
 import SubscriberFormSessions from "./SubscriberFormSessions";
 import { FlowsMapperImpl as SubscriptionFlowsMapperImpl, SubscriptionMapperImpl } from "../../lib/dtos/subscription";
 import { FlowsMapperImpl as ProfileFlowsMapperImpl, ProfileMapperImpl } from "../../lib/dtos/profile";
-import { validateMBRGreaterThanGBR } from "../../lib/utils";
+import { validateSubscription } from "../../lib/validator/subscriptionValidator";
 
 function FormHOC(Component: React.ComponentType<any>) {
   return function (props: any) {
@@ -93,7 +93,7 @@ function SubscriberCreate() {
     const subscriberMapper = new SubscriptionMapperImpl(new SubscriptionFlowsMapperImpl());
     const subscription = subscriberMapper.mapFromDto(data);
 
-    const validation = validateMBRGreaterThanGBR(subscription.QosFlows);
+    const validation = validateSubscription(subscription);
     if (!validation.isValid) {
       alert(validation.error);
       return;
@@ -135,7 +135,7 @@ function SubscriberCreate() {
     const subscriberMapper = new SubscriptionMapperImpl(new SubscriptionFlowsMapperImpl());
     const subscription = subscriberMapper.mapFromDto(data);
 
-    const validation = validateMBRGreaterThanGBR(subscription.QosFlows);
+    const validation = validateSubscription(subscription);
     if (!validation.isValid) {
       alert(validation.error);
       return;
