@@ -22,6 +22,12 @@ import (
 	"github.com/free5gc/webconsole/backend/webui_context"
 )
 
+// Configuration constants
+const (
+	CorsMaxAge            = 86400
+	ServerShutdownTimeout = 3 * time.Second
+)
+
 type WebuiApp struct {
 	cfg      *factory.Config
 	webuiCtx *webui_context.WEBUIContext
@@ -142,7 +148,7 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		AllowAllOrigins:  true,
-		MaxAge:           86400,
+		MaxAge:           CorsMaxAge,
 	}))
 
 	self := webui_context.GetSelf()
@@ -190,7 +196,7 @@ func (a *WebuiApp) Terminate() {
 	if a.server != nil {
 		logger.MainLog.Infoln("stopping HTTP server")
 
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), ServerShutdownTimeout)
 		defer cancel()
 		if err := a.server.Shutdown(ctx); err != nil {
 			logger.MainLog.Fatal("HTTP server forced to shutdown: ", err)

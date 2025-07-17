@@ -9,6 +9,12 @@ import (
 	"github.com/free5gc/webconsole/backend/logger"
 )
 
+// Constants for QoS profile configuration
+const (
+	DefaultVar5qi        = 9
+	DefaultPriorityLevel = 8
+)
+
 func GetSampleJSON(c *gin.Context) {
 	setCorsHeader(c)
 
@@ -92,11 +98,11 @@ func GetSampleJSON(c *gin.Context) {
 						Uplink:   "1000 Kbps",
 					},
 					Var5gQosProfile: &models.SubscribedDefaultQos{
-						Var5qi: 9,
+						Var5qi: DefaultVar5qi,
 						Arp: &models.Arp{
-							PriorityLevel: 8,
+							PriorityLevel: DefaultPriorityLevel,
 						},
-						PriorityLevel: 8,
+						PriorityLevel: DefaultPriorityLevel,
 					},
 				},
 			},
@@ -121,11 +127,11 @@ func GetSampleJSON(c *gin.Context) {
 						Uplink:   "1000 Kbps",
 					},
 					Var5gQosProfile: &models.SubscribedDefaultQos{
-						Var5qi: 9,
+						Var5qi: DefaultVar5qi,
 						Arp: &models.Arp{
-							PriorityLevel: 8,
+							PriorityLevel: DefaultPriorityLevel,
 						},
-						PriorityLevel: 8,
+						PriorityLevel: DefaultPriorityLevel,
 					},
 				},
 			},
