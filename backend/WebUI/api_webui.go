@@ -44,6 +44,13 @@ const (
 	profileDataColl     = "profileData" // store profile data
 )
 
+// Security and configuration constants
+const (
+	DefaultBcryptCost  = 12
+	JWTKeySize         = 256
+	JWTExpirationHours = 24
+)
+
 var jwtKey = "" // for generating JWT
 
 var httpsClient *http.Client
@@ -88,7 +95,7 @@ func SetAdmin() {
 	// Create Admin user
 	logger.InitLog.Infoln("Create user: admin")
 
-	hash, err := bcrypt.GenerateFromPassword([]byte("free5gc"), 12)
+	hash, err := bcrypt.GenerateFromPassword([]byte("free5gc"), DefaultBcryptCost)
 	if err != nil {
 		logger.InitLog.Errorf("GenerateFromPassword err: %+v", err)
 	}
@@ -107,7 +114,7 @@ func SetAdmin() {
 }
 
 func InitJwtKey() error {
-	randomBytes := make([]byte, 256)
+	randomBytes := make([]byte, JWTKeySize)
 	_, err := rand.Read(randomBytes)
 	if err != nil {
 		return errors.Wrap(err, "Init JWT key error")
@@ -289,7 +296,7 @@ func JWT(email, userId, tenantId string) string {
 	claims := token.Claims.(jwt.MapClaims)
 	claims["sub"] = userId
 	claims["iat"] = time.Now()
-	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
+	claims["exp"] = time.Now().Add(time.Hour * JWTExpirationHours).Unix()
 	claims["email"] = email
 	claims["tenantId"] = tenantId
 
@@ -696,7 +703,7 @@ func PostUserByID(c *gin.Context) {
 
 	userData.TenantId = tenantId
 	userData.UserId = uuid.Must(uuid.NewRandom()).String()
-	hash, err := bcrypt.GenerateFromPassword([]byte(userData.EncryptedPassword), 12)
+	hash, err := bcrypt.GenerateFromPassword([]byte(userData.EncryptedPassword), DefaultBcryptCost)
 	if err != nil {
 		logger.ProcLog.Errorf("PostUserByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
@@ -772,7 +779,7 @@ func PutUserByID(c *gin.Context) {
 	}
 
 	if newUserData.EncryptedPassword != "" {
-		hash, err_gen := bcrypt.GenerateFromPassword([]byte(newUserData.EncryptedPassword), 12)
+		hash, err_gen := bcrypt.GenerateFromPassword([]byte(newUserData.EncryptedPassword), DefaultBcryptCost)
 		if err_gen != nil {
 			logger.ProcLog.Errorf("PutUserByID err: %+v", err_gen)
 			c.JSON(http.StatusInternalServerError, gin.H{})
@@ -833,7 +840,7 @@ func GetSubscribers(c *gin.Context) {
 
 	isAdmin := CheckAuth(c)
 
-	var subsList []SubsListIE = make([]SubsListIE, 0)
+	subsList := make([]SubsListIE, 0)
 	amDataList, err := mongoapi.RestfulAPIGetMany(amDataColl, bson.M{})
 	if err != nil {
 		logger.ProcLog.Errorf("GetSubscribers err: %+v", err)
@@ -1231,7 +1238,8 @@ func dbOperation(
 	filter := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId}
 
 	// Replace all data with new one
-	if method == "put" {
+	switch method {
+	case "put":
 		if err := mongoapi.RestfulAPIDeleteMany(flowRuleDataColl, filter); err != nil {
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
 		}
@@ -1241,7 +1249,7 @@ func dbOperation(
 		if err := mongoapi.RestfulAPIDeleteMany(chargingDataColl, filter); err != nil {
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
 		}
-	} else if method == "delete" {
+	case "delete":
 		if multiple {
 			multipleFilterUeIdOnlyConditions, multipleFliterConditions := []bson.M{}, []bson.M{}
 			for _, subsData := range subsDatas {
@@ -1862,7 +1870,7 @@ func ChangePasswordInfo(c *gin.Context) {
 	}
 
 	if newUserData.EncryptedPassword != "" {
-		hash, err_gen := bcrypt.GenerateFromPassword([]byte(newUserData.EncryptedPassword), 12)
+		hash, err_gen := bcrypt.GenerateFromPassword([]byte(newUserData.EncryptedPassword), DefaultBcryptCost)
 		if err_gen != nil {
 			logger.ProcLog.Errorf("GenerateFromPassword err: %+v", err_gen)
 		}
@@ -2077,11 +2085,12 @@ func dbProfileOperation(
 	filter := bson.M{"profileName": profileName}
 
 	// Replace all data with new one
-	if method == "put" {
+	switch method {
+	case "put":
 		if err = mongoapi.RestfulAPIDeleteOne(profileDataColl, filter); err != nil {
 			logger.ProcLog.Errorf("DeleteProfile err: %+v", err)
 		}
-	} else if method == "delete" {
+	case "delete":
 		if multiple {
 			multipleFilterConditions := []bson.M{}
 			for _, profileData := range profileDatas {

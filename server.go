@@ -14,6 +14,11 @@ import (
 	"github.com/free5gc/webconsole/backend/webui_service"
 )
 
+// File system constants
+const (
+	DefaultDirPermission = 0o775
+)
+
 var WEBUI *webui_service.WebuiApp
 
 func main() {
@@ -82,7 +87,7 @@ func initLogFile(logNfPath []string) (string, error) {
 
 		nfDir, _ := filepath.Split(path)
 		tmpDir := filepath.Join(nfDir, "key")
-		if err := os.MkdirAll(tmpDir, 0o775); err != nil {
+		if err := os.MkdirAll(tmpDir, DefaultDirPermission); err != nil {
 			logger.InitLog.Errorf("Make directory %s failed: %+v", tmpDir, err)
 
 			return "", err

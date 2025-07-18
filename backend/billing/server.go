@@ -17,6 +17,11 @@ import (
 	"github.com/free5gc/webconsole/backend/logger"
 )
 
+// File permission constants
+const (
+	DefaultFilePermission = 0o600
+)
+
 type BillingDomain struct {
 	ftpServer *ftpserver.FtpServer
 	driver    *server.Server
@@ -77,7 +82,7 @@ func OpenServer(wg *sync.WaitGroup) *BillingDomain {
 		return nil
 	}
 
-	if err = os.WriteFile(confFile, file, 0o600); err != nil {
+	if err = os.WriteFile(confFile, file, DefaultFilePermission); err != nil {
 		logger.BillingLog.Errorf("Couldn't create conf file %v, err: %+v", confFile, err)
 		return nil
 	}

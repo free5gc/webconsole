@@ -12,6 +12,12 @@ import (
 	"github.com/free5gc/webconsole/backend/logger"
 )
 
+// NF registration constants
+const (
+	RetryInterval    = 2 * time.Second
+	MaxRetryAttempts = 10
+)
+
 func SendNFRegistration() error {
 	profile := &models.NrfNfManagementNfProfile{
 		NfInstanceId: GetSelf().NfInstanceID,
@@ -39,10 +45,10 @@ func SendNFRegistration() error {
 		// RegisterNFInstance(context.TODO(), GetSelf().NfInstanceID, profile)
 		if err != nil || res == nil {
 			logger.ConsumerLog.Warnf("Webconsole-AF register to NRF Error[%s]", err.Error())
-			time.Sleep(2 * time.Second)
+			time.Sleep(RetryInterval)
 			retryTime += 1
-			if retryTime == 10 {
-				return fmt.Errorf("NF Register retry failed %+v times.", retryTime)
+			if retryTime == MaxRetryAttempts {
+				return fmt.Errorf("NF Register retry failed %+v times", retryTime)
 			}
 			continue
 		}
