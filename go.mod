@@ -110,6 +110,6 @@ require (
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/spf13/afero v1.9.5 // indirect
-	golang.org/x/oauth2 v0.21.0
+	golang.org/x/oauth2 v0.27.0
 	google.golang.org/api v0.122.0 // indirect
 )
