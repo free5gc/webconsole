@@ -6,7 +6,7 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/fclairamb/go-log v0.4.1
 	github.com/free5gc/chf v1.1.2-0.20250718142832-7985bed2e1c7
-	github.com/free5gc/openapi v1.2.0
+	github.com/free5gc/openapi v1.2.2
 	github.com/free5gc/smf v1.3.3-0.20250718143453-8eae1979180a
 	github.com/free5gc/util v1.1.1
 	github.com/gin-contrib/cors v1.6.0
