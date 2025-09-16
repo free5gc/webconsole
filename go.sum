@@ -153,8 +153,8 @@ github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db/go.mod h1:7dvUGVsVB
 github.com/franela/goreq v0.0.0-20171204163338-bcd34c9993f8/go.mod h1:ZhphrRTfi2rbfLwlschooIH4+wKKDR4Pdxhh+TRoA20=
 github.com/free5gc/chf v1.1.2-0.20250718142832-7985bed2e1c7 h1:Lq7oMsDjcSX8Ws2BbiVAbXBiAZCcVkqhQJ0PpHTjMAI=
 github.com/free5gc/chf v1.1.2-0.20250718142832-7985bed2e1c7/go.mod h1:Sp+i+VuC2+WQ2TkTrZ7f6vYYxrPXZZIwPX55sQzh8J0=
-github.com/free5gc/openapi v1.2.0 h1:AOPqkkiWK7XJPdzWVohWsoGkLBt8OrVkQkU7xzvzbek=
-github.com/free5gc/openapi v1.2.0/go.mod h1:pGVJ27QZk4UGG4/1IioBtxwIKNdqOk7L9qcrXvdTjYU=
+github.com/free5gc/openapi v1.2.2 h1:SoWkuI/QOWA22UgNuqtkeoKeLEjThziJYGQFh/1gxSQ=
+github.com/free5gc/openapi v1.2.2/go.mod h1:5HbgGqlhaTBwcOrXQLCOmpbQoX/ogKSg6+TAsR1VxUM=
 github.com/free5gc/smf v1.3.3-0.20250718143453-8eae1979180a h1:P/Gypp6FLNyX01eXs2jkRbXtebz6lnVtwfWccG4i2vo=
 github.com/free5gc/smf v1.3.3-0.20250718143453-8eae1979180a/go.mod h1:IAM3PChW+GFITVlurRVtAnBzL5TQcEwNiWiZ4UnqZDE=
 github.com/free5gc/util v1.1.1 h1:gsjyI/XbHC9EChoMayHvV5kd92vDmp5/TvmBsOuHto4=
