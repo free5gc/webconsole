@@ -1166,6 +1166,10 @@ func PostSubscriberByID(c *gin.Context) {
 // ctfang
 
 func validate(supi string, gpsi string) bool {
+	// If GPSI is empty, skip to check it.
+	if gpsi == "msisdn-" {
+		return true
+	}
 	filter := bson.M{"gpsi": gpsi}
 	identityData, err := mongoapi.RestfulAPIGetOne(identityDataColl, filter)
 	if err != nil {
