@@ -1538,7 +1538,7 @@ func PutSubscriberByID(c *gin.Context) {
 
 	var claims jwt.MapClaims = nil
 	dbOperation(ueId, servingPlmnId, "put", &subsData, nil, claims, false)
-	c.JSON(http.StatusNoContent, gin.H{})
+	c.Status(http.StatusNoContent)
 }
 
 // Patch subscriber by IMSI(ueId) and PlmnID(servingPlmnId)
@@ -1640,7 +1640,7 @@ func PatchSubscriberByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusNoContent, gin.H{})
+	c.Status(http.StatusNoContent)
 }
 
 func removeCdrFile(cdrFilePath string) {
@@ -1680,7 +1680,7 @@ func DeleteSubscriberByID(c *gin.Context) {
 	CdrFilePath := "/tmp/webconsole/"
 	removeCdrFile(CdrFilePath)
 
-	c.JSON(http.StatusNoContent, gin.H{})
+	c.Status(http.StatusNoContent)
 }
 
 // Delete multiple subscribers
@@ -1700,7 +1700,7 @@ func DeleteMultipleSubscribers(c *gin.Context) {
 
 	dbOperation("", "", "delete", nil, subsDatas, claims, true)
 
-	c.JSON(http.StatusNoContent, gin.H{})
+	c.Status(http.StatusNoContent)
 }
 
 func GetRegisteredUEContext(c *gin.Context) {
@@ -1892,7 +1892,7 @@ func ChangePasswordInfo(c *gin.Context) {
 func OptionsSubscribers(c *gin.Context) {
 	setCorsHeader(c)
 
-	c.JSON(http.StatusNoContent, gin.H{})
+	c.Status(http.StatusNoContent)
 }
 
 // Delete profile by profileName
@@ -1937,7 +1937,7 @@ func DeleteMultipleProfiles(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusNoContent, gin.H{})
+	c.Status(http.StatusNoContent)
 }
 
 // Get profile list
