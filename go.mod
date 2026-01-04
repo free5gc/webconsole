@@ -5,14 +5,14 @@ go 1.25.5
 require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/fclairamb/go-log v0.4.1
-	github.com/free5gc/chf v1.2.0
+	github.com/free5gc/chf v1.2.1-0.20260104073217-9fbf02ffd990
 	github.com/free5gc/openapi v1.2.3
-	github.com/free5gc/smf v1.4.0
+	github.com/free5gc/smf v1.4.1-0.20260104075605-df5818d03d12
 	github.com/free5gc/util v1.3.1
 	github.com/gin-contrib/cors v1.6.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt/v5 v5.2.2
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.6.0
 	github.com/jlaffaye/ftp v0.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
