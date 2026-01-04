@@ -1,6 +1,7 @@
 package WebUI
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/tls"
 	"encoding/json"
@@ -1209,7 +1210,7 @@ func sendRechargeNotification(ueId string, rg int32) {
 	webuiSelf.UpdateNfProfiles()
 
 	requestUri := fmt.Sprintf("%s/nchf-convergedcharging/v3/recharging/%s_%d", "http://127.0.0.113:8000", ueId, rg)
-	req, err := http.NewRequest(http.MethodPut, requestUri, nil)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPut, requestUri, nil)
 	if err != nil {
 		logger.ProcLog.Error(err)
 	}
