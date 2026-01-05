@@ -8,18 +8,21 @@ package factory
 
 import (
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/google/uuid"
 
 	"github.com/free5gc/webconsole/backend/logger"
 )
 
 const (
-	WebuiDefaultTLSKeyLogPath  = "./log/webuisslkey.log"
-	WebuiDefaultCertPemPath    = "./cert/webui.pem"
-	WebuiDefaultPrivateKeyPath = "./cert/webui.key"
-	WebuiDefaultConfigPath     = "./config/webuicfg.yaml"
+	WebuiDefaultTLSKeyLogPath      = "./log/webuisslkey.log"
+	WebuiDefaultCertPemPath        = "./cert/webui.pem"
+	WebuiDefaultPrivateKeyPath     = "./cert/webui.key"
+	WebuiDefaultConfigPath         = "./config/webuicfg.yaml"
+	WebuiDefaultNfInstanceIdEnvVar = "WEBUI_NF_INSTANCE_ID"
 )
 
 type Config struct {
@@ -30,6 +33,12 @@ type Config struct {
 }
 
 func (c *Config) Validate() (bool, error) {
+	if configuration := c.Configuration; configuration != nil {
+		if result, err := configuration.validate(); err != nil {
+			return result, err
+		}
+	}
+
 	result, err := govalidator.ValidateStruct(c)
 	return result, appendInvalid(err)
 }
@@ -40,10 +49,20 @@ type Info struct {
 }
 
 type Configuration struct {
+	NfInstanceId  string         `yaml:"nfInstanceId,omitempty" valid:"optional,uuidv4"`
 	WebServer     *WebServer     `yaml:"webServer,omitempty" valid:"optional"`
 	Mongodb       *Mongodb       `yaml:"mongodb" valid:"required"`
 	NrfUri        string         `yaml:"nrfUri" valid:"required"`
 	BillingServer *BillingServer `yaml:"billingServer,omitempty" valid:"required"`
+}
+
+func (c *Configuration) validate() (bool, error) {
+	if c.NfInstanceId == "" {
+		c.NfInstanceId = uuid.New().String()
+	}
+
+	result, err := govalidator.ValidateStruct(c)
+	return result, appendInvalid(err)
 }
 
 type Logger struct {
@@ -170,4 +189,29 @@ func (c *Config) GetLogReportCaller() bool {
 		return false
 	}
 	return c.Logger.ReportCaller
+}
+
+func (c *Config) GetNfInstanceId() string {
+	c.RLock()
+	defer c.RUnlock()
+
+	var nfInstanceId string
+
+	logger.CfgLog.Debugf("Fetching nfInstanceId from env var \"%s\"", WebuiDefaultNfInstanceIdEnvVar)
+
+	if nfInstanceId = os.Getenv(WebuiDefaultNfInstanceIdEnvVar); nfInstanceId == "" {
+		logger.CfgLog.Debugf("No value found for \"%s\" env, fallback on config nfInstanceId : %s",
+			WebuiDefaultNfInstanceIdEnvVar, c.Configuration.NfInstanceId)
+		return c.Configuration.NfInstanceId
+	}
+
+	if err := uuid.Validate(nfInstanceId); err != nil {
+		logger.CfgLog.Errorf("Env var \"%s\" is not a valid uuid, "+
+			"fallback on configuration nfInstanceId : %s", WebuiDefaultNfInstanceIdEnvVar, c.Configuration.NfInstanceId)
+		return c.Configuration.NfInstanceId
+	}
+
+	logger.CfgLog.Debugf("nfInstanceId from %s : %s", WebuiDefaultNfInstanceIdEnvVar, nfInstanceId)
+
+	return nfInstanceId
 }
