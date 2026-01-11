@@ -1208,7 +1208,7 @@ func sendRechargeNotification(ueId string, rg int32) {
 	webuiSelf := webui_context.GetSelf()
 	webuiSelf.UpdateNfProfiles()
 
-	requestUri := fmt.Sprintf("%s/nchf-convergedcharging/v3/recharging/%s_%d", "http://127.0.0.113:8000", ueId, rg)
+	requestUri := fmt.Sprintf("%s/nchf-convergedcharging/v3/recharging/%s?ratingGroup=%d", "http://127.0.0.113:8000", ueId, rg)
 	req, err := http.NewRequest(http.MethodPut, requestUri, nil)
 	if err != nil {
 		logger.ProcLog.Error(err)
