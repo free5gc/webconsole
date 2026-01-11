@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 
 	"github.com/free5gc/openapi"
@@ -41,7 +40,7 @@ type NfOamInstance struct {
 }
 
 func Init() {
-	webuiContext.NfInstanceID = uuid.New().String()
+	webuiContext.NfInstanceID = factory.WebuiConfig.GetNfInstanceId()
 	webuiContext.NrfUri = factory.WebuiConfig.Configuration.NrfUri
 
 	webuiContext.IsRegistered = false
