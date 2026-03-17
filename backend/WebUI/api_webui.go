@@ -1,7 +1,6 @@
 package WebUI
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/tls"
 	"encoding/json"
@@ -1197,9 +1196,6 @@ func identityDataOperation(supi string, gpsi string, method string) {
 			if err := mongoapi.RestfulAPIDeleteOne(identityDataColl, filter); err != nil {
 				logger.ProcLog.Errorf("DeleteIdentityData err: %+v", err)
 			}
-			if err := mongoapi.RestfulAPIDeleteOne(identityDataColl, filter); err != nil {
-				logger.ProcLog.Errorf("DeleteIdentityData err: %+v", err)
-			}
 		}
 	}
 }
@@ -1211,23 +1207,35 @@ func sendRechargeNotification(ueId string, rg int32) {
 
 	requestUri := fmt.Sprintf("%s/nchf-convergedcharging/v3/recharging/%s?ratingGroup=%d",
 		"http://127.0.0.113:8000", ueId, rg)
-	req, err := http.NewRequestWithContext(context.Background(), http.MethodPut, requestUri, nil)
+	ctx, pd, tokenErr := webuiSelf.GetTokenCtx(models.ServiceName_NCHF_CONVERGEDCHARGING, models.NrfNfManagementNfType_CHF)
+	if tokenErr != nil {
+		logger.ProcLog.Errorf("GetTokenCtx for CHF recharge err: %+v", pd)
+		return
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, requestUri, nil)
 	if err != nil {
 		logger.ProcLog.Error(err)
+		return
 	}
 	defer func() {
-		if err = req.Body.Close(); err != nil {
-			logger.ProcLog.Error(err)
+		if req.Body != nil {
+			_ = req.Body.Close()
 		}
 	}()
 	req.Header.Add("Content-Type", "application/json")
-
-	resp, err1 := http.DefaultClient.Do(req)
-	if err != nil {
-		logger.ProcLog.Errorf("Send Charging Notification err: %+v", err1)
+	if err = webuiSelf.RequestBindToken(req, ctx); err != nil {
+		logger.ProcLog.Errorf("RequestBindToken err: %+v", err)
+		return
 	}
-	if err = resp.Body.Close(); err != nil {
-		logger.ProcLog.Error(err)
+
+	resp, err1 := httpsClient.Do(req)
+	if err1 != nil {
+		logger.ProcLog.Errorf("Send Charging Notification err: %+v", err1)
+		return
+	}
+	if resp != nil && resp.Body != nil {
+		_ = resp.Body.Close()
 	}
 }
 
@@ -1484,7 +1492,7 @@ func dbOperation(
 				chargingDataBsonM["ueId"] = ueId
 				chargingDataBsonM["servingPlmnId"] = servingPlmnId
 
-				if _, err_put := mongoapi.RestfulAPIPutOne(chargingDataColl, chargingFilter, chargingDataBsonM); err != nil {
+				if _, err_put := mongoapi.RestfulAPIPutOne(chargingDataColl, chargingFilter, chargingDataBsonM); err_put != nil {
 					logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err_put)
 				}
 			}
