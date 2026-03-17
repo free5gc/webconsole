@@ -1220,7 +1220,9 @@ func sendRechargeNotification(ueId string, rg int32) {
 	}
 	defer func() {
 		if req.Body != nil {
-			_ = req.Body.Close()
+			if closeErr := req.Body.Close(); closeErr != nil {
+				logger.ProcLog.Error(closeErr)
+			}
 		}
 	}()
 	req.Header.Add("Content-Type", "application/json")
@@ -1235,7 +1237,9 @@ func sendRechargeNotification(ueId string, rg int32) {
 		return
 	}
 	if resp != nil && resp.Body != nil {
-		_ = resp.Body.Close()
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			logger.ProcLog.Error(closeErr)
+		}
 	}
 }
 
