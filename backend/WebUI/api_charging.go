@@ -2,8 +2,8 @@ package WebUI
 
 import (
 	"crypto/sha256"
-	"encoding/json"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -63,9 +63,9 @@ func parseCDR(supi string) (map[int64]RatingGroupDataUsage, error) {
 	for _, cdr := range newCdrFile.CdrList {
 		recvByte := cdr.CdrByte
 		val := reflect.New(reflect.TypeOf(&cdrType.ChargingRecord{}).Elem()).Interface()
-		err := asn.UnmarshalWithParams(recvByte, val, "")
-		if err != nil {
-			logger.BillingLog.Errorf("parseCDR error when unmarshal with params: %+v", err)
+		unmarshalErr := asn.UnmarshalWithParams(recvByte, val, "")
+		if unmarshalErr != nil {
+			logger.BillingLog.Errorf("parseCDR error when unmarshal with params: %+v", unmarshalErr)
 			continue
 		}
 
