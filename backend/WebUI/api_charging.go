@@ -1,7 +1,9 @@
 package WebUI
 
 import (
+	"crypto/sha256"
 	"encoding/json"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"os"
@@ -25,12 +27,31 @@ const (
 	ChargingOnline  = "Online"
 )
 
+func hashedCdrFilePathForSupi(supi string) string {
+	sum := sha256.Sum256([]byte(supi))
+	return "/tmp/webconsole/chf-" + hex.EncodeToString(sum[:]) + ".cdr"
+}
+
+func resolveCdrFilePathForSupi(supi string) (string, error) {
+	hashedPath := hashedCdrFilePathForSupi(supi)
+	if _, err := os.Stat(hashedPath); err == nil {
+		return hashedPath, nil
+	}
+
+	legacyPath := "/tmp/webconsole/" + supi + ".cdr"
+	if _, err := os.Stat(legacyPath); err == nil {
+		return legacyPath, nil
+	}
+
+	return "", os.ErrNotExist
+}
+
 // Get vol from CDR
 // TS 32.297: Charging Data Record (CDR) file format and transfer
 func parseCDR(supi string) (map[int64]RatingGroupDataUsage, error) {
 	logger.BillingLog.Traceln("parseCDR")
-	fileName := "/tmp/webconsole/" + supi + ".cdr"
-	if _, err := os.Stat(fileName); err != nil {
+	fileName, err := resolveCdrFilePathForSupi(supi)
+	if err != nil {
 		return nil, err
 	}
 
