@@ -16,15 +16,13 @@ import {
   Alert,
   Box,
   Button,
+  CircularProgress,
   Grid,
+  LinearProgress,
   Snackbar,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   TextField,
+  Typography,
   Checkbox,
 } from "@mui/material";
 import { ReportProblemRounded } from "@mui/icons-material";
@@ -35,9 +33,20 @@ import {
 
 // ── constants ────────────────────────────────────────────────────────────────
 
-const ROW_HEIGHT = 53;
-const MAX_LIST_HEIGHT = 530; // ~10 rows visible at once
+const ROW_HEIGHT = 52;
+const MAX_LIST_HEIGHT = 530;
 const BULK_DELETE_WARN_THRESHOLD = 100;
+const BULK_DELETE_BATCH_SIZE = 100;
+
+// Column widths shared between header and virtual rows.
+// Must stay in sync — change both together.
+const COL_CHECKBOX = "52px";
+const COL_PLMN     = "18%";
+const COL_UEID     = "1fr";
+const COL_DELETE   = "110px";
+const COL_VIEW     = "90px";
+const COL_EDIT     = "90px";
+const GRID_COLS    = `${COL_CHECKBOX} ${COL_PLMN} ${COL_UEID} ${COL_DELETE} ${COL_VIEW} ${COL_EDIT}`;
 
 // ── types ────────────────────────────────────────────────────────────────────
 
@@ -46,7 +55,6 @@ interface Props {
   setRefresh: (v: boolean) => void;
 }
 
-// Shared data passed to every virtual row via react-window v2 rowProps
 type RowSharedProps = {
   rows: Subscriber[];
   selected: MultipleDeleteSubscriberData[];
@@ -56,12 +64,11 @@ type RowSharedProps = {
   onRowClick: (item: MultipleDeleteSubscriberData) => void;
 };
 
-// ── virtual row component ────────────────────────────────────────────────────
-// Defined outside SubscriberList so its reference is stable and react-window
-// does not remount every visible row on each parent render.
+// ── virtual row ──────────────────────────────────────────────────────────────
+// Defined outside SubscriberList so its reference is stable across renders.
 
 type VirtualRowProps = {
-  ariaAttributes: Record<string, string>;
+  ariaAttributes: Record<string, string | number>;
   index: number;
   style: CSSProperties;
 } & RowSharedProps;
@@ -84,101 +91,97 @@ function VirtualRow({
     plmnID: row.plmnID!,
   };
 
-  // Point 5: selection keyed by stable ueId+plmnID — not tied to index or
-  // current scroll position, so selections survive scroll and search changes.
+  // Selection keyed by stable ueId+plmnID — survives scroll and search changes
   const isItemSelected = selected.some(
     (s) => s.ueId === item.ueId && s.plmnID === item.plmnID
   );
 
   return (
-    <TableRow
-      style={{
-        ...style,
-        // Keep react-window absolute positioning while restoring table layout
-        // so cells align with the fixed TableHead columns.
-        display: "table",
-        width: "100%",
-        tableLayout: "fixed",
+    <Box
+      style={style}
+      onClick={() => onRowClick(item)}
+      sx={{
+        display: "grid",
+        gridTemplateColumns: GRID_COLS,
+        alignItems: "center",
+        borderBottom: "1px solid rgba(224,224,224,1)",
+        backgroundColor: isItemSelected
+          ? "rgba(25,118,210,0.08)"
+          : "transparent",
+        "&:hover": { backgroundColor: isItemSelected ? "rgba(25,118,210,0.12)" : "rgba(0,0,0,0.04)" },
+        cursor: "pointer",
         boxSizing: "border-box",
       }}
-      hover
-      selected={isItemSelected}
-      onClick={() => onRowClick(item)}
-      role="checkbox"
-      aria-checked={isItemSelected}
     >
-      <TableCell padding="checkbox">
-        <Checkbox color="primary" checked={isItemSelected} />
-      </TableCell>
-      <TableCell>{row.plmnID}</TableCell>
-      <TableCell>{row.ueId}</TableCell>
-      <TableCell>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Checkbox color="primary" checked={isItemSelected} size="small" />
+      </Box>
+      <Box sx={{ px: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 14 }}>
+        {row.plmnID}
+      </Box>
+      <Box sx={{ px: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 14 }}>
+        {row.ueId}
+      </Box>
+      <Box sx={{ px: 0.5 }}>
         <Button
           size="small"
           color="primary"
           variant="contained"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(row.ueId!, row.plmnID!);
-          }}
+          onClick={(e) => { e.stopPropagation(); onDelete(row.ueId!, row.plmnID!); }}
         >
           DELETE
         </Button>
-      </TableCell>
-      <TableCell>
+      </Box>
+      <Box sx={{ px: 0.5 }}>
         <Button
           size="small"
           color="primary"
           variant="contained"
-          onClick={(e) => {
-            e.stopPropagation();
-            onModify(row);
-          }}
+          onClick={(e) => { e.stopPropagation(); onModify(row); }}
         >
           VIEW
         </Button>
-      </TableCell>
-      <TableCell>
+      </Box>
+      <Box sx={{ px: 0.5 }}>
         <Button
           size="small"
           color="primary"
           variant="contained"
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit(row);
-          }}
+          onClick={(e) => { e.stopPropagation(); onEdit(row); }}
         >
           EDIT
         </Button>
-      </TableCell>
-    </TableRow>
+      </Box>
+    </Box>
   );
 }
 
-// ── main component ───────────────────────────────────────────────────────────
+// ── component ────────────────────────────────────────────────────────────────
 
 function SubscriberList(props: Props) {
   const navigation = useNavigate();
   const [data, setData] = useState<Subscriber[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [isLoadError, setIsLoadError] = useState(false);
   const [isDeleteError, setIsDeleteError] = useState(false);
-
-  // Point 5: selection stored globally by stable ID, independent of scroll
-  // position or current visible page — deletions work correctly across the
-  // full dataset.
   const [selected, setSelected] = useState<MultipleDeleteSubscriberData[]>([]);
+  const [deleteProgress, setDeleteProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
 
   useEffect(() => {
+    setIsLoading(true);
     axios
       .get("/api/subscriber")
       .then((res) => setData(res.data))
-      .catch(() => setIsLoadError(true));
+      .catch(() => setIsLoadError(true))
+      .finally(() => setIsLoading(false));
   }, [props.refresh]);
 
-  // Point 2: memoize filtering — only reruns when data or searchTerm changes,
-  // not on every checkbox tick or button hover. With 10K rows, this eliminates
-  // a full array scan on every unrelated render.
+  // useMemo: filter only reruns when data or searchTerm changes,
+  // not on every checkbox tick
   const filteredData = useMemo(
     () =>
       data.filter(
@@ -189,25 +192,20 @@ function SubscriberList(props: Props) {
     [data, searchTerm]
   );
 
-  // Point 4: clear selection when search changes — avoids deleting subscribers
-  // that are no longer visible in the filtered result set.
+  // Clear selection when search changes to avoid acting on hidden items
   useEffect(() => {
     setSelected([]);
   }, [searchTerm]);
 
-  // Point 5: row click toggles selection by stable ueId+plmnID key, not index.
-  const handleRowClick = useCallback(
-    (item: MultipleDeleteSubscriberData) => {
-      setSelected((prev) => {
-        const idx = prev.findIndex(
-          (s) => s.ueId === item.ueId && s.plmnID === item.plmnID
-        );
-        if (idx === -1) return [...prev, item];
-        return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
-      });
-    },
-    []
-  );
+  const handleRowClick = useCallback((item: MultipleDeleteSubscriberData) => {
+    setSelected((prev) => {
+      const idx = prev.findIndex(
+        (s) => s.ueId === item.ueId && s.plmnID === item.plmnID
+      );
+      if (idx === -1) return [...prev, item];
+      return [...prev.slice(0, idx), ...prev.slice(idx + 1)];
+    });
+  }, []);
 
   const handleSelectAllClick = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelected(
@@ -219,8 +217,6 @@ function SubscriberList(props: Props) {
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    // Point 4: no explicit page reset needed — virtualization always renders
-    // from the top of filteredData when the reference changes.
   };
 
   const onDelete = useCallback(
@@ -238,8 +234,7 @@ function SubscriberList(props: Props) {
   );
 
   const onModify = useCallback(
-    (s: Subscriber) =>
-      navigation("/subscriber/" + s.ueId + "/" + s.plmnID),
+    (s: Subscriber) => navigation("/subscriber/" + s.ueId + "/" + s.plmnID),
     [navigation]
   );
 
@@ -249,11 +244,13 @@ function SubscriberList(props: Props) {
     [navigation]
   );
 
-  // Point 3: threshold-based confirmation.
-  // < THRESHOLD  → single confirm with count + 5-item preview
-  // ≥ THRESHOLD  → double confirm: first warning, then final irreversible step
-  const onDeleteSelected = () => {
+  // Batched bulk delete — sends BULK_DELETE_BATCH_SIZE subscribers per request
+  // so large selections (e.g. 50 K) don't produce a single giant payload that
+  // the browser or server silently drops.
+  const onDeleteSelected = async () => {
     const count = selected.length;
+    if (count === 0) return;
+
     const preview = selected
       .slice(0, 5)
       .map((i) => `  • ${i.ueId} (PLMN: ${i.plmnID})`)
@@ -272,22 +269,42 @@ function SubscriberList(props: Props) {
       !window.confirm(
         `Final confirmation: permanently delete ${count} subscribers?\n\nThis cannot be undone.`
       )
-    ) {
+    )
       return;
+
+    const items = formatMultipleDeleteSubscriberToJson(selected);
+    console.log(`[BulkDelete] Starting: ${items.length} subscribers, batch size ${BULK_DELETE_BATCH_SIZE}`);
+
+    setDeleteProgress({ current: 0, total: items.length });
+    let completed = 0;
+    let anyError = false;
+
+    for (let start = 0; start < items.length; start += BULK_DELETE_BATCH_SIZE) {
+      const batch = items.slice(start, start + BULK_DELETE_BATCH_SIZE);
+      try {
+        await axios.delete("/api/subscriber", { data: batch });
+        console.log(`[BulkDelete] Batch ${start}–${start + batch.length - 1}: OK`);
+      } catch (err: any) {
+        anyError = true;
+        console.error(
+          `[BulkDelete] Batch ${start}–${start + batch.length - 1} failed:`,
+          err.response?.status,
+          err.response?.data ?? err.message
+        );
+      }
+      completed += batch.length;
+      setDeleteProgress({ current: completed, total: items.length });
     }
 
-    axios
-      .delete("/api/subscriber", {
-        data: formatMultipleDeleteSubscriberToJson(selected),
-      })
-      .then(() => {
-        props.setRefresh(!props.refresh);
-        setSelected([]);
-      })
-      .catch((err) => {
-        setIsDeleteError(true);
-        console.log(err.response?.data?.message);
-      });
+    setDeleteProgress(null);
+    console.log(`[BulkDelete] Done. anyError=${anyError}`);
+
+    if (anyError) {
+      setIsDeleteError(true);
+    }
+    // Always refresh and clear — partial deletes should still update the list
+    props.setRefresh(!props.refresh);
+    setSelected([]);
   };
 
   if (isLoadError) {
@@ -299,14 +316,21 @@ function SubscriberList(props: Props) {
     );
   }
 
+  if (isLoading) {
+    return (
+      <Stack sx={{ mx: "auto", py: "4rem" }} alignItems="center">
+        <CircularProgress />
+      </Stack>
+    );
+  }
+
   if (data == null || data.length === 0) {
     return (
       <>
         <br />
         <div>
           No Subscription
-          <br />
-          <br />
+          <br /><br />
           <Grid item xs={12}>
             <Button
               color="primary"
@@ -322,17 +346,16 @@ function SubscriberList(props: Props) {
     );
   }
 
-  // Point 1: react-window FixedSizeList (v2 API: `List`) — only visible rows
-  // exist in the DOM regardless of dataset size or search result count.
-  // DOM node count stays bounded to ~(MAX_LIST_HEIGHT / ROW_HEIGHT) ≈ 10 rows.
+  // ── Virtual list setup ───────────────────────────────────────────────────
+  // The List is placed in a plain Box div — NOT inside MUI TableBody.
+  // This ensures react-window can correctly measure its container height
+  // via ResizeObserver and render only visible rows (~10 at a time).
   //
-  // Column alignment: TableHead uses display:table + table-layout:fixed at
-  // 100% width. Each VirtualRow applies the same styles so columns align
-  // without needing a <colgroup>.
+  // Column alignment is achieved with CSS Grid using the same GRID_COLS
+  // constant for both the header and each virtual row.
+
   const listHeight = Math.min(filteredData.length * ROW_HEIGHT, MAX_LIST_HEIGHT);
 
-  // rowProps is shared across all rows — stable references via useCallback
-  // ensure react-window does not needlessly remount visible rows.
   const rowProps: RowSharedProps = {
     rows: filteredData,
     selected,
@@ -353,57 +376,78 @@ function SubscriberList(props: Props) {
         fullWidth
         margin="normal"
       />
-      {selected.length > 0 && (
-        <Box sx={{ mb: 2 }}>
-          <Button color="error" variant="contained" onClick={onDeleteSelected}>
-            Delete Selected ({selected.length})
+
+      {(selected.length > 0 || deleteProgress !== null) && (
+        <Box sx={{ mb: 1 }}>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={onDeleteSelected}
+            disabled={deleteProgress !== null}
+          >
+            {deleteProgress !== null
+              ? `Deleting… ${deleteProgress.current} / ${deleteProgress.total}`
+              : `Delete Selected (${selected.length})`}
           </Button>
+          {deleteProgress !== null && (
+            <Box sx={{ mt: 1 }}>
+              <LinearProgress
+                variant="determinate"
+                color="error"
+                value={Math.round((deleteProgress.current / deleteProgress.total) * 100)}
+              />
+              <Typography variant="caption" color="text.secondary">
+                {Math.round((deleteProgress.current / deleteProgress.total) * 100)}% complete
+              </Typography>
+            </Box>
+          )}
         </Box>
       )}
-      <Table
+
+      {/* Header — plain Table with matching CSS Grid column widths */}
+      <Box
         sx={{
-          tableLayout: "fixed",
-          "& thead": {
-            display: "table",
-            width: "100%",
-            tableLayout: "fixed",
-          },
+          display: "grid",
+          gridTemplateColumns: GRID_COLS,
+          alignItems: "center",
+          borderBottom: "2px solid rgba(224,224,224,1)",
+          borderTop: "1px solid rgba(224,224,224,1)",
+          borderLeft: "1px solid rgba(224,224,224,1)",
+          borderRight: "1px solid rgba(224,224,224,1)",
+          backgroundColor: "#fafafa",
+          fontWeight: 600,
+          fontSize: 14,
+          minHeight: ROW_HEIGHT,
         }}
       >
-        <TableHead>
-          <TableRow>
-            <TableCell padding="checkbox">
-              <Checkbox
-                color="primary"
-                indeterminate={
-                  selected.length > 0 &&
-                  selected.length < filteredData.length
-                }
-                checked={
-                  filteredData.length > 0 &&
-                  selected.length === filteredData.length
-                }
-                onChange={handleSelectAllClick}
-              />
-            </TableCell>
-            <TableCell>PLMN</TableCell>
-            <TableCell>UE ID</TableCell>
-            <TableCell>Delete</TableCell>
-            <TableCell>View</TableCell>
-            <TableCell>Edit</TableCell>
-          </TableRow>
-        </TableHead>
-        {/* display:block allows react-window to manage overflow/scroll */}
-        <TableBody sx={{ display: "block" }}>
-          <List<RowSharedProps>
-            rowComponent={VirtualRow}
-            rowProps={rowProps}
-            rowCount={filteredData.length}
-            rowHeight={ROW_HEIGHT}
-            style={{ height: listHeight, width: "100%" }}
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Checkbox
+            color="primary"
+            indeterminate={selected.length > 0 && selected.length < filteredData.length}
+            checked={filteredData.length > 0 && selected.length === filteredData.length}
+            onChange={handleSelectAllClick}
+            size="small"
           />
-        </TableBody>
-      </Table>
+        </Box>
+        <Box sx={{ px: 1 }}>PLMN</Box>
+        <Box sx={{ px: 1 }}>UE ID</Box>
+        <Box sx={{ px: 0.5 }}>Delete</Box>
+        <Box sx={{ px: 0.5 }}>View</Box>
+        <Box sx={{ px: 0.5 }}>Edit</Box>
+      </Box>
+
+      {/* Virtual body — react-window List with explicit pixel height.
+          Must use pixels not "100%" — react-window v2 uses ResizeObserver
+          which cannot resolve percentage heights, resulting in 0 rows rendered. */}
+      <Box sx={{ border: "1px solid rgba(224,224,224,1)", borderTop: 0 }}>
+        <List<RowSharedProps>
+          rowComponent={VirtualRow}
+          rowProps={rowProps}
+          rowCount={filteredData.length}
+          rowHeight={ROW_HEIGHT}
+          style={{ height: listHeight, width: "100%" }}
+        />
+      </Box>
 
       <Grid item xs={12} sx={{ mt: 1 }}>
         <Button
