@@ -141,7 +141,9 @@ function SubscriberCreate() {
     const total = subscription.userNumber!;
     setCreateErrors([]);
     setCreateProgress({ current: 0, total });
-    setLoading(true);
+    // NOTE: do NOT set setLoading(true) here — loading is only for edit mode
+    // (fetching existing subscriber). Setting it here causes the component to
+    // return <div>Loading...</div> which hides the form and progress bar.
 
     // Build the full list of (supi, payload) pairs upfront so the loop body
     // is free of mutation side effects.
@@ -187,7 +189,6 @@ function SubscriberCreate() {
       setCreateProgress({ current: completed, total });
     }
 
-    setLoading(false);
     setCreateProgress(null);
 
     if (errors.length > 0) {
