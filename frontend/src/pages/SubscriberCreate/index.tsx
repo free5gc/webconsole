@@ -25,7 +25,7 @@ import { FlowsMapperImpl as ProfileFlowsMapperImpl, ProfileMapperImpl } from "..
 import { validateSubscription } from "../../lib/validator/subscriptionValidator";
 
 // Max concurrent requests per batch. Keeps browser + server from being overwhelmed.
-const BATCH_SIZE = 50;
+const BATCH_SIZE = 500;
 
 function FormHOC(Component: React.ComponentType<any>) {
   return function (props: any) {
