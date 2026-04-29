@@ -74,8 +74,9 @@ function SubscriberList(props: Props) {
     setLimit(Number(event.target.value));
   };
 
+  // FIX: return actual filtered count so TablePagination renders correct page controls
   const count = () => {
-    return 0;
+    return filteredData.length;
   };
 
   const pager = () => {
@@ -131,6 +132,7 @@ function SubscriberList(props: Props) {
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);
+    setPage(0); // FIX: reset to first page on search so results are always visible
   };
 
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -171,12 +173,13 @@ function SubscriberList(props: Props) {
     selected.some(s => s.ueId === item.ueId && s.plmnID === item.plmnID);
 
   const onDeleteSelected = () => {
-    const selectedItems = selected.map(item => 
+    // FIX: cap confirm message — joining all 10K selected items crashes the browser
+    const preview = selected.slice(0, 5).map(item =>
       `PLMN: ${item.plmnID}\tUE ID: ${item.ueId}`
     );
+    const more = selected.length > 5 ? `\n...and ${selected.length - 5} more` : "";
+    const confirmMessage = `Are you sure you want to delete ${selected.length} subscriber(s)?\n\n${preview.join('\n')}${more}`;
 
-    const confirmMessage = `Are you sure you want to delete the following subscribers?\n\n${selectedItems.join('\n')}`;
-    
     const result = window.confirm(confirmMessage);
     if (!result) {
       return;
@@ -254,7 +257,9 @@ function SubscriberList(props: Props) {
           </TableRow>
         </TableHead>
         <TableBody>
-          {filteredData.map((row, index) => {
+          {/* FIX: slice filteredData to current page — previously rendered ALL rows causing
+              browser panic with large subscriber counts (e.g. 10,000 DOM nodes at once) */}
+          {filteredData.slice(page * limit, page * limit + limit).map((row, index) => {
             const item = { ueId: row.ueId!, plmnID: row.plmnID! };
             const isItemSelected = isSelected(item);
             return (
