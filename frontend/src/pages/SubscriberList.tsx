@@ -36,7 +36,7 @@ import {
 const ROW_HEIGHT = 52;
 const MAX_LIST_HEIGHT = 530;
 const BULK_DELETE_WARN_THRESHOLD = 100;
-const BULK_DELETE_BATCH_SIZE = 100;
+const BULK_DELETE_BATCH_SIZE = 500;
 
 // Column widths shared between header and virtual rows.
 // Must stay in sync — change both together.
