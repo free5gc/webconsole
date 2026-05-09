@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
 import { styled, createTheme, ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import MuiDrawer from "@mui/material/Drawer";
 import Box from "@mui/material/Box";
 import MuiAppBar, { AppBarProps as MuiAppBarProps } from "@mui/material/AppBar";
@@ -14,6 +15,7 @@ import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
 import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import { MainListItems } from "./ListItems";
 import { LoginContext } from "./LoginContext";
 import SimpleListMenu from "./SimpleListMenu";
@@ -49,6 +51,8 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== "open" 
       position: "relative",
       whiteSpace: "nowrap",
       width: drawerWidth,
+      backgroundColor: "#FCFCFD",
+      borderRight: "1px solid #EEEEEE",
       transition: theme.transitions.create("width", {
         easing: theme.transitions.easing.sharp,
         duration: theme.transitions.duration.enteringScreen,
@@ -71,6 +75,114 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== "open" 
 
 const mdTheme = createTheme();
 
+const teslaTheme = createTheme({
+  palette: {
+    primary: {
+      main: "#3E6AE1",
+      contrastText: "#FFFFFF",
+    },
+    secondary: {
+      main: "#171A20",
+    },
+    background: {
+      default: "#FFFFFF",
+      paper: "#FFFFFF",
+    },
+    text: {
+      primary: "#171A20",
+      secondary: "#393C41",
+    },
+    divider: "#EEEEEE",
+  },
+  shape: {
+    borderRadius: 4,
+  },
+  typography: {
+    fontFamily: '"Universal Sans Text", -apple-system, Arial, sans-serif',
+    h6: {
+      fontSize: "1rem",
+      fontWeight: 500,
+      letterSpacing: 0,
+    },
+    button: {
+      fontSize: "0.875rem",
+      fontWeight: 500,
+      textTransform: "none",
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 4,
+          minHeight: 40,
+          transition: "border-color 0.33s, background-color 0.33s, color 0.33s, box-shadow 0.25s",
+          boxShadow: "none",
+          border: "3px solid transparent",
+        },
+        containedPrimary: {
+          backgroundColor: "#3E6AE1",
+          color: "#FFFFFF",
+          "&:hover": {
+            backgroundColor: "#365FCC",
+            boxShadow: "none",
+          },
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          boxShadow: "none",
+          border: "1px solid #EEEEEE",
+        },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        head: {
+          color: "#171A20",
+          fontWeight: 500,
+          fontSize: "0.875rem",
+        },
+        body: {
+          color: "#393C41",
+          fontSize: "0.875rem",
+        },
+      },
+    },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          "& .MuiInputBase-root": {
+            borderRadius: 4,
+          },
+        },
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 4,
+          margin: "4px 10px",
+          minHeight: 40,
+          transition: "color 0.33s, background-color 0.33s",
+          "&.Mui-selected, &.Mui-selected:hover, &:hover": {
+            backgroundColor: "rgba(62, 106, 225, 0.08)",
+          },
+        },
+      },
+    },
+    MuiDivider: {
+      styleOverrides: {
+        root: {
+          borderColor: "#EEEEEE",
+        },
+      },
+    },
+  },
+});
+
 export interface DashboardProps {
   children: React.ReactNode;
   title: string;
@@ -79,6 +191,14 @@ export interface DashboardProps {
 
 function Dashboard(props: DashboardProps) {
   const [open, setOpen] = React.useState(true);
+  const isMobile = useMediaQuery(mdTheme.breakpoints.down("md"));
+
+  useEffect(() => {
+    if (isMobile) {
+      setOpen(false);
+    }
+  }, [isMobile]);
+
   const toggleDrawer = () => {
     setOpen(!open);
   };
@@ -157,39 +277,48 @@ function Dashboard(props: DashboardProps) {
     }
   };
   return (
-    <ThemeProvider theme={mdTheme}>
+    <ThemeProvider theme={teslaTheme}>
       <Box sx={{ display: "flex" }}>
         <CssBaseline />
-        <AppBar position="absolute" open={open}>
+        <AppBar
+          position="fixed"
+          open={open && !isMobile}
+          sx={{
+            backgroundColor: "rgba(255, 255, 255, 0.75)",
+            color: "#171A20",
+            backdropFilter: "blur(8px)",
+            borderBottom: "1px solid #EEEEEE",
+            boxShadow: "none",
+            transition: "background-color 0.33s, color 0.33s",
+          }}
+        >
           <Toolbar
             sx={{
-              pr: "24px", // keep right padding when drawer closed
+              pr: "24px",
             }}
           >
             <IconButton
               edge="start"
-              color="inherit"
+              color="secondary"
               aria-label="open drawer"
               onClick={toggleDrawer}
               sx={{
                 marginRight: "36px",
-                ...(open && { display: "none" }),
+                ...(!isMobile && open && { display: "none" }),
               }}
             >
               <MenuIcon />
             </IconButton>
             <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
-              <Typography component="h1" variant="h6" color="inherit" noWrap>
+              <Typography component="h1" variant="h6" color="#171A20" noWrap>
                 {props.title}
               </Typography>
               <Divider
                 orientation="vertical"
                 flexItem
                 sx={{
-                  //height: "100%",
-                  //alignSelf: "center",
                   mx: 2,
-                  borderColor: "white",
+                  borderColor: "#D0D1D2",
                 }}
               />
               <SimpleListMenu
@@ -205,47 +334,159 @@ function Dashboard(props: DashboardProps) {
             />
           </Toolbar>
         </AppBar>
-        <Drawer variant="permanent" open={open}>
-          <Toolbar
+        {isMobile ? (
+          <MuiDrawer
+            variant="temporary"
+            open={open}
+            onClose={toggleDrawer}
+            ModalProps={{
+              keepMounted: true,
+            }}
             sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-end",
-              px: [1],
+              "& .MuiDrawer-paper": {
+                width: drawerWidth,
+                borderRight: "1px solid #EEEEEE",
+              },
             }}
           >
-            <IconButton onClick={toggleDrawer}>
-              <ChevronLeftIcon />
-            </IconButton>
-          </Toolbar>
-          <Divider />
-          <List component="nav">
-            <MainListItems />
-            <Divider sx={{ my: 1 }} />
-            {/* Moved to drop down menu */}
-            {/* <Logout /> */}
-          </List>
-        </Drawer>
+            <Toolbar
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                px: [1],
+              }}
+            >
+              <IconButton onClick={toggleDrawer}>
+                <ChevronLeftIcon />
+              </IconButton>
+            </Toolbar>
+            <Divider />
+            <List component="nav">
+              <MainListItems />
+              <Divider sx={{ my: 1 }} />
+            </List>
+          </MuiDrawer>
+        ) : (
+          <Drawer variant="permanent" open={open}>
+            <Toolbar
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                px: [1],
+              }}
+            >
+              <IconButton onClick={toggleDrawer}>
+                <ChevronLeftIcon />
+              </IconButton>
+            </Toolbar>
+            <Divider />
+            <List component="nav">
+              <MainListItems />
+              <Divider sx={{ my: 1 }} />
+            </List>
+          </Drawer>
+        )}
         <Box
           component="main"
           sx={{
-            backgroundColor: (theme) =>
-              theme.palette.mode === "light" ? theme.palette.grey[100] : theme.palette.grey[900],
+            backgroundColor: "#F4F4F4",
             flexGrow: 1,
             height: "100vh",
             overflow: "auto",
+            pb: 10,
           }}
         >
           <Toolbar />
-          <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+          <Box
+            sx={{
+              minHeight: 180,
+              backgroundColor: "#171A20",
+              borderBottom: "1px solid #EEEEEE",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              position: "relative",
+              overflow: "hidden",
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                width: "320px",
+                height: "320px",
+                borderRadius: "12px",
+                backgroundColor: "rgba(62, 106, 225, 0.35)",
+                transform: "rotate(32deg)",
+                right: "-140px",
+                top: "-140px",
+              },
+              "&::after": {
+                content: '""',
+                position: "absolute",
+                width: "220px",
+                height: "220px",
+                borderRadius: "12px",
+                backgroundColor: "rgba(255, 255, 255, 0.08)",
+                transform: "rotate(25deg)",
+                left: "-110px",
+                bottom: "-110px",
+              },
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: '"Universal Sans Display", -apple-system, Arial, sans-serif',
+                fontWeight: 500,
+                fontSize: { xs: "1.7rem", md: "2.2rem" },
+                color: "#FFFFFF",
+                zIndex: 1,
+              }}
+            >
+              {props.title}
+            </Typography>
+          </Box>
+          <Container maxWidth="xl" sx={{ mt: 3, mb: 4 }}>
             <Grid container spacing={3}>
               <Grid item xs={12}>
-                <Paper sx={{ p: 2, display: "flex", flexDirection: "column" }}>
+                <Paper
+                  sx={{
+                    p: { xs: 2, md: 3 },
+                    display: "flex",
+                    flexDirection: "column",
+                    backgroundColor: "#FFFFFF",
+                    borderRadius: "12px",
+                  }}
+                >
                   {props.children}
                 </Paper>
               </Grid>
             </Grid>
           </Container>
+        </Box>
+
+        <Box
+          sx={{
+            position: "fixed",
+            bottom: 0,
+            left: isMobile ? 0 : open ? `${drawerWidth}px` : 0,
+            right: 0,
+            backgroundColor: "#FFFFFF",
+            borderTop: "1px solid #EEEEEE",
+            px: 2,
+            py: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+            gap: 2,
+            zIndex: teslaTheme.zIndex.appBar,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "#3E6AE1" }}>
+            <EventAvailableIcon sx={{ fontSize: "1rem" }} />
+            <Typography sx={{ fontSize: "0.875rem", fontWeight: 500 }}>
+              Schedule a Drive Today
+            </Typography>
+          </Box>
         </Box>
       </Box>
     </ThemeProvider>
