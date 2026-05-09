@@ -1,9 +1,16 @@
+:root {
+  --wf-blue: #146ef5;
+  --wf-black: #080808;
+  --wf-border: #d8d8d8;
+  --wf-muted: #363636;
+}
+
 body {
   margin: 0;
-  font-family: "Universal Sans Text", -apple-system, Arial, sans-serif;
+  font-family: "WF Visual Sans Variable", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #171a20;
+  color: var(--wf-black);
   background-color: #ffffff;
 }
 
@@ -24,7 +31,7 @@ select {
 }
 
 ::selection {
-  background: #3e6ae1;
+  background: var(--wf-blue);
   color: #ffffff;
 }
 

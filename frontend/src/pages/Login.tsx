@@ -15,7 +15,7 @@ import { LoginContext } from "../LoginContext";
 const theme = createTheme({
   palette: {
     primary: {
-      main: "#3E6AE1",
+      main: "#146ef5",
       contrastText: "#FFFFFF",
     },
     background: {
@@ -23,15 +23,15 @@ const theme = createTheme({
       paper: "#FFFFFF",
     },
     text: {
-      primary: "#171A20",
-      secondary: "#393C41",
+      primary: "#080808",
+      secondary: "#363636",
     },
   },
   shape: {
     borderRadius: 4,
   },
   typography: {
-    fontFamily: '"Universal Sans Text", -apple-system, Arial, sans-serif',
+    fontFamily: '"WF Visual Sans Variable", Arial, sans-serif',
   },
   components: {
     MuiButton: {
@@ -41,12 +41,16 @@ const theme = createTheme({
           borderRadius: 4,
           textTransform: "none",
           fontWeight: 500,
-          border: "3px solid transparent",
+          border: "1px solid transparent",
           boxShadow: "none",
-          transition: "border-color 0.33s, background-color 0.33s, color 0.33s, box-shadow 0.25s",
+          transition: "transform 0.33s, border-color 0.33s, background-color 0.33s, color 0.33s, box-shadow 0.25s",
+          "&:hover": {
+            transform: "translateX(6px)",
+          },
         },
         containedPrimary: {
           "&:hover": {
+            backgroundColor: "#0055d4",
             boxShadow: "none",
           },
         },
@@ -101,7 +105,8 @@ export default function SignIn() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#F4F4F4",
+          background:
+            "radial-gradient(circle at 20% -10%, rgba(122, 61, 255, 0.12) 0%, rgba(122, 61, 255, 0) 35%), radial-gradient(circle at 85% 15%, rgba(20, 110, 245, 0.12) 0%, rgba(20, 110, 245, 0) 40%), #ffffff",
         }}
       >
         <CssBaseline />
@@ -110,9 +115,10 @@ export default function SignIn() {
             width: "100%",
             maxWidth: 420,
             p: 4,
-            border: "1px solid #EEEEEE",
-            boxShadow: "none",
-            borderTop: "4px solid #3E6AE1",
+            border: "1px solid #d8d8d8",
+            borderTop: "4px solid #146ef5",
+            boxShadow:
+              "rgba(0, 0, 0, 0) 0px 84px 24px, rgba(0, 0, 0, 0.01) 0px 54px 22px, rgba(0, 0, 0, 0.04) 0px 30px 18px, rgba(0, 0, 0, 0.08) 0px 13px 13px, rgba(0, 0, 0, 0.09) 0px 3px 7px",
           }}
         >
           <Box
@@ -126,10 +132,10 @@ export default function SignIn() {
             <Typography
               sx={{
                 mt: 2,
-                fontFamily: '"Universal Sans Display", -apple-system, Arial, sans-serif',
-                fontWeight: 500,
+                fontFamily: '"WF Visual Sans Variable", Arial, sans-serif',
+                fontWeight: 600,
                 fontSize: "2rem",
-                color: "#171A20",
+                color: "#080808",
               }}
             >
               Webconsole

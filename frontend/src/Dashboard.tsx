@@ -78,36 +78,37 @@ const mdTheme = createTheme();
 const teslaTheme = createTheme({
   palette: {
     primary: {
-      main: "#3E6AE1",
+      main: "#146ef5",
       contrastText: "#FFFFFF",
     },
     secondary: {
-      main: "#171A20",
+      main: "#080808",
     },
     background: {
       default: "#FFFFFF",
       paper: "#FFFFFF",
     },
     text: {
-      primary: "#171A20",
-      secondary: "#393C41",
+      primary: "#080808",
+      secondary: "#363636",
     },
-    divider: "#EEEEEE",
+    divider: "#d8d8d8",
   },
   shape: {
-    borderRadius: 4,
+    borderRadius: 6,
   },
   typography: {
-    fontFamily: '"Universal Sans Text", -apple-system, Arial, sans-serif',
+    fontFamily: '"WF Visual Sans Variable", Arial, sans-serif',
     h6: {
       fontSize: "1rem",
-      fontWeight: 500,
+      fontWeight: 600,
       letterSpacing: 0,
     },
     button: {
-      fontSize: "0.875rem",
+      fontSize: "1rem",
       fontWeight: 500,
       textTransform: "none",
+      letterSpacing: "-0.16px",
     },
   },
   components: {
@@ -116,15 +117,18 @@ const teslaTheme = createTheme({
         root: {
           borderRadius: 4,
           minHeight: 40,
-          transition: "border-color 0.33s, background-color 0.33s, color 0.33s, box-shadow 0.25s",
+          transition: "transform 0.33s, border-color 0.33s, background-color 0.33s, color 0.33s, box-shadow 0.25s",
           boxShadow: "none",
-          border: "3px solid transparent",
+          border: "1px solid transparent",
+          "&:hover": {
+            transform: "translateX(6px)",
+          },
         },
         containedPrimary: {
-          backgroundColor: "#3E6AE1",
+          backgroundColor: "#146ef5",
           color: "#FFFFFF",
           "&:hover": {
-            backgroundColor: "#365FCC",
+            backgroundColor: "#0055d4",
             boxShadow: "none",
           },
         },
@@ -133,20 +137,23 @@ const teslaTheme = createTheme({
     MuiPaper: {
       styleOverrides: {
         root: {
-          boxShadow: "none",
-          border: "1px solid #EEEEEE",
+          boxShadow:
+            "rgba(0, 0, 0, 0) 0px 84px 24px, rgba(0, 0, 0, 0.01) 0px 54px 22px, rgba(0, 0, 0, 0.04) 0px 30px 18px, rgba(0, 0, 0, 0.08) 0px 13px 13px, rgba(0, 0, 0, 0.09) 0px 3px 7px",
+          border: "1px solid #d8d8d8",
         },
       },
     },
     MuiTableCell: {
       styleOverrides: {
         head: {
-          color: "#171A20",
-          fontWeight: 500,
+          color: "#080808",
+          fontWeight: 600,
           fontSize: "0.875rem",
+          letterSpacing: "0.8px",
+          textTransform: "uppercase",
         },
         body: {
-          color: "#393C41",
+          color: "#363636",
           fontSize: "0.875rem",
         },
       },
@@ -166,9 +173,10 @@ const teslaTheme = createTheme({
           borderRadius: 4,
           margin: "4px 10px",
           minHeight: 40,
-          transition: "color 0.33s, background-color 0.33s",
+          transition: "color 0.33s, background-color 0.33s, transform 0.33s",
           "&.Mui-selected, &.Mui-selected:hover, &:hover": {
-            backgroundColor: "rgba(62, 106, 225, 0.08)",
+            backgroundColor: "rgba(20, 110, 245, 0.1)",
+            transform: "translateX(6px)",
           },
         },
       },
@@ -176,7 +184,7 @@ const teslaTheme = createTheme({
     MuiDivider: {
       styleOverrides: {
         root: {
-          borderColor: "#EEEEEE",
+          borderColor: "#d8d8d8",
         },
       },
     },
@@ -284,10 +292,10 @@ function Dashboard(props: DashboardProps) {
           position="fixed"
           open={open && !isMobile}
           sx={{
-            backgroundColor: "rgba(255, 255, 255, 0.75)",
-            color: "#171A20",
-            backdropFilter: "blur(8px)",
-            borderBottom: "1px solid #EEEEEE",
+            backgroundColor: "rgba(255, 255, 255, 0.92)",
+            color: "#080808",
+            backdropFilter: "blur(6px)",
+            borderBottom: "1px solid #d8d8d8",
             boxShadow: "none",
             transition: "background-color 0.33s, color 0.33s",
           }}
@@ -310,7 +318,7 @@ function Dashboard(props: DashboardProps) {
               <MenuIcon />
             </IconButton>
             <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
-              <Typography component="h1" variant="h6" color="#171A20" noWrap>
+              <Typography component="h1" variant="h6" color="#080808" noWrap>
                 {props.title}
               </Typography>
               <Divider
@@ -318,7 +326,7 @@ function Dashboard(props: DashboardProps) {
                 flexItem
                 sx={{
                   mx: 2,
-                  borderColor: "#D0D1D2",
+                  borderColor: "#d8d8d8",
                 }}
               />
               <SimpleListMenu
@@ -345,7 +353,7 @@ function Dashboard(props: DashboardProps) {
             sx={{
               "& .MuiDrawer-paper": {
                 width: drawerWidth,
-                borderRight: "1px solid #EEEEEE",
+                borderRight: "1px solid #d8d8d8",
               },
             }}
           >
@@ -391,7 +399,8 @@ function Dashboard(props: DashboardProps) {
         <Box
           component="main"
           sx={{
-            backgroundColor: "#F4F4F4",
+            background:
+              "radial-gradient(circle at 10% -20%, rgba(122, 61, 255, 0.12) 0%, rgba(122, 61, 255, 0) 40%), radial-gradient(circle at 90% 10%, rgba(20, 110, 245, 0.12) 0%, rgba(20, 110, 245, 0) 45%), #ffffff",
             flexGrow: 1,
             height: "100vh",
             overflow: "auto",
@@ -402,9 +411,10 @@ function Dashboard(props: DashboardProps) {
           <Box
             sx={{
               minHeight: 180,
-              backgroundColor: "#171A20",
-              borderBottom: "1px solid #EEEEEE",
+              backgroundColor: "#ffffff",
+              borderBottom: "1px solid #d8d8d8",
               display: "flex",
+              flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
               position: "relative",
@@ -412,33 +422,45 @@ function Dashboard(props: DashboardProps) {
               "&::before": {
                 content: '""',
                 position: "absolute",
-                width: "320px",
-                height: "320px",
-                borderRadius: "12px",
-                backgroundColor: "rgba(62, 106, 225, 0.35)",
-                transform: "rotate(32deg)",
-                right: "-140px",
-                top: "-140px",
+                width: "360px",
+                height: "360px",
+                borderRadius: "50%",
+                backgroundColor: "rgba(20, 110, 245, 0.16)",
+                transform: "translate(0, 0)",
+                right: "-120px",
+                top: "-180px",
               },
               "&::after": {
                 content: '""',
                 position: "absolute",
-                width: "220px",
-                height: "220px",
-                borderRadius: "12px",
-                backgroundColor: "rgba(255, 255, 255, 0.08)",
-                transform: "rotate(25deg)",
-                left: "-110px",
-                bottom: "-110px",
+                width: "280px",
+                height: "280px",
+                borderRadius: "50%",
+                backgroundColor: "rgba(237, 82, 203, 0.14)",
+                left: "-100px",
+                bottom: "-130px",
               },
             }}
           >
             <Typography
               sx={{
-                fontFamily: '"Universal Sans Display", -apple-system, Arial, sans-serif',
-                fontWeight: 500,
+                zIndex: 1,
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                letterSpacing: "1.2px",
+                color: "#146ef5",
+                textTransform: "uppercase",
+                mb: 1,
+              }}
+            >
+              webconsole control plane
+            </Typography>
+            <Typography
+              sx={{
+                fontFamily: '"WF Visual Sans Variable", Arial, sans-serif',
+                fontWeight: 600,
                 fontSize: { xs: "1.7rem", md: "2.2rem" },
-                color: "#FFFFFF",
+                color: "#080808",
                 zIndex: 1,
               }}
             >
@@ -454,7 +476,8 @@ function Dashboard(props: DashboardProps) {
                     display: "flex",
                     flexDirection: "column",
                     backgroundColor: "#FFFFFF",
-                    borderRadius: "12px",
+                    borderRadius: "8px",
+                    border: "1px solid #d8d8d8",
                   }}
                 >
                   {props.children}
@@ -471,7 +494,7 @@ function Dashboard(props: DashboardProps) {
             left: isMobile ? 0 : open ? `${drawerWidth}px` : 0,
             right: 0,
             backgroundColor: "#FFFFFF",
-            borderTop: "1px solid #EEEEEE",
+            borderTop: "1px solid #d8d8d8",
             px: 2,
             py: 1,
             display: "flex",
@@ -481,7 +504,7 @@ function Dashboard(props: DashboardProps) {
             zIndex: teslaTheme.zIndex.appBar,
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "#3E6AE1" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "#146ef5" }}>
             <EventAvailableIcon sx={{ fontSize: "1rem" }} />
             <Typography sx={{ fontSize: "0.875rem", fontWeight: 500 }}>
               Schedule a Drive Today
