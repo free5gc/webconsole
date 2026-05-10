@@ -31,15 +31,12 @@ import {
   formatMultipleDeleteSubscriberToJson,
 } from "../lib/jsonFormating";
 
-// ── constants ────────────────────────────────────────────────────────────────
-
 const ROW_HEIGHT = 52;
 const MAX_LIST_HEIGHT = 530;
 const BULK_DELETE_WARN_THRESHOLD = 100;
 const BULK_DELETE_BATCH_SIZE = 500;
 
-// Column widths shared between header and virtual rows.
-// Must stay in sync — change both together.
+// Shared between header and virtual rows — both must use the same template.
 const COL_CHECKBOX = "52px";
 const COL_PLMN     = "18%";
 const COL_UEID     = "1fr";
@@ -47,8 +44,6 @@ const COL_DELETE   = "110px";
 const COL_VIEW     = "90px";
 const COL_EDIT     = "90px";
 const GRID_COLS    = `${COL_CHECKBOX} ${COL_PLMN} ${COL_UEID} ${COL_DELETE} ${COL_VIEW} ${COL_EDIT}`;
-
-// ── types ────────────────────────────────────────────────────────────────────
 
 interface Props {
   refresh: boolean;
@@ -64,9 +59,7 @@ type RowSharedProps = {
   onRowClick: (item: MultipleDeleteSubscriberData) => void;
 };
 
-// ── virtual row ──────────────────────────────────────────────────────────────
 // Defined outside SubscriberList so its reference is stable across renders.
-
 type VirtualRowProps = {
   ariaAttributes: Record<string, string | number>;
   index: number;
@@ -91,7 +84,6 @@ function VirtualRow({
     plmnID: row.plmnID!,
   };
 
-  // Selection keyed by stable ueId+plmnID — survives scroll and search changes
   const isItemSelected = selected.some(
     (s) => s.ueId === item.ueId && s.plmnID === item.plmnID
   );
@@ -104,11 +96,12 @@ function VirtualRow({
         display: "grid",
         gridTemplateColumns: GRID_COLS,
         alignItems: "center",
-        borderBottom: "1px solid rgba(224,224,224,1)",
-        backgroundColor: isItemSelected
-          ? "rgba(25,118,210,0.08)"
-          : "transparent",
-        "&:hover": { backgroundColor: isItemSelected ? "rgba(25,118,210,0.12)" : "rgba(0,0,0,0.04)" },
+        borderBottom: "1px solid",
+        borderColor: "divider",
+        backgroundColor: isItemSelected ? "action.selected" : "transparent",
+        "&:hover": {
+          backgroundColor: isItemSelected ? "action.focus" : "action.hover",
+        },
         cursor: "pointer",
         boxSizing: "border-box",
       }}
@@ -156,8 +149,6 @@ function VirtualRow({
   );
 }
 
-// ── component ────────────────────────────────────────────────────────────────
-
 function SubscriberList(props: Props) {
   const navigation = useNavigate();
   const [data, setData] = useState<Subscriber[]>([]);
@@ -180,8 +171,6 @@ function SubscriberList(props: Props) {
       .finally(() => setIsLoading(false));
   }, [props.refresh]);
 
-  // useMemo: filter only reruns when data or searchTerm changes,
-  // not on every checkbox tick
   const filteredData = useMemo(
     () =>
       data.filter(
@@ -192,7 +181,6 @@ function SubscriberList(props: Props) {
     [data, searchTerm]
   );
 
-  // Clear selection when search changes to avoid acting on hidden items
   useEffect(() => {
     setSelected([]);
   }, [searchTerm]);
@@ -244,9 +232,6 @@ function SubscriberList(props: Props) {
     [navigation]
   );
 
-  // Batched bulk delete — sends BULK_DELETE_BATCH_SIZE subscribers per request
-  // so large selections (e.g. 50 K) don't produce a single giant payload that
-  // the browser or server silently drops.
   const onDeleteSelected = async () => {
     const count = selected.length;
     if (count === 0) return;
@@ -297,12 +282,10 @@ function SubscriberList(props: Props) {
     }
 
     setDeleteProgress(null);
-    console.log(`[BulkDelete] Done. anyError=${anyError}`);
 
     if (anyError) {
       setIsDeleteError(true);
     }
-    // Always refresh and clear — partial deletes should still update the list
     props.setRefresh(!props.refresh);
     setSelected([]);
   };
@@ -345,14 +328,6 @@ function SubscriberList(props: Props) {
       </>
     );
   }
-
-  // ── Virtual list setup ───────────────────────────────────────────────────
-  // The List is placed in a plain Box div — NOT inside MUI TableBody.
-  // This ensures react-window can correctly measure its container height
-  // via ResizeObserver and render only visible rows (~10 at a time).
-  //
-  // Column alignment is achieved with CSS Grid using the same GRID_COLS
-  // constant for both the header and each virtual row.
 
   const listHeight = Math.min(filteredData.length * ROW_HEIGHT, MAX_LIST_HEIGHT);
 
@@ -404,17 +379,15 @@ function SubscriberList(props: Props) {
         </Box>
       )}
 
-      {/* Header — plain Table with matching CSS Grid column widths */}
       <Box
         sx={{
           display: "grid",
           gridTemplateColumns: GRID_COLS,
           alignItems: "center",
-          borderBottom: "2px solid rgba(224,224,224,1)",
-          borderTop: "1px solid rgba(224,224,224,1)",
-          borderLeft: "1px solid rgba(224,224,224,1)",
-          borderRight: "1px solid rgba(224,224,224,1)",
-          backgroundColor: "#fafafa",
+          border: "1px solid",
+          borderColor: "divider",
+          borderBottom: "2px solid",
+          backgroundColor: "background.default",
           fontWeight: 600,
           fontSize: 14,
           minHeight: ROW_HEIGHT,
@@ -436,10 +409,9 @@ function SubscriberList(props: Props) {
         <Box sx={{ px: 0.5 }}>Edit</Box>
       </Box>
 
-      {/* Virtual body — react-window List with explicit pixel height.
-          Must use pixels not "100%" — react-window v2 uses ResizeObserver
-          which cannot resolve percentage heights, resulting in 0 rows rendered. */}
-      <Box sx={{ border: "1px solid rgba(224,224,224,1)", borderTop: 0 }}>
+      {/* react-window requires an explicit pixel height — percentage heights
+          resolve to 0 because ResizeObserver cannot measure unconstrained flex containers. */}
+      <Box sx={{ border: "1px solid", borderColor: "divider", borderTop: 0 }}>
         <List<RowSharedProps>
           rowComponent={VirtualRow}
           rowProps={rowProps}
