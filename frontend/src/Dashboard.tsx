@@ -137,9 +137,15 @@ const teslaTheme = createTheme({
     MuiPaper: {
       styleOverrides: {
         root: {
-          boxShadow:
-            "rgba(0, 0, 0, 0) 0px 84px 24px, rgba(0, 0, 0, 0.01) 0px 54px 22px, rgba(0, 0, 0, 0.04) 0px 30px 18px, rgba(0, 0, 0, 0.08) 0px 13px 13px, rgba(0, 0, 0, 0.09) 0px 3px 7px",
+          boxShadow: "0 6px 18px rgba(8, 8, 8, 0.07), 0 2px 6px rgba(8, 8, 8, 0.04)",
           border: "1px solid #d8d8d8",
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          boxShadow: "0 5px 14px rgba(8, 8, 8, 0.06), 0 1px 4px rgba(8, 8, 8, 0.04)",
         },
       },
     },
