@@ -1,12 +1,5 @@
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  CSSProperties,
-} from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { List } from "react-window";
 
 import axios from "../axios";
 import { Subscriber } from "../api/api";
@@ -21,6 +14,11 @@ import {
   LinearProgress,
   Snackbar,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
   TextField,
   Typography,
   Checkbox,
@@ -31,122 +29,12 @@ import {
   formatMultipleDeleteSubscriberToJson,
 } from "../lib/jsonFormating";
 
-const ROW_HEIGHT = 52;
-const MAX_LIST_HEIGHT = 530;
 const BULK_DELETE_WARN_THRESHOLD = 100;
 const BULK_DELETE_BATCH_SIZE = 500;
-
-// Shared between header and virtual rows — both must use the same template.
-const COL_CHECKBOX = "52px";
-const COL_PLMN     = "18%";
-const COL_UEID     = "1fr";
-const COL_DELETE   = "110px";
-const COL_VIEW     = "90px";
-const COL_EDIT     = "90px";
-const GRID_COLS    = `${COL_CHECKBOX} ${COL_PLMN} ${COL_UEID} ${COL_DELETE} ${COL_VIEW} ${COL_EDIT}`;
 
 interface Props {
   refresh: boolean;
   setRefresh: (v: boolean) => void;
-}
-
-type RowSharedProps = {
-  rows: Subscriber[];
-  selected: MultipleDeleteSubscriberData[];
-  onDelete: (id: string, plmn: string) => void;
-  onModify: (s: Subscriber) => void;
-  onEdit: (s: Subscriber) => void;
-  onRowClick: (item: MultipleDeleteSubscriberData) => void;
-};
-
-// Defined outside SubscriberList so its reference is stable across renders.
-type VirtualRowProps = {
-  ariaAttributes: Record<string, string | number>;
-  index: number;
-  style: CSSProperties;
-} & RowSharedProps;
-
-function VirtualRow({
-  index,
-  style,
-  rows,
-  selected,
-  onDelete,
-  onModify,
-  onEdit,
-  onRowClick,
-}: VirtualRowProps) {
-  const row = rows[index];
-  if (!row) return null;
-
-  const item: MultipleDeleteSubscriberData = {
-    ueId: row.ueId!,
-    plmnID: row.plmnID!,
-  };
-
-  const isItemSelected = selected.some(
-    (s) => s.ueId === item.ueId && s.plmnID === item.plmnID
-  );
-
-  return (
-    <Box
-      style={style}
-      onClick={() => onRowClick(item)}
-      sx={{
-        display: "grid",
-        gridTemplateColumns: GRID_COLS,
-        alignItems: "center",
-        borderBottom: "1px solid",
-        borderColor: "divider",
-        backgroundColor: isItemSelected ? "action.selected" : "transparent",
-        "&:hover": {
-          backgroundColor: isItemSelected ? "action.focus" : "action.hover",
-        },
-        cursor: "pointer",
-        boxSizing: "border-box",
-      }}
-    >
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Checkbox color="primary" checked={isItemSelected} size="small" />
-      </Box>
-      <Box sx={{ px: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 14 }}>
-        {row.plmnID}
-      </Box>
-      <Box sx={{ px: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 14 }}>
-        {row.ueId}
-      </Box>
-      <Box sx={{ px: 0.5 }}>
-        <Button
-          size="small"
-          color="primary"
-          variant="contained"
-          onClick={(e) => { e.stopPropagation(); onDelete(row.ueId!, row.plmnID!); }}
-        >
-          DELETE
-        </Button>
-      </Box>
-      <Box sx={{ px: 0.5 }}>
-        <Button
-          size="small"
-          color="primary"
-          variant="contained"
-          onClick={(e) => { e.stopPropagation(); onModify(row); }}
-        >
-          VIEW
-        </Button>
-      </Box>
-      <Box sx={{ px: 0.5 }}>
-        <Button
-          size="small"
-          color="primary"
-          variant="contained"
-          onClick={(e) => { e.stopPropagation(); onEdit(row); }}
-        >
-          EDIT
-        </Button>
-      </Box>
-    </Box>
-  );
 }
 
 function SubscriberList(props: Props) {
@@ -206,6 +94,9 @@ function SubscriberList(props: Props) {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
+
+  const isSelected = (item: MultipleDeleteSubscriberData) =>
+    selected.some((s) => s.ueId === item.ueId && s.plmnID === item.plmnID);
 
   const onDelete = useCallback(
     (id: string, plmn: string) => {
@@ -329,17 +220,6 @@ function SubscriberList(props: Props) {
     );
   }
 
-  const listHeight = Math.min(filteredData.length * ROW_HEIGHT, MAX_LIST_HEIGHT);
-
-  const rowProps: RowSharedProps = {
-    rows: filteredData,
-    selected,
-    onDelete,
-    onModify,
-    onEdit,
-    onRowClick: handleRowClick,
-  };
-
   return (
     <>
       <br />
@@ -379,47 +259,84 @@ function SubscriberList(props: Props) {
         </Box>
       )}
 
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: GRID_COLS,
-          alignItems: "center",
-          border: "1px solid",
-          borderColor: "divider",
-          borderBottom: "2px solid",
-          backgroundColor: "background.default",
-          fontWeight: 600,
-          fontSize: 14,
-          minHeight: ROW_HEIGHT,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Checkbox
-            color="primary"
-            indeterminate={selected.length > 0 && selected.length < filteredData.length}
-            checked={filteredData.length > 0 && selected.length === filteredData.length}
-            onChange={handleSelectAllClick}
-            size="small"
-          />
-        </Box>
-        <Box sx={{ px: 1 }}>PLMN</Box>
-        <Box sx={{ px: 1 }}>UE ID</Box>
-        <Box sx={{ px: 0.5 }}>Delete</Box>
-        <Box sx={{ px: 0.5 }}>View</Box>
-        <Box sx={{ px: 0.5 }}>Edit</Box>
-      </Box>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell padding="checkbox">
+              <Checkbox
+                color="primary"
+                indeterminate={selected.length > 0 && selected.length < filteredData.length}
+                checked={filteredData.length > 0 && selected.length === filteredData.length}
+                onChange={handleSelectAllClick}
+              />
+            </TableCell>
+            <TableCell>PLMN</TableCell>
+            <TableCell>UE ID</TableCell>
+            <TableCell>Delete</TableCell>
+            <TableCell>View</TableCell>
+            <TableCell>Edit</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {filteredData.map((row, index) => {
+            const item = { ueId: row.ueId!, plmnID: row.plmnID! };
+            const isItemSelected = isSelected(item);
 
-      {/* react-window requires an explicit pixel height — percentage heights
-          resolve to 0 because ResizeObserver cannot measure unconstrained flex containers. */}
-      <Box sx={{ border: "1px solid", borderColor: "divider", borderTop: 0 }}>
-        <List<RowSharedProps>
-          rowComponent={VirtualRow}
-          rowProps={rowProps}
-          rowCount={filteredData.length}
-          rowHeight={ROW_HEIGHT}
-          style={{ height: listHeight, width: "100%" }}
-        />
-      </Box>
+            return (
+              <TableRow
+                key={index}
+                hover
+                onClick={() => handleRowClick(item)}
+                role="checkbox"
+                aria-checked={isItemSelected}
+                selected={isItemSelected}
+              >
+                <TableCell padding="checkbox">
+                  <Checkbox color="primary" checked={isItemSelected} />
+                </TableCell>
+                <TableCell>{row.plmnID}</TableCell>
+                <TableCell>{row.ueId}</TableCell>
+                <TableCell>
+                  <Button
+                    color="primary"
+                    variant="contained"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(row.ueId!, row.plmnID!);
+                    }}
+                  >
+                    DELETE
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    color="primary"
+                    variant="contained"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onModify(row);
+                    }}
+                  >
+                    VIEW
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    color="primary"
+                    variant="contained"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(row);
+                    }}
+                  >
+                    EDIT
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
 
       <Grid item xs={12} sx={{ mt: 1 }}>
         <Button
