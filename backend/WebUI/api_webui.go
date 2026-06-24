@@ -422,6 +422,17 @@ func GetTenantId(c *gin.Context) (string, error) {
 	return claims["tenantId"].(string), nil
 }
 
+func CheckProfileAuth(c *gin.Context) bool {
+	tokenStr := c.GetHeader("Token")
+	_, err := ParseJWT(tokenStr)
+	if err != nil {
+		logger.ProcLog.Errorln(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"cause": "Illegal Token"})
+		return false
+	}
+	return true
+}
+
 // Tenant
 func GetTenants(c *gin.Context) {
 	setCorsHeader(c)
@@ -1914,6 +1925,10 @@ func DeleteProfile(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Delete One Profile Data")
 
+	if !CheckProfileAuth(c) {
+		return
+	}
+
 	profileName := c.Param("profileName")
 	pf, err := mongoapi.RestfulAPIGetOne(profileDataColl, bson.M{"profileName": profileName})
 	if err != nil {
@@ -1937,6 +1952,11 @@ func DeleteProfile(c *gin.Context) {
 func DeleteMultipleProfiles(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Delete Multiple Profiles")
+
+	if !CheckProfileAuth(c) {
+		return
+	}
+
 	var profileDatas []*Profile
 	if err := c.ShouldBindJSON(&profileDatas); err != nil {
 		logger.ProcLog.Errorf("DeleteMultipleProfiles err: %+v", err)
@@ -1986,6 +2006,10 @@ func GetProfile(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Get One Profile Data")
 
+	if !CheckProfileAuth(c) {
+		return
+	}
+
 	profileName := c.Param("profileName")
 
 	profile, err := mongoapi.RestfulAPIGetOne(profileDataColl, bson.M{"profileName": profileName})
@@ -2009,16 +2033,12 @@ func PostProfile(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Post One Profile Data")
 
-	tokenStr := c.GetHeader("Token")
-	_, err := ParseJWT(tokenStr)
-	if err != nil {
-		logger.ProcLog.Errorln(err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"cause": "Illegal Token"})
+	if !CheckProfileAuth(c) {
 		return
 	}
 
 	var profile Profile
-	if err = c.ShouldBindJSON(&profile); err != nil {
+	if err := c.ShouldBindJSON(&profile); err != nil {
 		logger.ProcLog.Errorf("PostProfile err: %+v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"cause": "JSON format incorrect"})
 		return
@@ -2055,6 +2075,10 @@ func PostProfile(c *gin.Context) {
 func PutProfile(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Put One Profile Data")
+
+	if !CheckProfileAuth(c) {
+		return
+	}
 
 	profileName := c.Param("profileName")
 
