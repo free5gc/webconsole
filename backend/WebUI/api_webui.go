@@ -1808,6 +1808,16 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 		return
 	}
 
+	isAdmin := CheckAuth(c)
+	tenantId, err := GetTenantId(c)
+	if err != nil {
+		logger.ProcLog.Errorln(err.Error())
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"cause": "Illegal or Nil token",
+		})
+		return
+	}
+
 	// TODO: support fetching data from multiple SMF
 	if smfUris := webuiSelf.GetOamUris(models.NrfNfManagementNfType_SMF); smfUris != nil {
 		requestUri := fmt.Sprintf("%s/nsmf-oam/v1/ue-pdu-session-info/%s", smfUris[0], smContextRef)
@@ -1843,12 +1853,55 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 				logger.ProcLog.Error(closeErr)
 			}
 		}()
-		sendResponseToClient(c, resp)
+
+		if isAdmin {
+			sendResponseToClient(c, resp)
+		} else {
+			sendResponseToClientFilterTenantSingle(c, resp, tenantId)
+		}
 	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"cause": "No SMF Found",
 		})
 	}
+}
+
+// sendResponseToClientFilterTenantSingle forwards a single-object OAM response
+// (e.g. SMF ue-pdu-session-info) only when its Supi belongs to the caller's
+// tenant, so a non-admin user cannot read another tenant's PDU session.
+func sendResponseToClientFilterTenantSingle(c *gin.Context, response *http.Response, tenantId string) {
+	filterTenantIdOnly := bson.M{"tenantId": tenantId}
+	amDataList, err := mongoapi.RestfulAPIGetMany(amDataColl, filterTenantIdOnly)
+	if err != nil {
+		logger.ProcLog.Errorf("sendResponseToClientFilterTenantSingle err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
+
+	tenantCheck := func(supi string) bool {
+		for _, amData := range amDataList {
+			if supi == amData["ueId"] {
+				return true
+			}
+		}
+		return false
+	}
+
+	var jsonData map[string]interface{}
+	if err = json.NewDecoder(response.Body).Decode(&jsonData); err != nil {
+		logger.ProcLog.Errorf("sendResponseToClientFilterTenantSingle err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
+
+	if supi, ok := jsonData["Supi"].(string); ok && tenantCheck(supi) {
+		c.JSON(response.StatusCode, jsonData)
+		return
+	}
+
+	c.JSON(http.StatusForbidden, gin.H{
+		"cause": "Subscriber does not belong to this tenant",
+	})
 }
 
 func ChangePasswordInfo(c *gin.Context) {
