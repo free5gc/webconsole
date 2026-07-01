@@ -1808,6 +1808,16 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 		return
 	}
 
+	isAdmin := CheckAuth(c)
+	tenantId, err := GetTenantId(c)
+	if err != nil {
+		logger.ProcLog.Errorln(err.Error())
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"cause": "Illegal or Nil token",
+		})
+		return
+	}
+
 	// TODO: support fetching data from multiple SMF
 	if smfUris := webuiSelf.GetOamUris(models.NrfNfManagementNfType_SMF); smfUris != nil {
 		requestUri := fmt.Sprintf("%s/nsmf-oam/v1/ue-pdu-session-info/%s", smfUris[0], smContextRef)
@@ -1820,7 +1830,8 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 			return
 		}
 
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestUri, nil)
+		var req *http.Request
+		req, err = http.NewRequestWithContext(ctx, http.MethodGet, requestUri, nil)
 		if err != nil {
 			logger.ProcLog.Error(err)
 			c.JSON(http.StatusInternalServerError, gin.H{})
@@ -1832,7 +1843,8 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 			return
 		}
 
-		resp, err := httpsClient.Do(req)
+		var resp *http.Response
+		resp, err = httpsClient.Do(req)
 		if err != nil {
 			logger.ProcLog.Error(err)
 			c.JSON(http.StatusInternalServerError, gin.H{})
@@ -1843,12 +1855,59 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 				logger.ProcLog.Error(closeErr)
 			}
 		}()
-		sendResponseToClient(c, resp)
+
+		if isAdmin {
+			sendResponseToClient(c, resp)
+		} else {
+			sendResponseToClientFilterTenantSingle(c, resp, tenantId)
+		}
 	} else {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"cause": "No SMF Found",
 		})
 	}
+}
+
+// sendResponseToClientFilterTenantSingle forwards a single-object OAM response
+// (e.g. SMF ue-pdu-session-info) only when its Supi belongs to the caller's
+// tenant, so a non-admin user cannot read another tenant's PDU session.
+func sendResponseToClientFilterTenantSingle(c *gin.Context, response *http.Response, tenantId string) {
+	// Preserve upstream error responses as-is; only apply tenant check on success.
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		sendResponseToClient(c, response)
+		return
+	}
+
+	var jsonData map[string]interface{}
+	if err := json.NewDecoder(response.Body).Decode(&jsonData); err != nil {
+		logger.ProcLog.Errorf("sendResponseToClientFilterTenantSingle err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
+
+	supi, ok := jsonData["Supi"].(string)
+	if !ok || supi == "" {
+		c.JSON(http.StatusForbidden, gin.H{
+			"cause": "Subscriber does not belong to this tenant",
+		})
+		return
+	}
+
+	// Point query instead of loading all tenant rows (avoids O(N) scan).
+	amData, err := mongoapi.RestfulAPIGetOne(amDataColl, bson.M{"tenantId": tenantId, "ueId": supi})
+	if err != nil {
+		logger.ProcLog.Errorf("sendResponseToClientFilterTenantSingle err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
+	if len(amData) == 0 {
+		c.JSON(http.StatusForbidden, gin.H{
+			"cause": "Subscriber does not belong to this tenant",
+		})
+		return
+	}
+
+	c.JSON(response.StatusCode, jsonData)
 }
 
 func ChangePasswordInfo(c *gin.Context) {
