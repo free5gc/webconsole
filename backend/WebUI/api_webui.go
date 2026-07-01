@@ -1830,7 +1830,8 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 			return
 		}
 
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestUri, nil)
+		var req *http.Request
+		req, err = http.NewRequestWithContext(ctx, http.MethodGet, requestUri, nil)
 		if err != nil {
 			logger.ProcLog.Error(err)
 			c.JSON(http.StatusInternalServerError, gin.H{})
@@ -1842,7 +1843,8 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 			return
 		}
 
-		resp, err := httpsClient.Do(req)
+		var resp *http.Response
+		resp, err = httpsClient.Do(req)
 		if err != nil {
 			logger.ProcLog.Error(err)
 			c.JSON(http.StatusInternalServerError, gin.H{})
