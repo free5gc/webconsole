@@ -55,6 +55,12 @@ var jwtKey = "" // for generating JWT
 
 var httpsClient *http.Client
 
+const (
+	authClaimsContextKey = "authClaims"
+	authTenantContextKey = "authTenantId"
+	authAdminContextKey  = "authIsAdmin"
+)
+
 func init() {
 	httpsClient = &http.Client{
 		Transport: &http.Transport{
@@ -380,46 +386,145 @@ type AuthSub struct {
 
 // Parse JWT
 func ParseJWT(tokenStr string) (jwt.MapClaims, error) {
+	if tokenStr == "" {
+		return nil, fmt.Errorf("no token in header")
+	}
+
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+
 		// Tolerance for User's Time quicker than Server's time
-		mapClaims := token.Claims.(jwt.MapClaims)
-		delete(mapClaims, "iat")
+		if mapClaims, ok := token.Claims.(jwt.MapClaims); ok {
+			delete(mapClaims, "iat")
+		}
 		return []byte(jwtKey), nil
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "ParseJWT error")
 	}
+	if token == nil || !token.Valid {
+		return nil, fmt.Errorf("invalid token")
+	}
 
-	claims, _ := token.Claims.(jwt.MapClaims)
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, fmt.Errorf("invalid token claims")
+	}
 
 	return claims, nil
 }
 
+func getClaimString(claims jwt.MapClaims, key string) (string, bool) {
+	value, ok := claims[key]
+	if !ok {
+		return "", false
+	}
+
+	stringValue, ok := value.(string)
+	if !ok || stringValue == "" {
+		return "", false
+	}
+
+	return stringValue, true
+}
+
+func claimsFromContext(c *gin.Context) (jwt.MapClaims, bool) {
+	value, exists := c.Get(authClaimsContextKey)
+	if !exists {
+		return nil, false
+	}
+
+	claims, ok := value.(jwt.MapClaims)
+	return claims, ok
+}
+
+func getAuthenticatedClaims(c *gin.Context) (jwt.MapClaims, error) {
+	if claims, ok := claimsFromContext(c); ok {
+		return claims, nil
+	}
+
+	return ParseJWT(c.GetHeader("Token"))
+}
+
+func isAdminClaims(claims jwt.MapClaims) bool {
+	email, ok := getClaimString(claims, "email")
+	return ok && email == "admin"
+}
+
+func AuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.Method == http.MethodOptions ||
+			(c.Request.Method == http.MethodPost && c.Request.URL.Path == "/api/login") {
+			c.Next()
+			return
+		}
+
+		claims, err := ParseJWT(c.GetHeader("Token"))
+		if err != nil {
+			logger.ProcLog.Errorln(err.Error())
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
+			return
+		}
+
+		tenantId, ok := getClaimString(claims, "tenantId")
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"cause": "Illegal Token"})
+			return
+		}
+
+		c.Set(authClaimsContextKey, claims)
+		c.Set(authTenantContextKey, tenantId)
+		c.Set(authAdminContextKey, isAdminClaims(claims))
+		c.Next()
+	}
+}
+
 // Check of admin user. This should be done with proper JWT token.
 func CheckAuth(c *gin.Context) bool {
-	tokenStr := c.GetHeader("Token")
-	claims, err := ParseJWT(tokenStr)
+	if isAdmin, exists := c.Get(authAdminContextKey); exists {
+		if isAdminBool, ok := isAdmin.(bool); ok {
+			return isAdminBool
+		}
+	}
+
+	claims, err := getAuthenticatedClaims(c)
 	if err != nil {
 		return false
 	}
-	if claims["email"].(string) == "admin" {
-		return true
-	} else {
-		return false
-	}
+	return isAdminClaims(claims)
 }
 
 // Tenant ID
 func GetTenantId(c *gin.Context) (string, error) {
-	tokenStr := c.GetHeader("Token")
-	if tokenStr == "" {
-		return "", fmt.Errorf("no token in header")
+	if tenantId, exists := c.Get(authTenantContextKey); exists {
+		if tenantIdString, ok := tenantId.(string); ok && tenantIdString != "" {
+			return tenantIdString, nil
+		}
 	}
-	claims, err := ParseJWT(tokenStr)
+
+	claims, err := getAuthenticatedClaims(c)
 	if err != nil {
 		return "", errors.Wrap(err, "GetTenantId error")
 	}
-	return claims["tenantId"].(string), nil
+
+	tenantId, ok := getClaimString(claims, "tenantId")
+	if !ok {
+		return "", fmt.Errorf("tenantId not found in token")
+	}
+
+	return tenantId, nil
+}
+
+func CheckProfileAuth(c *gin.Context) bool {
+	_, err := getAuthenticatedClaims(c)
+	if err != nil {
+		logger.ProcLog.Errorln(err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"cause": "Illegal Token"})
+		return false
+	}
+	return true
 }
 
 // Tenant
@@ -882,11 +987,126 @@ func GetSubscribers(c *gin.Context) {
 	c.JSON(http.StatusOK, subsList)
 }
 
+func getSubscriberAMData(ueId string, servingPlmnId string) (map[string]interface{}, error) {
+	filter := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId}
+	return mongoapi.RestfulAPIGetOne(amDataColl, filter)
+}
+
+func subscriberTenantID(amData map[string]interface{}) (string, bool) {
+	if len(amData) == 0 {
+		return "", false
+	}
+
+	tenantId, ok := amData["tenantId"].(string)
+	return tenantId, ok && tenantId != ""
+}
+
+func canAccessSubscriberTenant(c *gin.Context, tenantId string) bool {
+	if CheckAuth(c) {
+		return true
+	}
+	if tenantId == "" {
+		return false
+	}
+
+	userTenantId, err := GetTenantId(c)
+	if err != nil {
+		logger.ProcLog.Errorln(err.Error())
+		return false
+	}
+
+	return userTenantId == tenantId
+}
+
+func requireSubscriberAccess(c *gin.Context, ueId string, servingPlmnId string) (map[string]interface{}, bool) {
+	amData, err := getSubscriberAMData(ueId, servingPlmnId)
+	if err != nil {
+		logger.ProcLog.Errorf("requireSubscriberAccess err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return nil, false
+	}
+	if len(amData) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"cause": "subscriber does not exist"})
+		return nil, false
+	}
+
+	tenantId, _ := subscriberTenantID(amData)
+	if !canAccessSubscriberTenant(c, tenantId) {
+		c.JSON(http.StatusForbidden, gin.H{"cause": "Forbidden"})
+		return nil, false
+	}
+
+	return amData, true
+}
+
+func authorizeSubscriberIfExists(
+	c *gin.Context,
+	ueId string,
+	servingPlmnId string,
+) (map[string]interface{}, bool, bool) {
+	amData, err := getSubscriberAMData(ueId, servingPlmnId)
+	if err != nil {
+		logger.ProcLog.Errorf("authorizeSubscriberIfExists err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return nil, false, false
+	}
+	if len(amData) == 0 {
+		return nil, false, true
+	}
+
+	tenantId, _ := subscriberTenantID(amData)
+	if !canAccessSubscriberTenant(c, tenantId) {
+		c.JSON(http.StatusForbidden, gin.H{"cause": "Forbidden"})
+		return nil, true, false
+	}
+
+	return amData, true, true
+}
+
+func claimsWithTenant(claims jwt.MapClaims, tenantId string) jwt.MapClaims {
+	if tenantId == "" {
+		return claims
+	}
+
+	scopedClaims := make(jwt.MapClaims, len(claims))
+	for key, value := range claims {
+		scopedClaims[key] = value
+	}
+	scopedClaims["tenantId"] = tenantId
+	return scopedClaims
+}
+
+func tenantScopedFilter(filter bson.M, claims jwt.MapClaims) bson.M {
+	if claims == nil || isAdminClaims(claims) {
+		return filter
+	}
+
+	tenantId, ok := getClaimString(claims, "tenantId")
+	if !ok {
+		return filter
+	}
+
+	scopedFilter := bson.M{}
+	for key, value := range filter {
+		scopedFilter[key] = value
+	}
+	scopedFilter["tenantId"] = tenantId
+	return scopedFilter
+}
+
 // Get subscriber by IMSI(ueId) and PlmnID(servingPlmnId)
 func GetSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
 
 	logger.ProcLog.Infoln("Get One Subscriber Data")
+
+	if _, err := getAuthenticatedClaims(c); err != nil {
+		logger.ProcLog.Errorln(err.Error())
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"cause": "Illegal Token (Relogin required)!",
+		})
+		return
+	}
 
 	var subsData SubsData
 
@@ -904,13 +1124,12 @@ func GetSubscriberByID(c *gin.Context) {
 	filterUeIdOnly := bson.M{"ueId": ueId}
 	filter := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId}
 
-	authSubsDataInterface, err := mongoapi.RestfulAPIGetOne(authWebSubsDataColl, filterUeIdOnly)
-	if err != nil {
-		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{})
+	amDataDataInterface, ok := requireSubscriberAccess(c, ueId, servingPlmnId)
+	if !ok {
 		return
 	}
-	amDataDataInterface, err := mongoapi.RestfulAPIGetOne(amDataColl, filter)
+
+	authSubsDataInterface, err := mongoapi.RestfulAPIGetOne(authWebSubsDataColl, filterUeIdOnly)
 	if err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
@@ -1067,8 +1286,7 @@ func PostSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Post One Subscriber Data")
 
-	tokenStr := c.GetHeader("Token")
-	claims, err := ParseJWT(tokenStr)
+	claims, err := getAuthenticatedClaims(c)
 	if err != nil {
 		logger.ProcLog.Errorln(err.Error())
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -1285,14 +1503,16 @@ func dbOperation(
 			}, bson.M{
 				"$or": multipleFliterConditions,
 			}
+			multipleFliterUeIdOnlyScoped := tenantScopedFilter(multipleFliterUeIdOnly, claims)
+			multipleFliterScoped := tenantScopedFilter(multipleFliter, claims)
 
-			if err := mongoapi.RestfulAPIDeleteMany(authSubsDataColl, multipleFliterUeIdOnly); err != nil {
+			if err := mongoapi.RestfulAPIDeleteMany(authSubsDataColl, multipleFliterUeIdOnlyScoped); err != nil {
 				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
 			}
-			if err := mongoapi.RestfulAPIDeleteMany(authWebSubsDataColl, multipleFliterUeIdOnly); err != nil {
+			if err := mongoapi.RestfulAPIDeleteMany(authWebSubsDataColl, multipleFliterUeIdOnlyScoped); err != nil {
 				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
 			}
-			if err := mongoapi.RestfulAPIDeleteMany(amDataColl, multipleFliter); err != nil {
+			if err := mongoapi.RestfulAPIDeleteMany(amDataColl, multipleFliterScoped); err != nil {
 				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
 			}
 			if err := mongoapi.RestfulAPIDeleteMany(smDataColl, multipleFliter); err != nil {
@@ -1320,13 +1540,16 @@ func dbOperation(
 				logger.ProcLog.Errorf("DeleteMultipleIdnetityDatas err: %+v", err)
 			}
 		} else {
-			if err := mongoapi.RestfulAPIDeleteOne(authSubsDataColl, filterUeIdOnly); err != nil {
+			filterUeIdOnlyScoped := tenantScopedFilter(filterUeIdOnly, claims)
+			filterScoped := tenantScopedFilter(filter, claims)
+
+			if err := mongoapi.RestfulAPIDeleteOne(authSubsDataColl, filterUeIdOnlyScoped); err != nil {
 				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
 			}
-			if err := mongoapi.RestfulAPIDeleteOne(authWebSubsDataColl, filterUeIdOnly); err != nil {
+			if err := mongoapi.RestfulAPIDeleteOne(authWebSubsDataColl, filterUeIdOnlyScoped); err != nil {
 				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
 			}
-			if err := mongoapi.RestfulAPIDeleteOne(amDataColl, filter); err != nil {
+			if err := mongoapi.RestfulAPIDeleteOne(amDataColl, filterScoped); err != nil {
 				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
 			}
 			if err := mongoapi.RestfulAPIDeleteMany(smDataColl, filter); err != nil {
@@ -1366,16 +1589,16 @@ func dbOperation(
 		authSubsBsonM := toBsonM(authSubs)
 		authSubsBsonM["ueId"] = ueId
 
-		if claims != nil {
-			webAuthSubsBsonM["tenantId"] = claims["tenantId"].(string)
-			authSubsBsonM["tenantId"] = claims["tenantId"].(string)
+		if tenantId, ok := getClaimString(claims, "tenantId"); ok {
+			webAuthSubsBsonM["tenantId"] = tenantId
+			authSubsBsonM["tenantId"] = tenantId
 		}
 
 		amDataBsonM := toBsonM(subsData.AccessAndMobilitySubscriptionData)
 		amDataBsonM["ueId"] = ueId
 		amDataBsonM["servingPlmnId"] = servingPlmnId
-		if claims != nil {
-			amDataBsonM["tenantId"] = claims["tenantId"].(string)
+		if tenantId, ok := getClaimString(claims, "tenantId"); ok {
+			amDataBsonM["tenantId"] = tenantId
 		}
 
 		// Replace all data with new one
@@ -1527,6 +1750,16 @@ func dbOperation(
 func PutSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Put One Subscriber Data")
+
+	claims, err := getAuthenticatedClaims(c)
+	if err != nil {
+		logger.ProcLog.Errorln(err.Error())
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"cause": "Illegal Token (Relogin required)!",
+		})
+		return
+	}
+
 	var subsData SubsData
 	if err := c.ShouldBindJSON(&subsData); err != nil {
 		logger.ProcLog.Errorf("PutSubscriberByID err: %v", err)
@@ -1537,6 +1770,16 @@ func PutSubscriberByID(c *gin.Context) {
 	}
 	ueId := c.Param("ueId")
 	servingPlmnId := c.Param("servingPlmnId")
+	amData, exists, ok := authorizeSubscriberIfExists(c, ueId, servingPlmnId)
+	if !ok {
+		return
+	}
+	writeClaims := claims
+	if exists {
+		tenantId, _ := subscriberTenantID(amData)
+		writeClaims = claimsWithTenant(claims, tenantId)
+	}
+
 	// modify a gpsi-supi map
 	gpsi := getMsisdn(toBsonM(subsData.AccessAndMobilitySubscriptionData)["gpsis"])
 	if !validate(ueId, gpsi) {
@@ -1550,8 +1793,7 @@ func PutSubscriberByID(c *gin.Context) {
 	logger.ProcLog.Infof("PutSubscriberByID gpsi: %+v", gpsi)
 	identityDataOperation(ueId, gpsi, "put")
 
-	var claims jwt.MapClaims = nil
-	dbOperation(ueId, servingPlmnId, "put", &subsData, nil, claims, false)
+	dbOperation(ueId, servingPlmnId, "put", &subsData, nil, writeClaims, false)
 	c.Status(http.StatusNoContent)
 }
 
@@ -1559,6 +1801,14 @@ func PutSubscriberByID(c *gin.Context) {
 func PatchSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Patch One Subscriber Data")
+
+	if _, err := getAuthenticatedClaims(c); err != nil {
+		logger.ProcLog.Errorln(err.Error())
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"cause": "Illegal Token (Relogin required)!",
+		})
+		return
+	}
 
 	var subsData SubsData
 	if err := c.ShouldBindJSON(&subsData); err != nil {
@@ -1573,7 +1823,7 @@ func PatchSubscriberByID(c *gin.Context) {
 	supi := gpsiToSupi(ueId)
 	servingPlmnId := c.Param("servingPlmnId")
 	// checking whether gpsi is successfully transformed to supi or not
-	if ueId == "" {
+	if supi == "" {
 		logger.ProcLog.Errorf("PatchSubscriberByID err: gpsi does not exists")
 		c.JSON(http.StatusNotFound, gin.H{
 			"cause": "gpsi does not exists",
@@ -1582,6 +1832,12 @@ func PatchSubscriberByID(c *gin.Context) {
 	}
 	filterUeIdOnly := bson.M{"ueId": supi}
 	filter := bson.M{"ueId": supi, "servingPlmnId": servingPlmnId}
+
+	amData, ok := requireSubscriberAccess(c, supi, servingPlmnId)
+	if !ok {
+		return
+	}
+	tenantId, _ := subscriberTenantID(amData)
 
 	webAuthSubsBsonM := toBsonM(subsData.WebAuthenticationSubscription)
 	webAuthSubsBsonM["ueId"] = supi
@@ -1592,10 +1848,17 @@ func PatchSubscriberByID(c *gin.Context) {
 	}
 	authSubsBsonM := toBsonM(authSubs)
 	authSubsBsonM["ueId"] = ueId
+	if tenantId != "" {
+		webAuthSubsBsonM["tenantId"] = tenantId
+		authSubsBsonM["tenantId"] = tenantId
+	}
 
 	amDataBsonM := toBsonM(subsData.AccessAndMobilitySubscriptionData)
 	amDataBsonM["ueId"] = supi
 	amDataBsonM["servingPlmnId"] = servingPlmnId
+	if tenantId != "" {
+		amDataBsonM["tenantId"] = tenantId
+	}
 
 	// Replace all data with new one
 	if err := mongoapi.RestfulAPIDeleteMany(smDataColl, filter); err != nil {
@@ -1677,6 +1940,16 @@ func removeCdrFile(cdrFilePath string) {
 func DeleteSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Delete One Subscriber Data")
+
+	claims, err := getAuthenticatedClaims(c)
+	if err != nil {
+		logger.ProcLog.Errorln(err.Error())
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"cause": "Illegal Token (Relogin required)!",
+		})
+		return
+	}
+
 	ueId := c.Param("ueId")
 	supi := gpsiToSupi(ueId)
 	servingPlmnId := c.Param("servingPlmnId")
@@ -1688,7 +1961,11 @@ func DeleteSubscriberByID(c *gin.Context) {
 		})
 		return
 	}
-	var claims jwt.MapClaims = nil
+
+	if _, ok := requireSubscriberAccess(c, supi, servingPlmnId); !ok {
+		return
+	}
+
 	dbOperation(supi, servingPlmnId, "delete", nil, nil, claims, false)
 
 	CdrFilePath := "/tmp/webconsole/"
@@ -1701,6 +1978,16 @@ func DeleteSubscriberByID(c *gin.Context) {
 func DeleteMultipleSubscribers(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Delete Multiple Subscribers")
+
+	claims, err := getAuthenticatedClaims(c)
+	if err != nil {
+		logger.ProcLog.Errorln(err.Error())
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"cause": "Illegal Token (Relogin required)!",
+		})
+		return
+	}
+
 	var subsDatas []*SubsListIE
 	if err := c.ShouldBindJSON(&subsDatas); err != nil {
 		logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
@@ -1709,8 +1996,22 @@ func DeleteMultipleSubscribers(c *gin.Context) {
 		})
 		return
 	}
+	if len(subsDatas) == 0 {
+		c.Status(http.StatusNoContent)
+		return
+	}
 
-	var claims jwt.MapClaims = nil
+	for _, subsData := range subsDatas {
+		if subsData == nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"cause": "JSON format incorrect",
+			})
+			return
+		}
+		if _, ok := requireSubscriberAccess(c, subsData.UeId, subsData.PlmnID); !ok {
+			return
+		}
+	}
 
 	dbOperation("", "", "delete", nil, subsDatas, claims, true)
 
@@ -1914,6 +2215,10 @@ func DeleteProfile(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Delete One Profile Data")
 
+	if !CheckProfileAuth(c) {
+		return
+	}
+
 	profileName := c.Param("profileName")
 	pf, err := mongoapi.RestfulAPIGetOne(profileDataColl, bson.M{"profileName": profileName})
 	if err != nil {
@@ -1937,6 +2242,11 @@ func DeleteProfile(c *gin.Context) {
 func DeleteMultipleProfiles(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Delete Multiple Profiles")
+
+	if !CheckProfileAuth(c) {
+		return
+	}
+
 	var profileDatas []*Profile
 	if err := c.ShouldBindJSON(&profileDatas); err != nil {
 		logger.ProcLog.Errorf("DeleteMultipleProfiles err: %+v", err)
@@ -1986,6 +2296,10 @@ func GetProfile(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Get One Profile Data")
 
+	if !CheckProfileAuth(c) {
+		return
+	}
+
 	profileName := c.Param("profileName")
 
 	profile, err := mongoapi.RestfulAPIGetOne(profileDataColl, bson.M{"profileName": profileName})
@@ -2009,16 +2323,12 @@ func PostProfile(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Post One Profile Data")
 
-	tokenStr := c.GetHeader("Token")
-	_, err := ParseJWT(tokenStr)
-	if err != nil {
-		logger.ProcLog.Errorln(err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"cause": "Illegal Token"})
+	if !CheckProfileAuth(c) {
 		return
 	}
 
 	var profile Profile
-	if err = c.ShouldBindJSON(&profile); err != nil {
+	if err := c.ShouldBindJSON(&profile); err != nil {
 		logger.ProcLog.Errorf("PostProfile err: %+v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"cause": "JSON format incorrect"})
 		return
@@ -2055,6 +2365,10 @@ func PostProfile(c *gin.Context) {
 func PutProfile(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Put One Profile Data")
+
+	if !CheckProfileAuth(c) {
+		return
+	}
 
 	profileName := c.Param("profileName")
 
