@@ -33,6 +33,7 @@ func NewRouter() *gin.Engine {
 
 func AddService(engine *gin.Engine) *gin.RouterGroup {
 	group := engine.Group("/api")
+	group.Use(AuthMiddleware())
 
 	for _, route := range routes {
 		switch route.Method {
