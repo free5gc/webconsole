@@ -1872,38 +1872,42 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 // (e.g. SMF ue-pdu-session-info) only when its Supi belongs to the caller's
 // tenant, so a non-admin user cannot read another tenant's PDU session.
 func sendResponseToClientFilterTenantSingle(c *gin.Context, response *http.Response, tenantId string) {
-	filterTenantIdOnly := bson.M{"tenantId": tenantId}
-	amDataList, err := mongoapi.RestfulAPIGetMany(amDataColl, filterTenantIdOnly)
+	// Preserve upstream error responses as-is; only apply tenant check on success.
+	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		sendResponseToClient(c, response)
+		return
+	}
+
+	var jsonData map[string]interface{}
+	if err := json.NewDecoder(response.Body).Decode(&jsonData); err != nil {
+		logger.ProcLog.Errorf("sendResponseToClientFilterTenantSingle err: %+v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
+
+	supi, ok := jsonData["Supi"].(string)
+	if !ok || supi == "" {
+		c.JSON(http.StatusForbidden, gin.H{
+			"cause": "Subscriber does not belong to this tenant",
+		})
+		return
+	}
+
+	// Point query instead of loading all tenant rows (avoids O(N) scan).
+	amData, err := mongoapi.RestfulAPIGetOne(amDataColl, bson.M{"tenantId": tenantId, "ueId": supi})
 	if err != nil {
 		logger.ProcLog.Errorf("sendResponseToClientFilterTenantSingle err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
-
-	tenantCheck := func(supi string) bool {
-		for _, amData := range amDataList {
-			if supi == amData["ueId"] {
-				return true
-			}
-		}
-		return false
-	}
-
-	var jsonData map[string]interface{}
-	if err = json.NewDecoder(response.Body).Decode(&jsonData); err != nil {
-		logger.ProcLog.Errorf("sendResponseToClientFilterTenantSingle err: %+v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{})
+	if len(amData) == 0 {
+		c.JSON(http.StatusForbidden, gin.H{
+			"cause": "Subscriber does not belong to this tenant",
+		})
 		return
 	}
 
-	if supi, ok := jsonData["Supi"].(string); ok && tenantCheck(supi) {
-		c.JSON(response.StatusCode, jsonData)
-		return
-	}
-
-	c.JSON(http.StatusForbidden, gin.H{
-		"cause": "Subscriber does not belong to this tenant",
-	})
+	c.JSON(response.StatusCode, jsonData)
 }
 
 func ChangePasswordInfo(c *gin.Context) {
