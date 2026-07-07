@@ -1751,8 +1751,8 @@ func PutSubscriberByID(c *gin.Context) {
 	}
 
 	var subsData SubsData
-	if err := c.ShouldBindJSON(&subsData); err != nil {
-		logger.ProcLog.Errorf("PutSubscriberByID err: %v", err)
+	if bindErr := c.ShouldBindJSON(&subsData); bindErr != nil {
+		logger.ProcLog.Errorf("PutSubscriberByID err: %v", bindErr)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"cause": "JSON format incorrect",
 		})
@@ -1979,8 +1979,8 @@ func DeleteMultipleSubscribers(c *gin.Context) {
 	}
 
 	var subsDatas []*SubsListIE
-	if err := c.ShouldBindJSON(&subsDatas); err != nil {
-		logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
+	if bindErr := c.ShouldBindJSON(&subsDatas); bindErr != nil {
+		logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", bindErr)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"cause": "JSON format incorrect",
 		})
