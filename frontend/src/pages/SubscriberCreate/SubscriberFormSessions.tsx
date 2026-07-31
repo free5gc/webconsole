@@ -35,9 +35,15 @@ interface VerifyResult {
   cause: string;
 }
 
-const handleVerifyStaticIp = (sd: string, sst: number, dnn: string, ipaddr: string) => {
+const handleVerifyStaticIp = (
+  supi: string,
+  sd: string,
+  sst: number,
+  dnn: string,
+  ipaddr: string,
+) => {
   const scope: VerifyScope = {
-    supi: "",
+    supi: supi,
     sd: sd,
     sst: sst,
     dnn: dnn,
@@ -300,6 +306,7 @@ export default function SubscriberFormSessions() {
                               variant="contained"
                               onClick={() =>
                                 handleVerifyStaticIp(
+                                  watch("ueId"),
                                   row.sd,
                                   row.sst,
                                   dnn,

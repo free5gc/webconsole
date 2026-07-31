@@ -1333,6 +1333,10 @@ func PostSubscriberByID(c *gin.Context) {
 		return
 	}
 
+	if !validateSubscriberStaticIPsForWrite(c, &subsData, getDnnStaticIpPools) {
+		return
+	}
+
 	for i := 0; i < userNumberTemp; i++ {
 		ueId = fmt.Sprintf("imsi-%015d", ueIdTemp)
 		if gpsiInt != 0 {
@@ -1768,6 +1772,10 @@ func PutSubscriberByID(c *gin.Context) {
 	if exists {
 		tenantId, _ := subscriberTenantID(amData)
 		writeClaims = claimsWithTenant(claims, tenantId)
+	}
+
+	if !validateSubscriberStaticIPsForWrite(c, &subsData, getDnnStaticIpPools) {
+		return
 	}
 
 	// modify a gpsi-supi map
