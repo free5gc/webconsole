@@ -2309,13 +2309,6 @@ func GetProfiles(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Get All Profiles List")
 
-	_, err := GetTenantId(c)
-	if err != nil {
-		logger.ProcLog.Errorln(err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"cause": "Illegal Token"})
-		return
-	}
-
 	pfs := make([]string, 0)
 	profileList, err := mongoapi.RestfulAPIGetMany(profileDataColl, bson.M{})
 	if err != nil {
@@ -2359,16 +2352,8 @@ func PostProfile(c *gin.Context) {
 	setCorsHeader(c)
 	logger.ProcLog.Infoln("Post One Profile Data")
 
-	tokenStr := c.GetHeader("Token")
-	_, err := ParseJWT(tokenStr)
-	if err != nil {
-		logger.ProcLog.Errorln(err.Error())
-		c.JSON(http.StatusBadRequest, gin.H{"cause": "Illegal Token"})
-		return
-	}
-
 	var profile Profile
-	if err = c.ShouldBindJSON(&profile); err != nil {
+	if err := c.ShouldBindJSON(&profile); err != nil {
 		logger.ProcLog.Errorf("PostProfile err: %+v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"cause": "JSON format incorrect"})
 		return
