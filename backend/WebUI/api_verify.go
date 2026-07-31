@@ -369,18 +369,8 @@ func checkIpCollisionFromDb(
 	c *gin.Context,
 	checkData VerifyScope,
 ) error {
-	snssai := models.Snssai{
-		Sst: int32(checkData.Sst),
-	}
-	if checkData.Sd != "" {
-		snssai.Sd = checkData.Sd
-	}
-
 	smDataColl := "subscriptionData.provisionedData.smData"
-	filter := bson.M{
-		"singleNssai": snssai,
-		"ueId":        bson.D{{Key: "$ne", Value: checkData.Supi}}, // not this UE
-	}
+	filter := buildStaticIPCollisionFilter(checkData)
 	smDataDataInterface, mongo_err := mongoapi.RestfulAPIGetMany(smDataColl, filter)
 	if mongo_err != nil {
 		logger.ProcLog.Warningln(smDataColl, "mongo error: ", mongo_err)
@@ -414,4 +404,20 @@ func checkIpCollisionFromDb(
 		}
 	}
 	return nil
+}
+
+func buildStaticIPCollisionFilter(checkData VerifyScope) bson.M {
+	filter := bson.M{
+		"singleNssai.sst": int32(checkData.Sst),
+		"ueId":            bson.D{{Key: "$ne", Value: checkData.Supi}}, // not this UE
+	}
+	if checkData.Sd != "" {
+		filter["singleNssai.sd"] = checkData.Sd
+	} else {
+		filter["$or"] = bson.A{
+			bson.M{"singleNssai.sd": bson.M{"$exists": false}},
+			bson.M{"singleNssai.sd": ""},
+		}
+	}
+	return filter
 }
