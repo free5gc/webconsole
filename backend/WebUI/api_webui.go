@@ -1835,6 +1835,9 @@ func PatchSubscriberByID(c *gin.Context) {
 	if !ok {
 		return
 	}
+	if !validateSubscriberStaticIPsForWrite(c, &subsData, getDnnStaticIpPools) {
+		return
+	}
 	tenantId, _ := subscriberTenantID(amData)
 
 	webAuthSubsBsonM := toBsonM(subsData.WebAuthenticationSubscription)
@@ -1845,7 +1848,7 @@ func PatchSubscriberByID(c *gin.Context) {
 		logger.ProcLog.Errorf("WebAuthSubToModels err: %+v", errModels)
 	}
 	authSubsBsonM := toBsonM(authSubs)
-	authSubsBsonM["ueId"] = ueId
+	authSubsBsonM["ueId"] = supi
 	if tenantId != "" {
 		webAuthSubsBsonM["tenantId"] = tenantId
 		authSubsBsonM["tenantId"] = tenantId
@@ -1858,18 +1861,22 @@ func PatchSubscriberByID(c *gin.Context) {
 		amDataBsonM["tenantId"] = tenantId
 	}
 
+	smDataBsonA := make([]interface{}, 0, len(subsData.SessionManagementSubscriptionData))
+	for _, data := range subsData.SessionManagementSubscriptionData {
+		smDataBsonM := toBsonM(data)
+		smDataBsonM["ueId"] = supi
+		smDataBsonM["servingPlmnId"] = servingPlmnId
+		smDataBsonA = append(smDataBsonA, smDataBsonM)
+	}
+
 	// Replace all data with new one
 	if err := mongoapi.RestfulAPIDeleteMany(smDataColl, filter); err != nil {
 		logger.ProcLog.Errorf("PatchSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
-	for _, data := range subsData.SessionManagementSubscriptionData {
-		smDataBsonM := toBsonM(data)
-		smDataBsonM["ueId"] = supi
-		smDataBsonM["servingPlmnId"] = servingPlmnId
-		filterSmData := bson.M{"ueId": supi, "servingPlmnId": servingPlmnId, "snssai": data.SingleNssai}
-		if err := mongoapi.RestfulAPIMergePatch(smDataColl, filterSmData, smDataBsonM); err != nil {
+	if len(smDataBsonA) > 0 {
+		if err := mongoapi.RestfulAPIPostMany(smDataColl, filter, smDataBsonA); err != nil {
 			logger.ProcLog.Errorf("PatchSubscriberByID err: %+v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{})
 			return

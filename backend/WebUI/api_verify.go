@@ -28,7 +28,10 @@ type VerifyScope struct {
 
 var errInvalidStaticIP = errors.New("invalid static IPv4 address")
 
-const responseCause = "cause"
+const (
+	responseCause      = "cause"
+	singleNssaiSDField = "singleNssai.sd"
+)
 
 type staticIPPoolProvider func(models.Snssai, string) ([]netip.Prefix, error)
 
@@ -412,11 +415,11 @@ func buildStaticIPCollisionFilter(checkData VerifyScope) bson.M {
 		"ueId":            bson.D{{Key: "$ne", Value: checkData.Supi}}, // not this UE
 	}
 	if checkData.Sd != "" {
-		filter["singleNssai.sd"] = checkData.Sd
+		filter[singleNssaiSDField] = checkData.Sd
 	} else {
 		filter["$or"] = bson.A{
-			bson.M{"singleNssai.sd": bson.M{"$exists": false}},
-			bson.M{"singleNssai.sd": ""},
+			bson.M{singleNssaiSDField: bson.M{"$exists": false}},
+			bson.M{singleNssaiSDField: ""},
 		}
 	}
 	return filter
