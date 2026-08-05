@@ -22,6 +22,7 @@ func TestGetStaticIpPoolsFromUserPlaneInfomation(t *testing.T) {
 		Dnn           string
 		Userplaneinfo smf_factory.UserPlaneInformation
 		ExpectIpPools []string
+		ExpectError   bool
 	}{
 		{
 			Name: "Simple",
@@ -156,6 +157,131 @@ func TestGetStaticIpPoolsFromUserPlaneInfomation(t *testing.T) {
 				"10.60.101.0/24",
 			},
 		},
+		{
+			Name: "Pools from multiple matching UPFs",
+			Snssai: models.Snssai{
+				Sst: 1,
+				Sd:  "010203",
+			},
+			Dnn: "internet",
+			Userplaneinfo: smf_factory.UserPlaneInformation{
+				UPNodes: map[string]*smf_factory.UPNode{
+					"UPF1": {
+						Type: "UPF",
+						SNssaiInfos: []*smf_factory.SnssaiUpfInfoItem{
+							{
+								SNssai: &models.Snssai{Sst: 1, Sd: "010203"},
+								DnnUpfInfoList: []*smf_factory.DnnUpfInfoItem{
+									{
+										Dnn: "internet",
+										StaticPools: []*smf_factory.UEIPPool{
+											{Cidr: "10.60.100.0/24"},
+										},
+									},
+								},
+							},
+						},
+					},
+					"UPF2": {
+						Type: "UPF",
+						SNssaiInfos: []*smf_factory.SnssaiUpfInfoItem{
+							{
+								SNssai: &models.Snssai{Sst: 1, Sd: "010203"},
+								DnnUpfInfoList: []*smf_factory.DnnUpfInfoItem{
+									{
+										Dnn: "internet",
+										StaticPools: []*smf_factory.UEIPPool{
+											{Cidr: "10.60.101.0/24"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			ExpectIpPools: []string{
+				"10.60.100.0/24",
+				"10.60.101.0/24",
+			},
+		},
+		{
+			Name: "DNN not found",
+			Snssai: models.Snssai{
+				Sst: 1,
+				Sd:  "010203",
+			},
+			Dnn: "internet",
+			Userplaneinfo: smf_factory.UserPlaneInformation{
+				UPNodes: map[string]*smf_factory.UPNode{
+					"UPF": {
+						Type: "UPF",
+						SNssaiInfos: []*smf_factory.SnssaiUpfInfoItem{
+							{
+								SNssai: &models.Snssai{Sst: 1, Sd: "010203"},
+								DnnUpfInfoList: []*smf_factory.DnnUpfInfoItem{
+									{Dnn: "ims"},
+								},
+							},
+						},
+					},
+				},
+			},
+			ExpectIpPools: []string{},
+		},
+		{
+			Name: "DNN has no static pools",
+			Snssai: models.Snssai{
+				Sst: 1,
+				Sd:  "010203",
+			},
+			Dnn: "internet",
+			Userplaneinfo: smf_factory.UserPlaneInformation{
+				UPNodes: map[string]*smf_factory.UPNode{
+					"UPF": {
+						Type: "UPF",
+						SNssaiInfos: []*smf_factory.SnssaiUpfInfoItem{
+							{
+								SNssai: &models.Snssai{Sst: 1, Sd: "010203"},
+								DnnUpfInfoList: []*smf_factory.DnnUpfInfoItem{
+									{Dnn: "internet"},
+								},
+							},
+						},
+					},
+				},
+			},
+			ExpectIpPools: []string{},
+		},
+		{
+			Name: "Malformed static pool CIDR",
+			Snssai: models.Snssai{
+				Sst: 1,
+				Sd:  "010203",
+			},
+			Dnn: "internet",
+			Userplaneinfo: smf_factory.UserPlaneInformation{
+				UPNodes: map[string]*smf_factory.UPNode{
+					"UPF": {
+						Type: "UPF",
+						SNssaiInfos: []*smf_factory.SnssaiUpfInfoItem{
+							{
+								SNssai: &models.Snssai{Sst: 1, Sd: "010203"},
+								DnnUpfInfoList: []*smf_factory.DnnUpfInfoItem{
+									{
+										Dnn: "internet",
+										StaticPools: []*smf_factory.UEIPPool{
+											{Cidr: "not-a-cidr"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			ExpectError: true,
+		},
 	}
 
 	for _, tc := range testcases {
@@ -168,6 +294,10 @@ func TestGetStaticIpPoolsFromUserPlaneInfomation(t *testing.T) {
 		}
 
 		resultPools, err := WebUI.GetStaticIpPoolsFromUserPlaneInfomation(&tc.Userplaneinfo, tc.Snssai, tc.Dnn)
+		if tc.ExpectError {
+			require.Error(t, err)
+			continue
+		}
 		require.NoError(t, err)
 
 		require.Equal(t, pools, resultPools)
