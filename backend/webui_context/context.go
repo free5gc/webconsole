@@ -178,7 +178,10 @@ func getSbiUri(scheme models.UriScheme, ipv4Address string, port int32) (uri str
 	return
 }
 
-func (c *WEBUIContext) GetTokenCtx(serviceName models.Nrf_NFMgmt_ServiceName, targetNF models.Nrf_NFMgmt_NFType) (
+func (c *WEBUIContext) GetTokenCtx(
+	serviceName models.Nrf_NFMgmt_ServiceName,
+	targetNF models.Nrf_NFMgmt_NFType,
+) (
 	context.Context, *models.ProblemDetails, error,
 ) {
 	if !c.OAuth2Required.Load() {
@@ -186,8 +189,14 @@ func (c *WEBUIContext) GetTokenCtx(serviceName models.Nrf_NFMgmt_ServiceName, ta
 	}
 
 	logger.ConsumerLog.Debugln("GetTokenCtx:", targetNF, serviceName)
-	return oauth.GetTokenCtx(models.Nrf_NFMgmt_NFType_AF, targetNF,
-		c.NfInstanceID, c.NrfUri, string(serviceName))
+
+	return oauth.GetTokenCtx(oauth.TokenRequest{
+		ConsumerNFType:       models.Nrf_NFMgmt_NFType_AF,
+		ConsumerNFInstanceID: c.NfInstanceID,
+		TargetNFType:         targetNF,
+		NRFURI:               c.NrfUri,
+		Scope:                string(serviceName),
+	})
 }
 
 // NewRequestWithContext() will not apply header in ctx
