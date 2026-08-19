@@ -153,8 +153,12 @@ github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db/go.mod h1:7dvUGVsVBjqR7JHJk0brhHOZYGmfBYOrK0ZhYMEtBr4=
 github.com/franela/goreq v0.0.0-20171204163338-bcd34c9993f8/go.mod h1:ZhphrRTfi2rbfLwlschooIH4+wKKDR4Pdxhh+TRoA20=
+github.com/free5gc/chf v1.2.6-0.20260819160712-4e06244b5612 h1:B28Kfir2Glbc76iYDd9byhqY0Rsyv32+h1eJAt1jWo4=
+github.com/free5gc/chf v1.2.6-0.20260819160712-4e06244b5612/go.mod h1:2XC+DdZTpXdzL4Tog24FfGmISa11514B34vhd8ptn6o=
 github.com/free5gc/openapi v1.3.0 h1:dVJ9FXM2qr8jesiHeTR9ZGZwYRmr7qcHx5Xgm/ip6s0=
 github.com/free5gc/openapi v1.3.0/go.mod h1:ggzAcwqg4JotSSdUvFFFruK6M0Yyr6mhBOCFaDHZmdE=
+github.com/free5gc/smf v1.4.6-0.20260819160737-dd94a6c43508 h1:ST4LgftrkU6+kRvqLS5CP1wjDw+Yzs/85Ab3nu8hrH8=
+github.com/free5gc/smf v1.4.6-0.20260819160737-dd94a6c43508/go.mod h1:73OY0o2Hy3M+R4utx7JF1RzhMI9CU8QF6QxX5i+kKIE=
 github.com/free5gc/util v1.4.0 h1:vdjzRUgxEYtjIy6AYkO4JuIQHV8DqBb1paNqJiajeus=
 github.com/free5gc/util v1.4.0/go.mod h1:ihddsLLECOOIkYzAlgkK3CVXmQh9HTGEagaJT9Rv/+I=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
