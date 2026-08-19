@@ -1174,31 +1174,31 @@ func GetSubscriberByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
-	var amDataData models.AccessAndMobilitySubscriptionData
+	var amDataData models.Udr_DR_AccessAndMobilitySubscriptionData
 	if err = json.Unmarshal(mapToByte(amDataDataInterface), &amDataData); err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
-	var smDataData []models.SessionManagementSubscriptionData
+	var smDataData []models.Udm_SDM_SessionManagementSubscriptionData
 	if err = json.Unmarshal(sliceToByte(smDataDataInterface), &smDataData); err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
-	var smfSelData models.SmfSelectionSubscriptionData
+	var smfSelData models.Udr_DR_SmfSelectionSubscriptionData
 	if err = json.Unmarshal(mapToByte(smfSelDataInterface), &smfSelData); err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
-	var amPolicyData models.AmPolicyData
+	var amPolicyData models.Udr_DR_AmPolicyData
 	if err = json.Unmarshal(mapToByte(amPolicyDataInterface), &amPolicyData); err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
-	var smPolicyData models.SmPolicyData
+	var smPolicyData models.Udr_DR_SmPolicyData
 	if err = json.Unmarshal(mapToByte(smPolicyDataInterface), &smPolicyData); err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
@@ -1234,7 +1234,7 @@ func GetSubscriberByID(c *gin.Context) {
 	}
 
 	for key, SnssaiData := range smPolicyData.SmPolicySnssaiData {
-		tmpSmPolicyDnnData := make(map[string]models.SmPolicyDnnData)
+		tmpSmPolicyDnnData := make(map[string]models.Udr_DR_SmPolicyDnnData)
 		for escapedDnn, dnn := range SnssaiData.SmPolicyDnnData {
 			dnnKey := UnescapeDnn(escapedDnn)
 			tmpSmPolicyDnnData[dnnKey] = dnn
@@ -1419,7 +1419,8 @@ func sendRechargeNotification(ueId string, rg int32) {
 
 	requestUri := fmt.Sprintf("%s/nchf-convergedcharging/v3/recharging/%s?ratingGroup=%d",
 		"http://127.0.0.113:8000", ueId, rg)
-	ctx, pd, tokenErr := webuiSelf.GetTokenCtx(models.ServiceName_NCHF_CONVERGEDCHARGING, models.NrfNfManagementNfType_CHF)
+	ctx, pd, tokenErr := webuiSelf.GetTokenCtx(
+		models.Nrf_NFMgmt_ServiceName_NCHF_CONVERGEDCHARGING, models.Nrf_NFMgmt_NFType_CHF)
 	if tokenErr != nil {
 		logger.ProcLog.Errorf("GetTokenCtx for CHF recharge err: %+v", pd)
 		return
@@ -1610,7 +1611,7 @@ func dbOperation(
 		}
 
 		for key, SnssaiData := range subsData.SmPolicyData.SmPolicySnssaiData {
-			tmpSmPolicyDnnData := make(map[string]models.SmPolicyDnnData)
+			tmpSmPolicyDnnData := make(map[string]models.Udr_DR_SmPolicyDnnData)
 			for dnnKey, dnn := range SnssaiData.SmPolicyDnnData {
 				escapedDnn := EscapeDnn(dnnKey)
 				tmpSmPolicyDnnData[escapedDnn] = dnn
@@ -2035,7 +2036,7 @@ func GetRegisteredUEContext(c *gin.Context) {
 
 	supi, supiExists := c.Params.Get("supi")
 	// TODO: support fetching data from multiple AMFs
-	if amfUris := webuiSelf.GetOamUris(models.NrfNfManagementNfType_AMF); amfUris != nil {
+	if amfUris := webuiSelf.GetOamUris(models.Nrf_NFMgmt_NFType_AMF); amfUris != nil {
 		var requestUri string
 
 		if supiExists {
@@ -2045,7 +2046,7 @@ func GetRegisteredUEContext(c *gin.Context) {
 		}
 
 		ctx, pd, tokerErr := webui_context.GetSelf().GetTokenCtx(
-			models.ServiceName_NAMF_OAM, models.NrfNfManagementNfType_AMF)
+			models.Nrf_NFMgmt_ServiceName_NAMF_OAM, models.Nrf_NFMgmt_NFType_AMF)
 		if tokerErr != nil {
 			logger.ProcLog.Errorf("GetTokenCtx error: %+v", tokerErr)
 			c.JSON(http.StatusInternalServerError, pd)
@@ -2125,11 +2126,11 @@ func GetUEPDUSessionInfo(c *gin.Context) {
 	}
 
 	// TODO: support fetching data from multiple SMF
-	if smfUris := webuiSelf.GetOamUris(models.NrfNfManagementNfType_SMF); smfUris != nil {
+	if smfUris := webuiSelf.GetOamUris(models.Nrf_NFMgmt_NFType_SMF); smfUris != nil {
 		requestUri := fmt.Sprintf("%s/nsmf-oam/v1/ue-pdu-session-info/%s", smfUris[0], smContextRef)
 
 		ctx, pd, tokerErr := webui_context.GetSelf().GetTokenCtx(
-			models.ServiceName_NSMF_OAM, models.NrfNfManagementNfType_SMF)
+			models.Nrf_NFMgmt_ServiceName_NSMF_OAM, models.Nrf_NFMgmt_NFType_SMF)
 		if tokerErr != nil {
 			logger.ProcLog.Errorf("GetTokenCtx error: %+v", tokerErr)
 			c.JSON(http.StatusInternalServerError, pd)

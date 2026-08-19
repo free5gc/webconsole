@@ -5,11 +5,11 @@ import (
 )
 
 type WebAuthenticationSubscription struct {
-	AuthenticationMethod models.AuthMethod `json:"authenticationMethod" bson:"authenticationMethod"`
-	PermanentKey         *PermanentKey     `json:"permanentKey" bson:"permanentKey"`
-	SequenceNumber       string            `json:"sequenceNumber" bson:"sequenceNumber"`
-	Milenage             *Milenage         `json:"milenage,omitempty" bson:"milenage"`
-	Opc                  *Opc              `json:"opc,omitempty" bson:"opc"`
+	AuthenticationMethod models.Udr_DR_AuthMethod `json:"authenticationMethod" bson:"authenticationMethod"`
+	PermanentKey         *PermanentKey            `json:"permanentKey" bson:"permanentKey"`
+	SequenceNumber       string                   `json:"sequenceNumber" bson:"sequenceNumber"`
+	Milenage             *Milenage                `json:"milenage,omitempty" bson:"milenage"`
+	Opc                  *Opc                     `json:"opc,omitempty" bson:"opc"`
 	//nolint
 	AuthenticationManagementField string `json:"authenticationManagementField,omitempty" bson:"authenticationManagementField"`
 }

@@ -8,7 +8,7 @@ import (
 
 	"github.com/free5gc/openapi"
 	"github.com/free5gc/openapi/models"
-	Nnrf_NFManagement "github.com/free5gc/openapi/nrf/NFManagement"
+	Nnrf_NFManagement "github.com/free5gc/openapi/nrf/NFMgmt"
 	"github.com/free5gc/webconsole/backend/logger"
 )
 
@@ -19,21 +19,21 @@ const (
 )
 
 func SendNFRegistration() error {
-	profile := &models.NrfNfManagementNfProfile{
+	profile := &models.Nrf_NFMgmt_NFProfile{
 		NfInstanceId: GetSelf().NfInstanceID,
-		NfType:       models.NrfNfManagementNfType_AF,
-		NfStatus:     models.NrfNfManagementNfStatus_REGISTERED,
+		NfType:       models.Nrf_NFMgmt_NFType_AF,
+		NfStatus:     models.Nrf_NFMgmt_NFStatus_REGISTERED,
 		CustomInfo: map[string]interface{}{
 			"AfType": "webconsole",
 		},
 	}
 
 	registrationRequest := &Nnrf_NFManagement.RegisterNFInstanceRequest{
-		NfInstanceID:             &GetSelf().NfInstanceID,
-		NrfNfManagementNfProfile: profile,
+		NfInstanceID: &GetSelf().NfInstanceID,
+		RequestBody:  profile,
 	}
 
-	var nf models.NrfNfManagementNfProfile
+	var nf models.Nrf_NFMgmt_NFProfile
 	var res *Nnrf_NFManagement.RegisterNFInstanceResponse
 	var err error
 
@@ -43,7 +43,10 @@ func SendNFRegistration() error {
 			NFManagementClient.
 			NFInstanceIDDocumentApi.RegisterNFInstance(context.Background(), registrationRequest)
 		// RegisterNFInstance(context.TODO(), GetSelf().NfInstanceID, profile)
-		if err != nil || res == nil {
+		if err != nil || res == nil || res.Nrf_NFMgmt_NFProfile == nil {
+			if err == nil {
+				err = fmt.Errorf("RegisterNFInstance returned an empty NF profile")
+			}
 			logger.ConsumerLog.Warnf("Webconsole-AF register to NRF Error[%s]", err.Error())
 			time.Sleep(RetryInterval)
 			retryTime += 1
@@ -52,7 +55,7 @@ func SendNFRegistration() error {
 			}
 			continue
 		}
-		nf = res.NrfNfManagementNfProfile
+		nf = *res.Nrf_NFMgmt_NFProfile
 
 		if res.Location == "" {
 			// NFUpdate
@@ -63,8 +66,8 @@ func SendNFRegistration() error {
 			GetSelf().NfInstanceID = resourceUri[strings.LastIndex(resourceUri, "/")+1:]
 
 			oauth2 := false
-			if nf.CustomInfo != nil {
-				v, ok := nf.CustomInfo["oauth2"].(bool)
+			if customInfo, isMap := nf.CustomInfo.(map[string]interface{}); isMap {
+				v, ok := customInfo["oauth2"].(bool)
 				if ok {
 					oauth2 = v
 					logger.MainLog.Infoln("OAuth2 setting receive from NRF:", oauth2)
@@ -94,7 +97,7 @@ func RetrySendNFRegistration(maxRetry int) error {
 func SendDeregisterNFInstance() (*models.ProblemDetails, error) {
 	logger.ConsumerLog.Infof("Send Deregister NFInstance")
 
-	ctx, pd, err := GetSelf().GetTokenCtx(models.ServiceName_NNRF_NFM, models.NrfNfManagementNfType_NRF)
+	ctx, pd, err := GetSelf().GetTokenCtx(models.Nrf_NFMgmt_ServiceName_NNRF_NFM, models.Nrf_NFMgmt_NFType_NRF)
 	if err != nil {
 		return pd, err
 	}
@@ -110,7 +113,7 @@ func SendDeregisterNFInstance() (*models.ProblemDetails, error) {
 		case openapi.GenericOpenAPIError:
 			switch errModel := apiErr.Model().(type) {
 			case Nnrf_NFManagement.DeregisterNFInstanceError:
-				pd = &errModel.ProblemDetails
+				pd = errModel.ProblemDetails
 				logger.InitLog.Errorf("Deregister NF instance Failed Problem[%+v]", pd)
 				return pd, err
 			case error:

@@ -6,9 +6,9 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/fclairamb/go-log v0.4.1
 	github.com/free5gc/chf v1.2.2
-	github.com/free5gc/openapi v1.2.4
+	github.com/free5gc/openapi v1.3.0
 	github.com/free5gc/smf v1.4.3
-	github.com/free5gc/util v1.3.2
+	github.com/free5gc/util v1.4.0
 	github.com/gin-contrib/cors v1.6.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt/v5 v5.2.2
@@ -116,4 +116,14 @@ require (
 	github.com/spf13/afero v1.9.5 // indirect
 	golang.org/x/oauth2 v0.36.0
 	google.golang.org/api v0.122.0 // indirect
+)
+
+// The pinned smf/chf releases still target pre-migration openapi models.
+// Pin to the reviewed sync-branch commits (smf 3043dc5, chf 8d75cc0) instead;
+// those commits only exist as PR heads on GitHub (not a pushed branch/tag), so
+// `go get module@commit` can't resolve them and a local path replace is used
+// in their place. Keep NFs/smf and NFs/chf checked out at these exact commits.
+replace (
+	github.com/free5gc/chf => ../NFs/chf
+	github.com/free5gc/smf => ../NFs/smf
 )

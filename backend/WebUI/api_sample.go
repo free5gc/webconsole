@@ -45,11 +45,11 @@ func GetSampleJSON(c *gin.Context) {
 		SequenceNumber: "16f3b3f70fc2",
 	}
 
-	amDataData := models.AccessAndMobilitySubscriptionData{
+	amDataData := models.Udr_DR_AccessAndMobilitySubscriptionData{
 		Gpsis: []string{
 			"msisdn-0900000000",
 		},
-		Nssai: &models.Nssai{
+		Nssai: &models.Udm_SDM_Nssai{
 			DefaultSingleNssais: []models.Snssai{
 				{
 					Sd:  "010203",
@@ -77,21 +77,21 @@ func GetSampleJSON(c *gin.Context) {
 		},
 	}
 
-	smDataData := []models.SessionManagementSubscriptionData{
+	smDataData := []models.Udm_SDM_SessionManagementSubscriptionData{
 		{
 			SingleNssai: &models.Snssai{
 				Sst: 1,
 				Sd:  "010203",
 			},
-			DnnConfigurations: map[string]models.DnnConfiguration{
+			DnnConfigurations: map[string]models.Udm_SDM_DnnConfiguration{
 				"internet": {
-					PduSessionTypes: &models.PduSessionTypes{
+					PduSessionTypes: &models.Udm_SDM_PduSessionTypes{
 						DefaultSessionType:  models.PduSessionType_IPV4,
 						AllowedSessionTypes: []models.PduSessionType{models.PduSessionType_IPV4},
 					},
-					SscModes: &models.SscModes{
-						DefaultSscMode:  models.SscMode__1,
-						AllowedSscModes: []models.SscMode{models.SscMode__1},
+					SscModes: &models.Udm_SDM_SscModes{
+						DefaultSscMode:  models.SscMode_1,
+						AllowedSscModes: []models.SscMode{models.SscMode_1},
 					},
 					SessionAmbr: &models.Ambr{
 						Downlink: "1000 Kbps",
@@ -112,15 +112,15 @@ func GetSampleJSON(c *gin.Context) {
 				Sst: 1,
 				Sd:  "112233",
 			},
-			DnnConfigurations: map[string]models.DnnConfiguration{
+			DnnConfigurations: map[string]models.Udm_SDM_DnnConfiguration{
 				"internet": {
-					PduSessionTypes: &models.PduSessionTypes{
+					PduSessionTypes: &models.Udm_SDM_PduSessionTypes{
 						DefaultSessionType:  models.PduSessionType_IPV4,
 						AllowedSessionTypes: []models.PduSessionType{models.PduSessionType_IPV4},
 					},
-					SscModes: &models.SscModes{
-						DefaultSscMode:  models.SscMode__1,
-						AllowedSscModes: []models.SscMode{models.SscMode__1},
+					SscModes: &models.Udm_SDM_SscModes{
+						DefaultSscMode:  models.SscMode_1,
+						AllowedSscModes: []models.SscMode{models.SscMode_1},
 					},
 					SessionAmbr: &models.Ambr{
 						Downlink: "1000 Kbps",
@@ -138,17 +138,17 @@ func GetSampleJSON(c *gin.Context) {
 		},
 	}
 
-	smfSelData := models.SmfSelectionSubscriptionData{
-		SubscribedSnssaiInfos: map[string]models.SnssaiInfo{
+	smfSelData := models.Udr_DR_SmfSelectionSubscriptionData{
+		SubscribedSnssaiInfos: map[string]models.Udm_SDM_SnssaiInfo{
 			"01010203": {
-				DnnInfos: []models.DnnInfo{
+				DnnInfos: []models.Udm_SDM_DnnInfo{
 					{
 						Dnn: "internet",
 					},
 				},
 			},
 			"01112233": {
-				DnnInfos: []models.DnnInfo{
+				DnnInfos: []models.Udm_SDM_DnnInfo{
 					{
 						Dnn: "internet",
 					},
@@ -157,20 +157,20 @@ func GetSampleJSON(c *gin.Context) {
 		},
 	}
 
-	amPolicyData := models.AmPolicyData{
+	amPolicyData := models.Udr_DR_AmPolicyData{
 		SubscCats: []string{
 			"free5gc",
 		},
 	}
 
-	smPolicyData := models.SmPolicyData{
-		SmPolicySnssaiData: map[string]models.SmPolicySnssaiData{
+	smPolicyData := models.Udr_DR_SmPolicyData{
+		SmPolicySnssaiData: map[string]models.Udr_DR_SmPolicySnssaiData{
 			"01010203": {
 				Snssai: &models.Snssai{
 					Sd:  "010203",
 					Sst: 1,
 				},
-				SmPolicyDnnData: map[string]models.SmPolicyDnnData{
+				SmPolicyDnnData: map[string]models.Udr_DR_SmPolicyDnnData{
 					"internet": {
 						Dnn: "internet",
 					},
@@ -181,7 +181,7 @@ func GetSampleJSON(c *gin.Context) {
 					Sd:  "112233",
 					Sst: 1,
 				},
-				SmPolicyDnnData: map[string]models.SmPolicyDnnData{
+				SmPolicyDnnData: map[string]models.Udr_DR_SmPolicyDnnData{
 					"internet": {
 						Dnn: "internet",
 					},

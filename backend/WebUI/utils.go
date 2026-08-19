@@ -9,7 +9,7 @@ import (
 
 func WebAuthSubToModels(
 	webAuth WebAuthenticationSubscription,
-) (*models.AuthenticationSubscription, error) {
+) (*models.Udr_DR_AuthenticationSubscription, error) {
 	if webAuth.Opc == nil && webAuth.Milenage == nil {
 		return nil, fmt.Errorf("WebAuthenticationSubscription OPc & Milenage are nil")
 	}
@@ -26,12 +26,12 @@ func WebAuthSubToModels(
 		return nil, fmt.Errorf("WebAuthenticationSubscription OPc OP not found")
 	}
 
-	authSub := &models.AuthenticationSubscription{
+	authSub := &models.Udr_DR_AuthenticationSubscription{
 		AuthenticationMethod: webAuth.AuthenticationMethod,
 		EncOpcKey:            encOpc,
 		EncPermanentKey:      webAuth.PermanentKey.PermanentKeyValue,
-		SequenceNumber: &models.SequenceNumber{
-			SqnScheme: models.SqnScheme_GENERAL,
+		SequenceNumber: &models.Udr_DR_SequenceNumber{
+			SqnScheme: models.Udr_DR_SqnScheme_GENERAL,
 			Sqn:       webAuth.SequenceNumber,
 		},
 		AuthenticationManagementField: webAuth.AuthenticationManagementField,
