@@ -49,12 +49,12 @@ func GetSmfUserPlaneInfo() (interface{}, error) {
 	var jsonData interface{}
 
 	// TODO: support fetching data from multiple SMF
-	if smfUris := webuiSelf.GetOamUris(models.NrfNfManagementNfType_SMF); len(smfUris) > 0 {
+	if smfUris := webuiSelf.GetOamUris(models.Nrf_NFMgmt_NFType_SMF); len(smfUris) > 0 {
 		requestUri := fmt.Sprintf("%s/nsmf-oam/v1/user-plane-info/", smfUris[0])
 
-		ctx, pd, err := webuiSelf.GetTokenCtx(models.ServiceName_NSMF_OAM, models.NrfNfManagementNfType_SMF)
+		ctx, pd, err := webuiSelf.GetTokenCtx(models.Nrf_NFMgmt_ServiceName_NSMF_OAM, models.Nrf_NFMgmt_NFType_SMF)
 		if err != nil {
-			logger.ConsumerLog.Infof("GetTokenCtx: service %v, err: %+v", models.ServiceName_NSMF_OAM, err)
+			logger.ConsumerLog.Infof("GetTokenCtx: service %v, err: %+v", models.Nrf_NFMgmt_ServiceName_NSMF_OAM, err)
 			return pd, err
 		}
 
@@ -195,7 +195,7 @@ func validateStaticIPv4InPools(address string, staticPools []netip.Prefix) error
 }
 
 func validateSubscriberStaticIPs(
-	smData []models.SessionManagementSubscriptionData,
+	smData []models.Udm_SDM_SessionManagementSubscriptionData,
 	poolProvider staticIPPoolProvider,
 ) error {
 	poolCache := make(map[staticIPPoolCacheKey][]netip.Prefix)
@@ -384,7 +384,7 @@ func checkIpCollisionFromDb(
 		})
 		return mongo_err
 	}
-	var smDatas []models.SessionManagementSubscriptionData
+	var smDatas []models.Udm_SDM_SessionManagementSubscriptionData
 	if err := json.Unmarshal(sliceToByte(smDataDataInterface), &smDatas); err != nil {
 		logger.ProcLog.Errorf("Unmarshal smDatas err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
