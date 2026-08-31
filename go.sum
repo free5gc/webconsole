@@ -82,8 +82,8 @@ github.com/bytedance/sonic v1.11.6 h1:oUp34TzMlL+OY1OUWxHqsdkgC/Zfc85zGqw9siXjrc
 github.com/bytedance/sonic v1.11.6/go.mod h1:LysEHSvpvDySVdC2f87zGWf6CIKJcAvqab1ZaiQtds4=
 github.com/bytedance/sonic/loader v0.1.1 h1:c+e5Pt1k/cy5wMveRDyk2X4B9hF4g7an8N3zCYjJFNM=
 github.com/bytedance/sonic/loader v0.1.1/go.mod h1:ncP89zfokxS5LZrJxl5z0UJcsk4M4yY2JpfqGeCtNLU=
-github.com/carlhus/openapi v0.0.0-20260821053527-127c60ebf021 h1:7NfiZk/ffa9fqvcGfwoE1xZ3j0ZOpW1o5U3YoVa2zIs=
-github.com/carlhus/openapi v0.0.0-20260821053527-127c60ebf021/go.mod h1:ggzAcwqg4JotSSdUvFFFruK6M0Yyr6mhBOCFaDHZmdE=
+github.com/carlhus/openapi v0.0.0-20260831123630-67c603f8c589 h1:P9g2fairdJ9HAlbPe+2PgIuudLcvCaONK3aQAunHDYU=
+github.com/carlhus/openapi v0.0.0-20260831123630-67c603f8c589/go.mod h1:ixcBUsgwkQBAT/4peVVB0daqxk0qv6V8zOMSFvhKVfo=
 github.com/casbin/casbin/v2 v2.31.6/go.mod h1:vByNa/Fchek0KZUgG5wEsl7iFsiviAYKRtgrQfcJqHg=
 github.com/cenkalti/backoff v2.2.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
