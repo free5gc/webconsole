@@ -15,7 +15,6 @@ import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
 import MenuIcon from "@mui/icons-material/Menu";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import { MainListItems } from "./ListItems";
 import { LoginContext } from "./LoginContext";
 import SimpleListMenu from "./SimpleListMenu";
@@ -493,30 +492,6 @@ function Dashboard(props: DashboardProps) {
           </Container>
         </Box>
 
-        <Box
-          sx={{
-            position: "fixed",
-            bottom: 0,
-            left: isMobile ? 0 : open ? `${drawerWidth}px` : 0,
-            right: 0,
-            backgroundColor: "#FFFFFF",
-            borderTop: "1px solid #d8d8d8",
-            px: 2,
-            py: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-end",
-            gap: 2,
-            zIndex: teslaTheme.zIndex.appBar,
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, color: "#146ef5" }}>
-            <EventAvailableIcon sx={{ fontSize: "1rem" }} />
-            <Typography sx={{ fontSize: "0.875rem", fontWeight: 500 }}>
-              Schedule a Drive Today
-            </Typography>
-          </Box>
-        </Box>
       </Box>
     </ThemeProvider>
   );
