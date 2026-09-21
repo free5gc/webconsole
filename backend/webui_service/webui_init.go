@@ -32,6 +32,13 @@ type WebuiApp struct {
 	cfg      *factory.Config
 	webuiCtx *webui_context.WEBUIContext
 
+	// ctx is canceled by Terminate, which is what stops the NF heartbeat.
+	ctx    context.Context
+	cancel context.CancelFunc
+
+	// Closed when the startup registration goroutine exits; IsRegistered is only safe to read after that.
+	registrationDone chan struct{}
+
 	wg            *sync.WaitGroup
 	server        *http.Server
 	billingServer *billing.BillingDomain
@@ -39,15 +46,19 @@ type WebuiApp struct {
 
 func NewApp(cfg *factory.Config) (*WebuiApp, error) {
 	webui := &WebuiApp{
-		cfg: cfg,
-		wg:  &sync.WaitGroup{},
+		cfg:              cfg,
+		wg:               &sync.WaitGroup{},
+		registrationDone: make(chan struct{}),
 	}
 	webui.SetLogEnable(cfg.GetLogEnable())
 	webui.SetLogLevel(cfg.GetLogLevel())
 	webui.SetReportCaller(cfg.GetLogReportCaller())
 
-	webui_context.Init()
+	if err := webui_context.Init(); err != nil {
+		return nil, err
+	}
 	webui.webuiCtx = webui_context.GetSelf()
+	webui.ctx, webui.cancel = context.WithCancel(context.Background())
 	return webui, nil
 }
 
@@ -120,16 +131,16 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 	}()
 
 	go func() {
-		err := webui_context.SendNFRegistration()
-		if err != nil {
-			retry_err := webui_context.RetrySendNFRegistration(1)
-			if retry_err != nil {
-				logger.InitLog.Errorln(retry_err)
-				logger.InitLog.Warningln("The registration to NRF failed, resulting in limited functionalities.")
-			}
-		} else {
-			a.webuiCtx.IsRegistered = true
+		defer close(a.registrationDone)
+		if err := webui_context.SendNFRegistration(a.ctx, true); err != nil {
+			// Only shutdown ends the startup registration early.
+			logger.InitLog.Debugln(err)
+			return
 		}
+		a.webuiCtx.IsRegistered = true
+		// Only a registered profile has something to keep alive. Start is a no-op
+		// once the context is done, so racing Terminate here is safe.
+		webui_context.StartHeartbeat(a.ctx, a.wg)
 	}()
 
 	router := WebUI.NewRouter()
@@ -189,6 +200,9 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 func (a *WebuiApp) Terminate() {
 	logger.MainLog.Infoln("Terminating WebUI-AF...")
 
+	// Nothing else cancels the context, and WaitHeartbeatStopped would never return.
+	a.cancel()
+
 	if a.billingServer != nil {
 		a.billingServer.Stop()
 	}
@@ -202,6 +216,11 @@ func (a *WebuiApp) Terminate() {
 			logger.MainLog.Fatal("HTTP server forced to shutdown: ", err)
 		}
 	}
+
+	// Canceled above, so the registration goroutine exits promptly.
+	<-a.registrationDone
+	// no heartbeat PATCH or re-registration PUT may land after the deregistration
+	webui_context.WaitHeartbeatStopped()
 
 	// Deregister with NRF
 	if a.webuiCtx.IsRegistered {
