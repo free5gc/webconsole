@@ -19,7 +19,7 @@ node -v
 nvm install <version>
 nvm use <version>
 ```
-# if you don't have Node.js
+### if you don't have Node.js
 ```bash
 sudo apt remove nodejs -y
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
