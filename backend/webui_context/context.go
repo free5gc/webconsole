@@ -165,8 +165,13 @@ func (c *WEBUIContext) GetTokenCtx(serviceName models.Nrf_NFMgmt_ServiceName, ta
 	}
 
 	logger.ConsumerLog.Infoln("GetTokenCtx:", targetNF, serviceName)
-	return oauth.GetTokenCtx(models.Nrf_NFMgmt_NFType_AF, targetNF,
-		c.NfInstanceID, c.NrfUri, string(serviceName))
+	return oauth.GetTokenCtx(oauth.TokenRequest{
+		ConsumerNFType:       models.Nrf_NFMgmt_NFType_AF,
+		ConsumerNFInstanceID: c.NfInstanceID,
+		TargetNFType:         targetNF,
+		NRFURI:               c.NrfUri,
+		Scope:                string(serviceName),
+	})
 }
 
 // NewRequestWithContext() will not apply header in ctx
