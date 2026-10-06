@@ -2,8 +2,9 @@
 
 ### Install Node.js 
 ```bash
-# if you already have Node.js, you can also use nvm to manage Node.js versions.
-#This makes it easier to switch between different Node.js versions when needed.
+# If you already have Node.js, you can also use nvm to manage Node.js versions.
+# This makes it easier to switch between different Node.js versions when needed.
+# If you don't want to use nvm, just skip to next part
 # Install nvm 
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh | bash  
 
@@ -17,10 +18,10 @@ nvm alias default 22
 node -v
 
 #To switch Node.js versions later:
-nvm install <version>
-nvm use <version>
+nvm install <version> #ex:nvm install 22
+nvm use <version>     #ex:nvm use 22
 ```
-### If you don't have Node.js
+### Download Node.js
 ```bash
 sudo apt remove nodejs -y
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
