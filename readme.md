@@ -3,7 +3,7 @@
 ### Install Node.js 
 ```bash
 # if you already have Node.js, you can also use nvm to manage Node.js versions.
-This makes it easier to switch between different Node.js versions when needed.
+#This makes it easier to switch between different Node.js versions when needed.
 # Install nvm 
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.8/install.sh | bash  
 
@@ -20,7 +20,7 @@ node -v
 nvm install <version>
 nvm use <version>
 ```
-### if you don't have Node.js
+### If you don't have Node.js
 ```bash
 sudo apt remove nodejs -y
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
