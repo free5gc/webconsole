@@ -8,7 +8,7 @@ require (
 	github.com/free5gc/chf v1.2.6-0.20260819160712-4e06244b5612
 	github.com/free5gc/openapi v1.3.0
 	github.com/free5gc/smf v1.4.6-0.20260819160737-dd94a6c43508
-	github.com/free5gc/util v1.4.0
+	github.com/free5gc/util v1.4.1-0.20260918051623-86c859a404ad
 	github.com/gin-contrib/cors v1.6.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt/v5 v5.2.2
@@ -51,7 +51,7 @@ require (
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.11 // indirect
 	github.com/googleapis/gax-go/v2 v2.17.0 // indirect
-	github.com/h2non/gock v1.2.0 // indirect
+	github.com/h2non/gock v1.2.0
 	github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect

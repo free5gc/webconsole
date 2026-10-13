@@ -155,8 +155,8 @@ github.com/free5gc/openapi v1.3.0 h1:dVJ9FXM2qr8jesiHeTR9ZGZwYRmr7qcHx5Xgm/ip6s0
 github.com/free5gc/openapi v1.3.0/go.mod h1:ggzAcwqg4JotSSdUvFFFruK6M0Yyr6mhBOCFaDHZmdE=
 github.com/free5gc/smf v1.4.6-0.20260819160737-dd94a6c43508 h1:ST4LgftrkU6+kRvqLS5CP1wjDw+Yzs/85Ab3nu8hrH8=
 github.com/free5gc/smf v1.4.6-0.20260819160737-dd94a6c43508/go.mod h1:73OY0o2Hy3M+R4utx7JF1RzhMI9CU8QF6QxX5i+kKIE=
-github.com/free5gc/util v1.4.0 h1:vdjzRUgxEYtjIy6AYkO4JuIQHV8DqBb1paNqJiajeus=
-github.com/free5gc/util v1.4.0/go.mod h1:ihddsLLECOOIkYzAlgkK3CVXmQh9HTGEagaJT9Rv/+I=
+github.com/free5gc/util v1.4.1-0.20260918051623-86c859a404ad h1:UPVIHmaWYap6oNbpOSnqO80dh10XyuVPlODp4fxo7cA=
+github.com/free5gc/util v1.4.1-0.20260918051623-86c859a404ad/go.mod h1:/KTrB9YEXvGFBoOuX18kdPlwVuOd4MIbdHC/Qhq2wTU=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/gabriel-vasile/mimetype v1.4.3 h1:in2uUcidCuFcDKtdcBxlR0rJ1+fsokWf+uqxgUFjbI0=
 github.com/gabriel-vasile/mimetype v1.4.3/go.mod h1:d8uq/6HKRL6CGdk+aubisF/M5GcPfT7nKyLpA0lbSSk=

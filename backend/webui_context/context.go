@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync/atomic"
 
 	"golang.org/x/oauth2"
 
@@ -12,6 +13,7 @@ import (
 	Nnrf_NFDiscovery "github.com/free5gc/openapi/nrf/NFDisc"
 	Nnrf_NFManagement "github.com/free5gc/openapi/nrf/NFMgmt"
 	"github.com/free5gc/openapi/oauth"
+	"github.com/free5gc/util/nfheartbeat"
 	"github.com/free5gc/webconsole/backend/factory"
 	"github.com/free5gc/webconsole/backend/logger"
 )
@@ -26,11 +28,18 @@ type WEBUIContext struct {
 	// is registered to NRF as AF
 	IsRegistered bool
 
-	NrfUri         string
-	OAuth2Required bool
+	NrfUri string
+	// Set by the startup registration while UpdateNfProfiles and the handlers may already read it.
+	OAuth2Required atomic.Bool
 
 	NFManagementClient *Nnrf_NFManagement.APIClient
 	NFDiscoveryClient  *Nnrf_NFDiscovery.APIClient
+
+	heartbeat *nfheartbeat.Runner
+
+	// Interval in seconds from the last registration response.
+	// Written before the heartbeat starts, then only on its goroutine.
+	heartbeatTimer int32
 }
 
 type NfOamInstance struct {
@@ -39,7 +48,7 @@ type NfOamInstance struct {
 	Uri    string
 }
 
-func Init() {
+func Init() error {
 	webuiContext.NfInstanceID = factory.WebuiConfig.GetNfInstanceId()
 	webuiContext.NrfUri = factory.WebuiConfig.Configuration.NrfUri
 
@@ -52,6 +61,18 @@ func Init() {
 	NFDiscovryConfig := Nnrf_NFDiscovery.NewConfiguration()
 	NFDiscovryConfig.SetBasePath(GetSelf().NrfUri)
 	webuiContext.NFDiscoveryClient = Nnrf_NFDiscovery.NewAPIClient(NFDiscovryConfig)
+
+	heartbeat, err := nfheartbeat.NewRunner(
+		nrfRegistrar{},
+		func() int32 { return factory.WebuiConfig.GetNfHeartBeatTimer() },
+		logger.ConsumerLog,
+	)
+	if err != nil {
+		return err
+	}
+	webuiContext.heartbeat = heartbeat
+
+	return nil
 }
 
 func (context *WEBUIContext) UpdateNfProfiles() {
@@ -160,11 +181,11 @@ func getSbiUri(scheme models.UriScheme, ipv4Address string, port int32) (uri str
 func (c *WEBUIContext) GetTokenCtx(serviceName models.Nrf_NFMgmt_ServiceName, targetNF models.Nrf_NFMgmt_NFType) (
 	context.Context, *models.ProblemDetails, error,
 ) {
-	if !c.OAuth2Required {
+	if !c.OAuth2Required.Load() {
 		return context.TODO(), nil, nil
 	}
 
-	logger.ConsumerLog.Infoln("GetTokenCtx:", targetNF, serviceName)
+	logger.ConsumerLog.Debugln("GetTokenCtx:", targetNF, serviceName)
 	return oauth.GetTokenCtx(models.Nrf_NFMgmt_NFType_AF, targetNF,
 		c.NfInstanceID, c.NrfUri, string(serviceName))
 }
