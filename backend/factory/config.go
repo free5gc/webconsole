@@ -14,6 +14,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/google/uuid"
 
+	"github.com/free5gc/util/nfheartbeat"
 	"github.com/free5gc/webconsole/backend/logger"
 )
 
@@ -54,6 +55,9 @@ type Configuration struct {
 	Mongodb       *Mongodb       `yaml:"mongodb" valid:"required"`
 	NrfUri        string         `yaml:"nrfUri" valid:"required"`
 	BillingServer *BillingServer `yaml:"billingServer,omitempty" valid:"required"`
+	// NfHeartBeatTimer is the fallback heartbeat interval in seconds, from 1 to
+	// 3600 as the NRF accepts. The interval the NRF assigns always wins.
+	NfHeartBeatTimer int32 `yaml:"nfHeartBeatTimer,omitempty" valid:"optional,range(1|3600)"`
 }
 
 func (c *Configuration) validate() (bool, error) {
@@ -189,6 +193,17 @@ func (c *Config) GetLogReportCaller() bool {
 		return false
 	}
 	return c.Logger.ReportCaller
+}
+
+// GetNfHeartBeatTimer returns the fallback heartbeat interval in seconds.
+func (c *Config) GetNfHeartBeatTimer() int32 {
+	c.RLock()
+	defer c.RUnlock()
+
+	if c.Configuration != nil && c.Configuration.NfHeartBeatTimer > 0 {
+		return c.Configuration.NfHeartBeatTimer
+	}
+	return nfheartbeat.DefaultTimer
 }
 
 func (c *Config) GetNfInstanceId() string {
