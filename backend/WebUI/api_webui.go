@@ -1336,6 +1336,9 @@ func PostSubscriberByID(c *gin.Context) {
 	if !validateSubscriberStaticIPsForWrite(c, &subsData, getDnnStaticIpPools) {
 		return
 	}
+	if !validateSubscriberSMPolicyForWrite(c, &subsData) {
+		return
+	}
 
 	for i := 0; i < userNumberTemp; i++ {
 		ueId = fmt.Sprintf("imsi-%015d", ueIdTemp)
@@ -1778,6 +1781,9 @@ func PutSubscriberByID(c *gin.Context) {
 	if !validateSubscriberStaticIPsForWrite(c, &subsData, getDnnStaticIpPools) {
 		return
 	}
+	if !validateSubscriberSMPolicyForWrite(c, &subsData) {
+		return
+	}
 
 	// modify a gpsi-supi map
 	gpsi := getMsisdn(toBsonM(subsData.AccessAndMobilitySubscriptionData)["gpsis"])
@@ -1839,6 +1845,27 @@ func PatchSubscriberByID(c *gin.Context) {
 	if !validateSubscriberStaticIPsForWrite(c, &subsData, getDnnStaticIpPools) {
 		return
 	}
+	if !validateSubscriberSMPolicyForWrite(c, &subsData) {
+		return
+	}
+	smPolicyDataBsonM := toBsonM(subsData.SmPolicyData)
+	if subsData.SmPolicyData.SmPolicySnssaiData != nil {
+		stored, err := mongoapi.RestfulAPIGetOne(smPolicyDataColl, filterUeIdOnly)
+		if err != nil {
+			logger.ProcLog.Errorf("Read SM policy before patch: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{})
+			return
+		}
+		patch, err := smPolicyUpdate(stored, subsData.SmPolicyData)
+		if err != nil {
+			logger.ProcLog.Errorf("Normalize stored SM policy: %v", err)
+			c.JSON(http.StatusConflict, gin.H{"cause": "Stored SM policy requires repair"})
+			return
+		}
+		smPolicyDataBsonM = patch
+	}
+	smPolicyDataBsonM["ueId"] = supi
+
 	tenantId, _ := subscriberTenantID(amData)
 
 	webAuthSubsBsonM := toBsonM(subsData.WebAuthenticationSubscription)
@@ -1889,8 +1916,6 @@ func PatchSubscriberByID(c *gin.Context) {
 	smfSelSubsBsonM["servingPlmnId"] = servingPlmnId
 	amPolicyDataBsonM := toBsonM(subsData.AmPolicyData)
 	amPolicyDataBsonM["ueId"] = supi
-	smPolicyDataBsonM := toBsonM(subsData.SmPolicyData)
-	smPolicyDataBsonM["ueId"] = supi
 
 	if err := mongoapi.RestfulAPIMergePatch(authWebSubsDataColl, filterUeIdOnly, webAuthSubsBsonM); err != nil {
 		logger.ProcLog.Errorf("PatchSubscriberByID err: %+v", err)
@@ -1917,7 +1942,14 @@ func PatchSubscriberByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
-	if err := mongoapi.RestfulAPIMergePatch(smPolicyDataColl, filterUeIdOnly, smPolicyDataBsonM); err != nil {
+	var smPolicyErr error
+	if subsData.SmPolicyData.SmPolicySnssaiData != nil {
+		// Set the complete, merged policy map atomically to remove old aliases.
+		_, smPolicyErr = mongoapi.RestfulAPIPutOne(smPolicyDataColl, filterUeIdOnly, smPolicyDataBsonM)
+	} else {
+		smPolicyErr = mongoapi.RestfulAPIMergePatch(smPolicyDataColl, filterUeIdOnly, smPolicyDataBsonM)
+	}
+	if err := smPolicyErr; err != nil {
 		logger.ProcLog.Errorf("PatchSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
