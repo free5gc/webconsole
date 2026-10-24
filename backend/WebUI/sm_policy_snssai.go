@@ -10,8 +10,9 @@ import (
 	"strings"
 
 	jsonpatch "github.com/evanphx/json-patch/v5"
-	"github.com/free5gc/openapi/models"
 	"github.com/gin-gonic/gin"
+
+	"github.com/free5gc/openapi/models"
 )
 
 // normalizeSMPolicySnssaiData accepts legacy map keys using the mandatory
@@ -49,7 +50,7 @@ func normalizeSMPolicySnssaiData(entries map[string]models.Udr_DR_SmPolicySnssai
 		// A hyphenated key has an unambiguous standard identity. Do not silently
 		// repair a contradictory identity. Unseparated legacy keys are ambiguous.
 		if strings.Contains(oldKey, "-") && !strings.EqualFold(oldKey, key) &&
-			!(snssai.Sd == "" && strings.EqualFold(oldKey, key+"-ffffff")) {
+			(snssai.Sd != "" || !strings.EqualFold(oldKey, key+"-ffffff")) {
 			return nil, fmt.Errorf("SM policy key %q disagrees with snssai", oldKey)
 		}
 		entry.Snssai = &snssai
@@ -88,7 +89,7 @@ func smPolicyUpdate(stored map[string]interface{}, incoming models.Udr_DR_SmPoli
 		return nil, err
 	}
 	var previous models.Udr_DR_SmPolicyData
-	if err := json.Unmarshal(raw, &previous); err != nil {
+	if err = json.Unmarshal(raw, &previous); err != nil {
 		return nil, err
 	}
 	oldEntries, err := normalizeSMPolicySnssaiData(previous.SmPolicySnssaiData)
@@ -128,7 +129,7 @@ func smPolicyUpdate(stored map[string]interface{}, incoming models.Udr_DR_SmPoli
 		return nil, err
 	}
 	var result map[string]interface{}
-	if err := json.Unmarshal(merged, &result); err != nil {
+	if err = json.Unmarshal(merged, &result); err != nil {
 		return nil, err
 	}
 	return result, nil

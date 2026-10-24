@@ -32,7 +32,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dropbox/dropbox-sdk-go-unofficial v5.6.0+incompatible // indirect
-	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
+	github.com/evanphx/json-patch/v5 v5.9.0
 	github.com/fclairamb/afero-dropbox v0.1.0 // indirect
 	github.com/fclairamb/afero-gdrive v0.3.0 // indirect
 	github.com/fclairamb/afero-s3 v0.3.1 // indirect

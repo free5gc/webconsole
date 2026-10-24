@@ -99,7 +99,8 @@ func TestSMPolicyUpdateMigratesLegacyKeysWithoutLosingData(t *testing.T) {
 		t.Fatal(err)
 	}
 	incoming := models.Udr_DR_SmPolicyData{SmPolicySnssaiData: map[string]models.Udr_DR_SmPolicySnssaiData{
-		"22200007b": {Snssai: &models.Snssai{Sst: 222, Sd: "00007b"},
+		"22200007b": {
+			Snssai:          &models.Snssai{Sst: 222, Sd: "00007b"},
 			SmPolicyDnnData: map[string]models.Udr_DR_SmPolicyDnnData{"default": {Dnn: "default", GbrUl: "50 Mbps"}},
 		},
 	}}
@@ -112,7 +113,7 @@ func TestSMPolicyUpdateMigratesLegacyKeysWithoutLosingData(t *testing.T) {
 		t.Fatal(err)
 	}
 	var got models.Udr_DR_SmPolicyData
-	if err := json.Unmarshal(result, &got); err != nil {
+	if err = json.Unmarshal(result, &got); err != nil {
 		t.Fatal(err)
 	}
 	if len(got.SmPolicySnssaiData) != 2 {
@@ -151,9 +152,12 @@ func TestSMPolicyUpdateDoesNotMixLegacyHexAndDecimalNoSD(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	raw, _ := json.Marshal(result)
+	raw, err := json.Marshal(result)
+	if err != nil {
+		t.Fatal(err)
+	}
 	var got models.Udr_DR_SmPolicyData
-	if err := json.Unmarshal(raw, &got); err != nil {
+	if err = json.Unmarshal(raw, &got); err != nil {
 		t.Fatal(err)
 	}
 	if len(got.SmPolicySnssaiData) != 2 || len(got.SmPolicySnssaiData["10"].SmPolicyDnnData) != 1 ||
