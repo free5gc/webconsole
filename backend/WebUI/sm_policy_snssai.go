@@ -1,17 +1,16 @@
 package WebUI
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
-	"strconv"
 	"strings"
 
 	jsonpatch "github.com/evanphx/json-patch/v5"
 	"github.com/gin-gonic/gin"
 
+	"github.com/free5gc/openapi"
 	"github.com/free5gc/openapi/models"
 )
 
@@ -29,23 +28,13 @@ func normalizeSMPolicySnssaiData(entries map[string]models.Udr_DR_SmPolicySnssai
 		if entry.Snssai == nil {
 			return nil, fmt.Errorf("SM policy entry %q is missing snssai", oldKey)
 		}
-		snssai := *entry.Snssai
-		if snssai.Sst < 0 || snssai.Sst > 255 {
-			return nil, fmt.Errorf("invalid SM policy SST: %d", snssai.Sst)
+		snssai, err := openapi.NormalizeSnssai(*entry.Snssai)
+		if err != nil {
+			return nil, fmt.Errorf("SM policy entry %q: %w", oldKey, err)
 		}
-		if snssai.Sd != "" {
-			if _, err := hex.DecodeString(snssai.Sd); err != nil || len(snssai.Sd) != 6 {
-				return nil, fmt.Errorf("invalid SM policy SD: %q", snssai.Sd)
-			}
-		}
-		snssai.Sd = strings.ToLower(snssai.Sd)
-		// Match openapi.SnssaiEqualFold's no-SD semantics (TS 23.003 section 28.4.2).
-		if snssai.Sd == "ffffff" {
-			snssai.Sd = ""
-		}
-		key := strconv.FormatInt(int64(snssai.Sst), 10)
-		if snssai.Sd != "" {
-			key += "-" + snssai.Sd
+		key, err := openapi.SnssaiModelsToMapKey(snssai)
+		if err != nil {
+			return nil, err
 		}
 		// A hyphenated key has an unambiguous standard identity. Do not silently
 		// repair a contradictory identity. Unseparated legacy keys are ambiguous.

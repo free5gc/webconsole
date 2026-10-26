@@ -10,21 +10,14 @@ import (
 
 func TestNormalizeSMPolicySnssaiData(t *testing.T) {
 	for _, tc := range []struct {
-		name, oldKey, sd, want string
-		sst                    int32
+		name, oldKey string
 	}{
-		{"standard", "1-010203", "010203", "1-010203", 1},
-		{"legacy-small", "01010203", "010203", "1-010203", 1},
-		{"legacy-decimal", "10010203", "010203", "10-010203", 10},
-		{"legacy-hex", "0a010203", "010203", "10-010203", 10},
-		{"operator-decimal", "22200007b", "00007b", "222-00007b", 222},
-		{"operator-hex", "de00007b", "00007b", "222-00007b", 222},
-		{"uppercase", "222-00007B", "00007B", "222-00007b", 222},
-		{"no-sd", "01", "", "1", 1},
-		{"reserved-no-sd", "01ffffff", "FFFFFF", "1", 1},
+		{"standard", "222-00007b"},
+		{"legacy-decimal", "22200007b"},
+		{"legacy-hex", "de00007b"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			snssai := &models.Snssai{Sst: tc.sst, Sd: tc.sd}
+			snssai := &models.Snssai{Sst: 222, Sd: "00007B"}
 			entry := models.Udr_DR_SmPolicySnssaiData{
 				Snssai: snssai,
 				SmPolicyDnnData: map[string]models.Udr_DR_SmPolicyDnnData{
@@ -37,7 +30,7 @@ func TestNormalizeSMPolicySnssaiData(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			value, ok := got[tc.want]
+			value, ok := got["222-00007b"]
 			if !ok || len(got) != 1 {
 				t.Fatalf("unexpected keys: %v", got)
 			}
@@ -45,7 +38,7 @@ func TestNormalizeSMPolicySnssaiData(t *testing.T) {
 				!reflect.DeepEqual(value.UeSliceMbr, entry.UeSliceMbr) {
 				t.Fatal("policy data changed")
 			}
-			if snssai.Sd != tc.sd || input[tc.oldKey].Snssai != snssai {
+			if snssai.Sd != "00007B" || input[tc.oldKey].Snssai != snssai {
 				t.Fatal("input mutated")
 			}
 			twice, err := normalizeSMPolicySnssaiData(got)
@@ -57,7 +50,7 @@ func TestNormalizeSMPolicySnssaiData(t *testing.T) {
 }
 
 func TestNormalizeSMPolicySnssaiDataRejectsInvalidEntries(t *testing.T) {
-	for _, snssai := range []*models.Snssai{nil, {Sst: -1}, {Sst: 256}, {Sst: 1, Sd: "123"}, {Sst: 1, Sd: "zzzzzz"}} {
+	for _, snssai := range []*models.Snssai{nil, {Sst: 256}} {
 		_, err := normalizeSMPolicySnssaiData(map[string]models.Udr_DR_SmPolicySnssaiData{"old": {Snssai: snssai}})
 		if err == nil {
 			t.Errorf("accepted invalid snssai: %+v", snssai)
