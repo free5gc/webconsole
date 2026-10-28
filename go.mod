@@ -6,7 +6,7 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/fclairamb/go-log v0.4.1
 	github.com/free5gc/chf v1.2.6-0.20260819160712-4e06244b5612
-	github.com/free5gc/openapi v1.3.0
+	github.com/free5gc/openapi v1.3.1-0.20261027083627-d2459f9624f1
 	github.com/free5gc/smf v1.4.6-0.20260819160737-dd94a6c43508
 	github.com/free5gc/util v1.4.0
 	github.com/gin-contrib/cors v1.6.0
@@ -32,7 +32,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dropbox/dropbox-sdk-go-unofficial v5.6.0+incompatible // indirect
-	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
+	github.com/evanphx/json-patch/v5 v5.9.0
 	github.com/fclairamb/afero-dropbox v0.1.0 // indirect
 	github.com/fclairamb/afero-gdrive v0.3.0 // indirect
 	github.com/fclairamb/afero-s3 v0.3.1 // indirect
