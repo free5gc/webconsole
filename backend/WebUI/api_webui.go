@@ -1,6 +1,7 @@
 package WebUI
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/tls"
 	"encoding/json"
@@ -19,10 +20,13 @@ import (
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/free5gc/openapi/models"
 	"github.com/free5gc/util/mongoapi"
+	"github.com/free5gc/webconsole/backend/factory"
 	"github.com/free5gc/webconsole/backend/logger"
 	"github.com/free5gc/webconsole/backend/webui_context"
 )
@@ -1528,7 +1532,9 @@ func dbOperation(
 			if err := mongoapi.RestfulAPIDeleteMany(qosFlowDataColl, multipleFliter); err != nil {
 				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
 			}
-			if err := mongoapi.RestfulAPIDeleteMany(chargingDataColl, multipleFliter); err != nil {
+			// PCF owns assigned rating groups until final charging settlement completes.
+			chargingFilter := bson.M{"$and": bson.A{multipleFliter, bson.M{"ratingGroup": nil}}}
+			if err := mongoapi.RestfulAPIDeleteMany(chargingDataColl, chargingFilter); err != nil {
 				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
 			}
 			if err := mongoapi.RestfulAPIDeleteMany(identityDataColl, multipleFliterUeIdOnly); err != nil {
@@ -1565,7 +1571,8 @@ func dbOperation(
 			if err := mongoapi.RestfulAPIDeleteMany(qosFlowDataColl, filter); err != nil {
 				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
 			}
-			if err := mongoapi.RestfulAPIDeleteMany(chargingDataColl, filter); err != nil {
+			chargingFilter := bson.M{"$and": bson.A{filter, bson.M{"ratingGroup": nil}}}
+			if err := mongoapi.RestfulAPIDeleteMany(chargingDataColl, chargingFilter); err != nil {
 				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
 			}
 			if err := mongoapi.RestfulAPIDeleteOne(identityDataColl, filterUeIdOnly); err != nil {
@@ -1942,6 +1949,57 @@ func removeCdrFile(cdrFilePath string) {
 	}
 }
 
+const (
+	chargingCleanupWait = 5 * time.Second
+	chargingCleanupPoll = 100 * time.Millisecond
+)
+
+// Deleting a subscriber must not remove the balance used by background charging.
+// Assigned RG records belong to PCF; SMF requests their cleanup after CHF settles.
+func requireChargingCleanup(c *gin.Context, filter bson.M) bool {
+	if mongoapi.Client == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"cause": "Charging status unavailable"})
+		return false
+	}
+	ctx, cancel := context.WithTimeout(c.Request.Context(), chargingCleanupWait)
+	defer cancel()
+	collection := mongoapi.Client.Database(factory.WebuiConfig.Configuration.Mongodb.Name).Collection(chargingDataColl)
+	if err := waitForChargingCleanup(ctx, collection, filter); err != nil {
+		if c.Request.Context().Err() != nil {
+			c.Status(http.StatusRequestTimeout)
+		} else if ctx.Err() != nil {
+			c.Header("Retry-After", "1")
+			c.JSON(http.StatusConflict, gin.H{"cause": "Charging is still active or awaiting final settlement"})
+		} else {
+			logger.ProcLog.Errorf("Check subscriber charging cleanup: %v", err)
+			c.JSON(http.StatusServiceUnavailable, gin.H{"cause": "Charging status unavailable"})
+		}
+		return false
+	}
+	return true
+}
+
+func waitForChargingCleanup(ctx context.Context, collection *mongo.Collection, filter bson.M) error {
+	pending := bson.M{"$and": bson.A{filter, bson.M{"ratingGroup": bson.M{"$ne": nil}}}}
+	projection := options.FindOne().SetProjection(bson.M{"_id": 1})
+	ticker := time.NewTicker(chargingCleanupPoll)
+	defer ticker.Stop()
+	for {
+		err := collection.FindOne(ctx, pending, projection).Err()
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return ctx.Err()
+		}
+		if err != nil {
+			return err
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+		}
+	}
+}
+
 // Delete subscriber by IMSI(ueId) and PlmnID(servingPlmnId)
 func DeleteSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
@@ -1969,6 +2027,10 @@ func DeleteSubscriberByID(c *gin.Context) {
 	}
 
 	if _, ok := requireSubscriberAccess(c, supi, servingPlmnId); !ok {
+		return
+	}
+
+	if !requireChargingCleanup(c, bson.M{"ueId": supi, "servingPlmnId": servingPlmnId}) {
 		return
 	}
 
@@ -2019,6 +2081,15 @@ func DeleteMultipleSubscribers(c *gin.Context) {
 		}
 	}
 
+	chargingFilters := make(bson.A, 0, len(subsDatas))
+	for _, subscriber := range subsDatas {
+		chargingFilters = append(chargingFilters, bson.M{
+			"ueId": subscriber.UeId, "servingPlmnId": subscriber.PlmnID,
+		})
+	}
+	if !requireChargingCleanup(c, bson.M{"$or": chargingFilters}) {
+		return
+	}
 	dbOperation("", "", "delete", nil, subsDatas, claims, true)
 
 	c.Status(http.StatusNoContent)
