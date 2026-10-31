@@ -2,7 +2,6 @@ package webui_context
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"sync/atomic"
 
@@ -14,6 +13,7 @@ import (
 	Nnrf_NFManagement "github.com/free5gc/openapi/nrf/NFMgmt"
 	"github.com/free5gc/openapi/oauth"
 	"github.com/free5gc/util/nfheartbeat"
+	"github.com/free5gc/util/serviceuri"
 	"github.com/free5gc/webconsole/backend/factory"
 	"github.com/free5gc/webconsole/backend/logger"
 )
@@ -125,29 +125,16 @@ func (context *WEBUIContext) NfProfileAlreadyExists(nfProfile *models.Nrf_NFDisc
 	return false
 }
 
-func getNfOamUri(nfProfile *models.Nrf_NFDisc_NFProfile, serviceName models.Nrf_NFMgmt_ServiceName) (nfOamUri string) {
-	for _, service := range nfProfile.NfServices {
-		if service.ServiceName == serviceName && service.NfServiceStatus == models.Nrf_NFMgmt_NFServiceStatus_REGISTERED {
-			if nfProfile.Fqdn != "" {
-				nfOamUri = nfProfile.Fqdn
-			} else if service.Fqdn != "" {
-				nfOamUri = service.Fqdn
-			} else if service.ApiPrefix != "" {
-				nfOamUri = service.ApiPrefix
-			} else if service.IpEndPoints != nil {
-				point := service.IpEndPoints[0]
-				if point.Ipv4Address != "" {
-					nfOamUri = getSbiUri(service.Scheme, point.Ipv4Address, point.Port)
-				} else if len(nfProfile.Ipv4Addresses) != 0 {
-					nfOamUri = getSbiUri(service.Scheme, nfProfile.Ipv4Addresses[0], point.Port)
-				}
-			}
-		}
-		if nfOamUri != "" {
-			break
-		}
+// getNfOamUri returns the API root of the OAM service in nfProfile, or "".
+func getNfOamUri(nfProfile *models.Nrf_NFDisc_NFProfile, serviceName models.Nrf_NFMgmt_ServiceName) string {
+	// NFs that still register a full URL as apiPrefix remain reachable.
+	uri, err := serviceuri.ResolveNFServiceURI(nfProfile, serviceName,
+		serviceuri.Options{AllowLegacyAbsoluteAPIPrefix: true})
+	if err != nil {
+		logger.CtxLog.Warnf("NF service %s API root resolution failed: %v", serviceName, err)
+		return ""
 	}
-	return
+	return uri
 }
 
 func (context *WEBUIContext) GetOamUris(targetNfType models.Nrf_NFMgmt_NFType) (uris []string) {
@@ -162,20 +149,6 @@ func (context *WEBUIContext) GetOamUris(targetNfType models.Nrf_NFMgmt_NFType) (
 
 func GetSelf() *WEBUIContext {
 	return &webuiContext
-}
-
-func getSbiUri(scheme models.UriScheme, ipv4Address string, port int32) (uri string) {
-	if port != 0 {
-		uri = fmt.Sprintf("%s://%s:%d", scheme, ipv4Address, port)
-	} else {
-		switch scheme {
-		case models.UriScheme_HTTP:
-			uri = fmt.Sprintf("%s://%s:80", scheme, ipv4Address)
-		case models.UriScheme_HTTPS:
-			uri = fmt.Sprintf("%s://%s:443", scheme, ipv4Address)
-		}
-	}
-	return
 }
 
 func (c *WEBUIContext) GetTokenCtx(serviceName models.Nrf_NFMgmt_ServiceName, targetNF models.Nrf_NFMgmt_NFType) (
