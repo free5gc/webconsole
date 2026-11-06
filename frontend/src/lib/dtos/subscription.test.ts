@@ -5,6 +5,8 @@ import {
   SubscriptionMapperImpl,
   SubscriptionDTO,
   defaultSubscriptionDTO,
+  flowRulesDTOSchema,
+  defaultFlowRule,
 } from "./subscription";
 import assert from "node:assert";
 
@@ -171,6 +173,7 @@ const defaultSubscription = (): Subscription => ({
   FlowRules: [
     {
       filter: "1.1.1.1/32",
+      flowDirection: "BIDIRECTIONAL",
       precedence: 128,
       snssai: "01010203",
       dnn: "internet",
@@ -178,6 +181,7 @@ const defaultSubscription = (): Subscription => ({
     },
     {
       filter: "1.1.1.1/32",
+      flowDirection: "BIDIRECTIONAL",
       precedence: 127,
       snssai: "01112233",
       dnn: "internet",
@@ -347,5 +351,30 @@ describe("SubscriptionDTO", ({ extend }) => {
         JSON.parse(JSON.stringify(subscriptionWithUpSecurityDTO)),
       );
     });
+  });
+});
+
+
+describe("flow rule direction", () => {
+  test("preserves all configured directions through form and API mappings", () => {
+    for (const direction of ["DOWNLINK", "UPLINK", "BIDIRECTIONAL"] as const) {
+      const dto = defaultSubscriptionDTO();
+      dto.SnssaiConfigurations[0].dnnConfigurations.internet.flowRules[0].flowDirection = direction;
+      const mapper = new SubscriptionMapperImpl(new FlowsMapperImpl());
+      const api = mapper.mapFromDto(dto);
+      assert.equal(api.FlowRules[0].flowDirection, direction);
+      const roundTrip = mapper.mapFromSubscription(api);
+      assert.equal(roundTrip.SnssaiConfigurations[0].dnnConfigurations.internet.flowRules[0].flowDirection, direction);
+      delete api.FlowRules[0].flowDirection;
+      const legacy = mapper.mapFromSubscription(api);
+      assert.equal(legacy.SnssaiConfigurations[0].dnnConfigurations.internet.flowRules[0].flowDirection, "BIDIRECTIONAL");
+    }
+  });
+
+  test("defaults legacy input and rejects invalid directions", () => {
+    const legacy = defaultFlowRule();
+    delete legacy.flowDirection;
+    assert.equal(flowRulesDTOSchema.parse(legacy).flowDirection, "BIDIRECTIONAL");
+    assert.equal(flowRulesDTOSchema.safeParse({ ...legacy, flowDirection: "BOTH" }).success, false);
   });
 });

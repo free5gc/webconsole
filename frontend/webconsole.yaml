@@ -602,6 +602,10 @@ components:
     FlowRules:
       type: object
       properties:
+        flowDirection:
+          type: string
+          enum: [DOWNLINK, UPLINK, BIDIRECTIONAL]
+          default: BIDIRECTIONAL
         filter:
           type: string
         precedence:
