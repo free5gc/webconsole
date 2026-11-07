@@ -6,7 +6,7 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2
 	github.com/fclairamb/go-log v0.4.1
 	github.com/free5gc/chf v1.2.6-0.20260819160712-4e06244b5612
-	github.com/free5gc/openapi v1.3.0
+	github.com/free5gc/openapi v1.3.1-0.20261104070955-7fad8e868cb2
 	github.com/free5gc/smf v1.4.6-0.20260819160737-dd94a6c43508
 	github.com/free5gc/util v1.4.1-0.20260918051623-86c859a404ad
 	github.com/gin-contrib/cors v1.6.0
@@ -22,8 +22,6 @@ require (
 	golang.org/x/crypto v0.55.0
 	gopkg.in/yaml.v2 v2.4.0
 )
-
-replace github.com/free5gc/openapi => github.com/carlhus/openapi v0.0.0-20260831123630-67c603f8c589
 
 require (
 	cloud.google.com/go/compute/metadata v0.9.0 // indirect
