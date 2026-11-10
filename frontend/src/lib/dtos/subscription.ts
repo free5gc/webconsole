@@ -242,6 +242,12 @@ interface SubscriptionMapper {
   mapFromSubscription(subscription: Subscription): SubscriptionDTO;
 }
 
+// TS 29.571 map-key representation, only for SM policy data.
+function formatSMPolicySnssaiKey(s: SnssaiConfigurationDTO): string {
+  const sd = s.sd?.toLowerCase();
+  return sd && sd !== "ffffff" ? `${s.sst}-${sd}` : `${s.sst}`;
+}
+
 class SubscriptionMapperImpl implements SubscriptionMapper {
   constructor(private readonly flowsBuilder: FlowsMapper) {}
 
@@ -290,7 +296,7 @@ class SubscriptionMapperImpl implements SubscriptionMapper {
       SmPolicyData: {
         smPolicySnssaiData: Object.fromEntries(
           subscription.SnssaiConfigurations.map((s) => [
-            s.sst.toString().padStart(2, "0") + s.sd,
+            formatSMPolicySnssaiKey(s),
             {
               snssai: this.buildNssai(s),
               smPolicyDnnData: Object.fromEntries(

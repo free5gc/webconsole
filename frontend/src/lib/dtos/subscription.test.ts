@@ -144,7 +144,7 @@ const defaultSubscription = (): Subscription => ({
   },
   SmPolicyData: {
     smPolicySnssaiData: {
-      "01010203": {
+      "1-010203": {
         snssai: {
           sst: 1,
           sd: "010203",
@@ -155,7 +155,7 @@ const defaultSubscription = (): Subscription => ({
           },
         },
       },
-      "01112233": {
+      "1-112233": {
         snssai: {
           sst: 1,
           sd: "112233",
@@ -348,4 +348,26 @@ describe("SubscriptionDTO", ({ extend }) => {
       );
     });
   });
+});
+
+describe("SM policy S-NSSAI map keys", () => {
+  for (const [sst, sd, expected] of [
+    [1, "010203", "1-010203"],
+    [10, "010203", "10-010203"],
+    [222, "00007B", "222-00007b"],
+    [1, "", "1"],
+  ] as const) {
+    test(`${sst}/${sd}`, () => {
+      const dto = defaultSubscriptionDTO();
+      dto.SnssaiConfigurations = [{ ...dto.SnssaiConfigurations[0], sst, sd }];
+      const mapped = new SubscriptionMapperImpl(new FlowsMapperImpl()).mapFromDto(dto);
+      assert.deepStrictEqual(Object.keys(mapped.SmPolicyData.smPolicySnssaiData!), [expected]);
+      // This change must not alter the other internal identifiers.
+      assert.strictEqual(mapped.FlowRules[0].snssai, sst.toString().padStart(2, "0") + sd);
+      assert.deepStrictEqual(
+        Object.keys(mapped.SmfSelectionSubscriptionData.subscribedSnssaiInfos!),
+        [sst.toString().padStart(2, "0") + sd],
+      );
+    });
+  }
 });
