@@ -444,6 +444,42 @@ func TestSendNFRegistration(t *testing.T) {
 	}
 }
 
+// TestSendNFRegistrationWithdrawsOnOAuth2SetupFailure covers the NRF enabling OAuth2
+// while the webconsole has no NRF certificate: the profile the NRF accepted is
+// deregistered with a type-level token instead of lingering until heartbeat expiry.
+func TestSendNFRegistrationWithdrawsOnOAuth2SetupFailure(t *testing.T) {
+	newNrfTestContext(t)
+
+	gock.New(testNrfUri).
+		Put(testNfIdPath).
+		Reply(http.StatusCreated).
+		JSON(nfProfileJSON(15, map[string]any{"oauth2": true}))
+	gock.New(testNrfUri).
+		Post("/oauth2/token").
+		BodyString("targetNfType=NRF").
+		Reply(http.StatusOK).
+		JSON(map[string]any{
+			"access_token": "withdraw-token",
+			"token_type":   "Bearer",
+			"expires_in":   1000,
+		})
+	gock.New(testNrfUri).
+		Delete(testNfIdPath).
+		MatchHeader("Authorization", "^Bearer withdraw-token$").
+		Reply(http.StatusNoContent)
+
+	err := SendNFRegistration(testCtx(t), true)
+	if err == nil {
+		t.Fatal("SendNFRegistration succeeded, want the OAuth2 setup error")
+	}
+	if !gock.IsDone() {
+		t.Fatalf("pending mocks %d: the registration was not withdrawn with a token", len(gock.Pending()))
+	}
+	if GetSelf().OAuth2Required.Load() {
+		t.Error("OAuth2Required = true, want false after the setup failure")
+	}
+}
+
 // TestStartupRegistrationAlongsideTokenLookup is for -race: the startup registration
 // writes OAuth2Required while UpdateNfProfiles and the handlers read it.
 func TestStartupRegistrationAlongsideTokenLookup(t *testing.T) {
