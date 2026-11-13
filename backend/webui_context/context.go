@@ -2,9 +2,12 @@ package webui_context
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"strings"
 	"sync/atomic"
 
+	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 
 	"github.com/free5gc/openapi"
@@ -20,6 +23,9 @@ import (
 
 var webuiContext WEBUIContext
 
+// NF instance IDs are UUID version 4 (TS 29.571 NfInstanceId).
+const nfInstanceIDUUIDVersion = 4
+
 type WEBUIContext struct {
 	NfInstanceID   string
 	NFProfiles     []models.Nrf_NFDisc_NFProfile
@@ -28,7 +34,11 @@ type WEBUIContext struct {
 	// is registered to NRF as AF
 	IsRegistered bool
 
-	NrfUri string
+	NrfUri     string
+	NrfCertPem string
+	// NrfNfInstanceID is derived from the NRF certificate URI SAN when OAuth2 is enabled.
+	// It is written before OAuth2Required is stored as true and only read after loading true.
+	NrfNfInstanceID string
 	// Set by the startup registration while UpdateNfProfiles and the handlers may already read it.
 	OAuth2Required atomic.Bool
 
@@ -51,6 +61,7 @@ type NfOamInstance struct {
 func Init() error {
 	webuiContext.NfInstanceID = factory.WebuiConfig.GetNfInstanceId()
 	webuiContext.NrfUri = factory.WebuiConfig.Configuration.NrfUri
+	webuiContext.NrfCertPem = factory.WebuiConfig.Configuration.NrfCertPem
 
 	webuiContext.IsRegistered = false
 
@@ -151,7 +162,10 @@ func GetSelf() *WEBUIContext {
 	return &webuiContext
 }
 
-func (c *WEBUIContext) GetTokenCtx(serviceName models.Nrf_NFMgmt_ServiceName, targetNF models.Nrf_NFMgmt_NFType) (
+func (c *WEBUIContext) GetTokenCtx(
+	serviceName models.Nrf_NFMgmt_ServiceName,
+	targetNF models.Nrf_NFMgmt_NFType,
+) (
 	context.Context, *models.ProblemDetails, error,
 ) {
 	if !c.OAuth2Required.Load() {
@@ -159,8 +173,80 @@ func (c *WEBUIContext) GetTokenCtx(serviceName models.Nrf_NFMgmt_ServiceName, ta
 	}
 
 	logger.ConsumerLog.Debugln("GetTokenCtx:", targetNF, serviceName)
-	return oauth.GetTokenCtx(models.Nrf_NFMgmt_NFType_AF, targetNF,
-		c.NfInstanceID, c.NrfUri, string(serviceName))
+
+	return oauth.GetTokenCtx(c.tokenRequest(serviceName, targetNF))
+}
+
+// GetTokenCtxForNFInstance requests a token whose audience is the given NF instance.
+func (c *WEBUIContext) GetTokenCtxForNFInstance(serviceName models.Nrf_NFMgmt_ServiceName,
+	targetNF models.Nrf_NFMgmt_NFType, targetNFInstanceID string,
+) (context.Context, *models.ProblemDetails, error) {
+	if !c.OAuth2Required.Load() {
+		return context.TODO(), nil, nil
+	}
+	targetID, err := uuid.Parse(strings.TrimSpace(targetNFInstanceID))
+	if err != nil {
+		return nil, nil, fmt.Errorf("invalid target NF instance ID: %w", err)
+	}
+	if targetID.Version() != nfInstanceIDUUIDVersion {
+		return nil, nil, fmt.Errorf("invalid target NF instance ID: UUID must be version 4")
+	}
+	return oauth.GetTokenCtx(c.tokenRequestForNFInstance(serviceName, targetNF, targetNFInstanceID))
+}
+
+// GetTokenCtxForNRF requests a token whose audience is the trusted NRF instance.
+func (c *WEBUIContext) GetTokenCtxForNRF(serviceName models.Nrf_NFMgmt_ServiceName) (
+	context.Context, *models.ProblemDetails, error,
+) {
+	// Load OAuth2Required before NrfNfInstanceID: the startup registration may
+	// still be writing the ID, and only a true Load orders that write before us.
+	if !c.OAuth2Required.Load() {
+		return context.TODO(), nil, nil
+	}
+	return c.GetTokenCtxForNFInstance(serviceName, models.Nrf_NFMgmt_NFType_NRF, c.NrfNfInstanceID)
+}
+
+func (c *WEBUIContext) tokenRequest(serviceName models.Nrf_NFMgmt_ServiceName,
+	targetNF models.Nrf_NFMgmt_NFType,
+) oauth.TokenRequest {
+	return oauth.TokenRequest{
+		ConsumerNFType:       models.Nrf_NFMgmt_NFType_AF,
+		ConsumerNFInstanceID: c.NfInstanceID,
+		TargetNFType:         targetNF,
+		NRFURI:               c.NrfUri,
+		Scope:                string(serviceName),
+	}
+}
+
+func (c *WEBUIContext) tokenRequestForNFInstance(serviceName models.Nrf_NFMgmt_ServiceName,
+	targetNF models.Nrf_NFMgmt_NFType, targetNFInstanceID string,
+) oauth.TokenRequest {
+	request := c.tokenRequest(serviceName, targetNF)
+	request.TargetNFInstanceID = targetNFInstanceID
+	return request
+}
+
+// SetOAuth2Required applies the NRF OAuth2 setting. Enabling it requires the NRF
+// certificate and URI, and derives the trusted NRF instance ID from the certificate.
+func (c *WEBUIContext) SetOAuth2Required(required bool) error {
+	if !required {
+		c.OAuth2Required.Store(false)
+		c.NrfNfInstanceID = ""
+		return nil
+	}
+	if strings.TrimSpace(c.NrfCertPem) == "" {
+		return fmt.Errorf("OAuth2 enabled but NRF certificate path is empty")
+	}
+	if strings.TrimSpace(c.NrfUri) == "" {
+		return fmt.Errorf("OAuth2 enabled but NRF URI is empty")
+	}
+	nrfNfInstanceID, err := oauth.NFInstanceIDFromCertificate(c.NrfCertPem)
+	if err != nil {
+		return fmt.Errorf("derive trusted NRF instance ID from certificate: %w", err)
+	}
+	c.NrfNfInstanceID = nrfNfInstanceID
+	c.OAuth2Required.Store(true)
+	return nil
 }
 
 // NewRequestWithContext() will not apply header in ctx

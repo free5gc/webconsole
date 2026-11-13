@@ -8,6 +8,7 @@ import (
 	"testing/synctest"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/h2non/gock"
 
 	"github.com/free5gc/openapi"
@@ -370,16 +371,27 @@ func TestSendNFRegistration(t *testing.T) {
 		status     int
 		body       map[string]any
 		startup    bool
+		nrfCert    bool
 		wantTimer  int32
 		wantOAuth2 bool
+		wantErr    bool
 	}{
 		{
 			name:       "201 adopts the returned timer",
 			status:     http.StatusCreated,
 			body:       nfProfileJSON(15, map[string]any{"oauth2": true}),
 			startup:    true,
+			nrfCert:    true,
 			wantTimer:  15,
 			wantOAuth2: true,
+		},
+		{
+			name:      "startup OAuth2 without an NRF certificate fails",
+			status:    http.StatusCreated,
+			body:      nfProfileJSON(15, map[string]any{"oauth2": true}),
+			startup:   true,
+			wantTimer: 15,
+			wantErr:   true,
 		},
 		{
 			name:      "200 on an existing profile adopts the returned timer",
@@ -398,14 +410,22 @@ func TestSendNFRegistration(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			newNrfTestContext(t)
+			nrfID := uuid.NewString()
+			if tt.nrfCert {
+				GetSelf().NrfCertPem = writeNrfCert(t, nrfID)
+			}
 
 			gock.New(testNrfUri).
 				Put(testNfIdPath).
 				Reply(tt.status).
 				JSON(tt.body)
 
-			if err := SendNFRegistration(testCtx(t), tt.startup); err != nil {
-				t.Fatalf("SendNFRegistration: %v", err)
+			err := SendNFRegistration(testCtx(t), tt.startup)
+			if tt.wantErr != (err != nil) {
+				t.Fatalf("SendNFRegistration error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantOAuth2 && GetSelf().NrfNfInstanceID != nrfID {
+				t.Errorf("NrfNfInstanceID = %q, want %q", GetSelf().NrfNfInstanceID, nrfID)
 			}
 			if !gock.IsDone() {
 				t.Fatal("the registration PUT was not sent as expected")
@@ -440,9 +460,9 @@ func TestStartupRegistrationAlongsideTokenLookup(t *testing.T) {
 		registered <- SendNFRegistration(ctx, true)
 	}()
 
-	_, _, err := GetSelf().GetTokenCtx(models.Nrf_NFMgmt_ServiceName_NNRF_DISC, models.Nrf_NFMgmt_NFType_NRF)
+	_, _, err := GetSelf().GetTokenCtxForNRF(models.Nrf_NFMgmt_ServiceName_NNRF_DISC)
 	if err != nil {
-		t.Errorf("GetTokenCtx: %v", err)
+		t.Errorf("GetTokenCtxForNRF: %v", err)
 	}
 	if err = <-registered; err != nil {
 		t.Fatalf("SendNFRegistration: %v", err)
