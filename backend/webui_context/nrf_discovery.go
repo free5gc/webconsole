@@ -16,7 +16,7 @@ type NfInstance struct {
 func SendSearchNFInstances(targetNfType models.Nrf_NFMgmt_NFType) ([]models.Nrf_NFDisc_NFProfile, error) {
 	var nfProfiles []models.Nrf_NFDisc_NFProfile
 
-	ctx, _, err := GetSelf().GetTokenCtx(models.Nrf_NFMgmt_ServiceName_NNRF_DISC, models.Nrf_NFMgmt_NFType_NRF)
+	ctx, _, err := GetSelf().GetTokenCtxForNRF(models.Nrf_NFMgmt_ServiceName_NNRF_DISC)
 	if err != nil {
 		logger.ConsumerLog.Errorln(err.Error())
 		return nfProfiles, err

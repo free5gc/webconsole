@@ -54,6 +54,7 @@ type Configuration struct {
 	WebServer     *WebServer     `yaml:"webServer,omitempty" valid:"optional"`
 	Mongodb       *Mongodb       `yaml:"mongodb" valid:"required"`
 	NrfUri        string         `yaml:"nrfUri" valid:"required"`
+	NrfCertPem    string         `yaml:"nrfCertPem,omitempty" valid:"optional"`
 	BillingServer *BillingServer `yaml:"billingServer,omitempty" valid:"required"`
 	// NfHeartBeatTimer is the fallback heartbeat interval in seconds, from 1 to
 	// 3600 as the NRF accepts. The interval the NRF assigns always wins.

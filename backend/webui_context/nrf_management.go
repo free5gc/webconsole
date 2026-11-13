@@ -48,7 +48,10 @@ func SendNFRegistration(ctx context.Context, startup bool) error {
 			NFManagementClient.
 			NFInstanceIDDocumentApi.RegisterNFInstance(ctx, registrationRequest)
 		if err == nil && res != nil && res.Nrf_NFMgmt_NFProfile != nil {
-			processRegisterResponse(res.Nrf_NFMgmt_NFProfile, startup)
+			if err = processRegisterResponse(res.Nrf_NFMgmt_NFProfile, startup); err != nil {
+				// A misconfigured OAuth2 setup does not heal by retrying.
+				return fmt.Errorf("apply NRF OAuth2 setting: %w", err)
+			}
 			logger.InitLog.Infof("Webconsole-AF Registration to NRF success")
 			return nil
 		}
@@ -73,7 +76,7 @@ func SendNFRegistration(ctx context.Context, startup bool) error {
 
 // processRegisterResponse adopts what the NRF answered to the NFRegister PUT: the
 // heartbeat interval and the oauth2 custom info.
-func processRegisterResponse(nf *models.Nrf_NFMgmt_NFProfile, applyOAuth2 bool) {
+func processRegisterResponse(nf *models.Nrf_NFMgmt_NFProfile, applyOAuth2 bool) error {
 	GetSelf().heartbeatTimer = nf.HeartBeatTimer
 
 	oauth2 := false
@@ -84,10 +87,12 @@ func processRegisterResponse(nf *models.Nrf_NFMgmt_NFProfile, applyOAuth2 bool) 
 		}
 	}
 	if applyOAuth2 {
-		GetSelf().OAuth2Required.Store(oauth2)
-	} else if oauth2 != GetSelf().OAuth2Required.Load() {
+		return GetSelf().SetOAuth2Required(oauth2)
+	}
+	if oauth2 != GetSelf().OAuth2Required.Load() {
 		logger.ConsumerLog.Warnf("NRF OAuth2 setting changed to %v, restart the webconsole to apply it", oauth2)
 	}
+	return nil
 }
 
 // SendUpdateNFInstance sends an NFUpdate PATCH to the NRF, honoring ctx and heartbeatRequestTimeout.
@@ -96,11 +101,11 @@ func SendUpdateNFInstance(ctx context.Context, patchItems []models.PatchItem) (
 	nf models.Nrf_NFMgmt_NFProfile, problemDetails *models.ProblemDetails, err error,
 ) {
 	afSelf := GetSelf()
-	tokCtx, pd, err := afSelf.GetTokenCtx(models.Nrf_NFMgmt_ServiceName_NNRF_NFM, models.Nrf_NFMgmt_NFType_NRF)
+	tokCtx, pd, err := afSelf.GetTokenCtxForNRF(models.Nrf_NFMgmt_ServiceName_NNRF_NFM)
 	if err != nil {
 		return nf, pd, err
 	}
-	// GetTokenCtx takes no parent, so the token request stays uncancelable;
+	// GetTokenCtxForNRF takes no parent, so the token request stays uncancelable;
 	// transplanting the token lets at least the PATCH honor ctx.
 	if tok := tokCtx.Value(openapi.ContextOAuth2); tok != nil {
 		ctx = context.WithValue(ctx, openapi.ContextOAuth2, tok)
@@ -135,7 +140,7 @@ func SendUpdateNFInstance(ctx context.Context, patchItems []models.PatchItem) (
 func SendDeregisterNFInstance() (*models.ProblemDetails, error) {
 	logger.ConsumerLog.Infof("Send Deregister NFInstance")
 
-	ctx, pd, err := GetSelf().GetTokenCtx(models.Nrf_NFMgmt_ServiceName_NNRF_NFM, models.Nrf_NFMgmt_NFType_NRF)
+	ctx, pd, err := GetSelf().GetTokenCtxForNRF(models.Nrf_NFMgmt_ServiceName_NNRF_NFM)
 	if err != nil {
 		return pd, err
 	}
