@@ -8,7 +8,7 @@ require (
 	github.com/free5gc/chf v1.2.6-0.20260819160712-4e06244b5612
 	github.com/free5gc/openapi v1.3.1-0.20261104070955-7fad8e868cb2
 	github.com/free5gc/smf v1.4.6-0.20260819160737-dd94a6c43508
-	github.com/free5gc/util v1.4.1-0.20260918051623-86c859a404ad
+	github.com/free5gc/util v1.4.1-0.20261105063436-ea3001890fa5
 	github.com/gin-contrib/cors v1.6.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/golang-jwt/jwt/v5 v5.2.2
