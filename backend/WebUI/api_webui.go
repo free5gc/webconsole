@@ -2237,8 +2237,20 @@ func ChangePasswordInfo(c *gin.Context) {
 		return
 	}
 
-	filterEmailOnly := bson.M{"tenantId": tenantId, "email": newUserData.Email}
-	userDataInterface, err := mongoapi.RestfulAPIGetOne(userDataColl, filterEmailOnly)
+	claims, err := getAuthenticatedClaims(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{})
+		return
+	}
+
+	userId, ok := getClaimString(claims, "sub")
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{})
+		return
+	}
+
+	filter := bson.M{"tenantId": tenantId, "userId": userId}
+	userDataInterface, err := mongoapi.RestfulAPIGetOne(userDataColl, filter)
 	if err != nil {
 		logger.ProcLog.Errorf("ChangePassword err: %+v", err)
 	}
@@ -2262,7 +2274,7 @@ func ChangePasswordInfo(c *gin.Context) {
 	}
 
 	userBsonM := toBsonM(userData)
-	if _, err_put := mongoapi.RestfulAPIPost(userDataColl, filterEmailOnly, userBsonM); err_put != nil {
+	if _, err_put := mongoapi.RestfulAPIPost(userDataColl, filter, userBsonM); err_put != nil {
 		logger.ProcLog.Errorf("PutUserByID err: %+v", err_put)
 	}
 
