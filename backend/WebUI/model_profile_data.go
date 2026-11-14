@@ -10,7 +10,7 @@ type Profile struct {
 	SmfSelectionSubscriptionData      models.Udr_DR_SmfSelectionSubscriptionData         `json:"SmfSelectionSubscriptionData"`      //nolint:lll
 	AmPolicyData                      models.Udr_DR_AmPolicyData                         `json:"AmPolicyData"`
 	SmPolicyData                      models.Udr_DR_SmPolicyData                         `json:"SmPolicyData"`
-	FlowRules                         []FlowRule                                         `json:"FlowRules"`
+	FlowRules                         []FlowRule                                         `json:"FlowRules" binding:"dive"`
 	QosFlows                          []QosFlow                                          `json:"QosFlows"`
 	ChargingDatas                     []ChargingData
 }
