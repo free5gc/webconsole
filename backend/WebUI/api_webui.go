@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	jsonpatch "github.com/evanphx/json-patch/v5"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -21,6 +22,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/free5gc/openapi"
 	"github.com/free5gc/openapi/models"
 	"github.com/free5gc/util/mongoapi"
 	"github.com/free5gc/webconsole/backend/logger"
@@ -1260,6 +1262,118 @@ func GetSubscriberByID(c *gin.Context) {
 	c.JSON(http.StatusOK, subsData)
 }
 
+// Reject invalid input before any subscriber collections are changed.
+func validateSubscriberSMPolicyForWrite(c *gin.Context, subs *SubsData) bool {
+	if subs.SmPolicyData.SmPolicySnssaiData == nil {
+		return true
+	}
+	entries := make(map[string]models.Udr_DR_SmPolicySnssaiData, len(subs.SmPolicyData.SmPolicySnssaiData))
+	var err error
+	for _, entry := range subs.SmPolicyData.SmPolicySnssaiData {
+		if entry.Snssai == nil {
+			err = fmt.Errorf("SM policy entry is missing snssai")
+			break
+		}
+		var key string
+		key, err = openapi.SnssaiModelsToMapKey(*entry.Snssai)
+		if err != nil {
+			break
+		}
+		if previous, ok := entries[key]; ok &&
+			(!reflect.DeepEqual(previous.SmPolicyDnnData, entry.SmPolicyDnnData) ||
+				!reflect.DeepEqual(previous.UeSliceMbr, entry.UeSliceMbr)) {
+			err = fmt.Errorf("conflicting SM policy entries for %q", key)
+			break
+		}
+		entries[key] = entry
+	}
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"cause": err.Error()})
+		return false
+	}
+	subs.SmPolicyData.SmPolicySnssaiData = entries
+	return true
+}
+
+// Merge in canonical key space before writing the resulting map with $set.
+// Merging new keys directly into the legacy map would retain aliases and can
+// mix different slices (e.g. legacy hex "10" and canonical decimal "10").
+// Omitted slices, DNNs and policy fields retain PATCH semantics.
+func smPolicyUpdate(stored map[string]interface{}, incoming models.Udr_DR_SmPolicyData) (
+	map[string]interface{}, error,
+) {
+	patch := toBsonM(incoming)
+	if incoming.SmPolicySnssaiData == nil {
+		return patch, nil
+	}
+	raw, err := json.Marshal(stored)
+	if err != nil {
+		return nil, err
+	}
+	var previous models.Udr_DR_SmPolicyData
+	if err = json.Unmarshal(raw, &previous); err != nil {
+		return nil, err
+	}
+	// Rebuild both maps from their entries before applying PATCH fields.
+	for _, data := range []*models.Udr_DR_SmPolicyData{&previous, &incoming} {
+		if data.SmPolicySnssaiData == nil {
+			continue
+		}
+		entries := make(map[string]models.Udr_DR_SmPolicySnssaiData, len(data.SmPolicySnssaiData))
+		for _, entry := range data.SmPolicySnssaiData {
+			if entry.Snssai == nil {
+				return nil, fmt.Errorf("SM policy entry is missing snssai")
+			}
+			key, keyErr := openapi.SnssaiModelsToMapKey(*entry.Snssai)
+			if keyErr != nil {
+				return nil, keyErr
+			}
+			if existing, ok := entries[key]; ok &&
+				(!reflect.DeepEqual(existing.SmPolicyDnnData, entry.SmPolicyDnnData) ||
+					!reflect.DeepEqual(existing.UeSliceMbr, entry.UeSliceMbr)) {
+				return nil, fmt.Errorf("conflicting SM policy entries for %q", key)
+			}
+			entries[key] = entry
+		}
+		data.SmPolicySnssaiData = entries
+	}
+	oldEntries := previous.SmPolicySnssaiData
+	newEntries := incoming.SmPolicySnssaiData
+	for key, entry := range newEntries {
+		if entry.SmPolicyDnnData != nil {
+			dnns := make(map[string]models.Udr_DR_SmPolicyDnnData, len(entry.SmPolicyDnnData))
+			for dnn, data := range entry.SmPolicyDnnData {
+				dnns[EscapeDnn(dnn)] = data
+			}
+			entry.SmPolicyDnnData = dnns
+			newEntries[key] = entry
+		}
+	}
+	base := make(map[string]interface{}, len(stored))
+	for key, value := range stored {
+		base[key] = value
+	}
+	base["smPolicySnssaiData"] = oldEntries
+	patch["smPolicySnssaiData"] = newEntries
+	oldJSON, err := json.Marshal(base)
+	if err != nil {
+		return nil, err
+	}
+	newJSON, err := json.Marshal(patch)
+	if err != nil {
+		return nil, err
+	}
+	merged, err := jsonpatch.MergePatch(oldJSON, newJSON)
+	if err != nil {
+		return nil, err
+	}
+	var result map[string]interface{}
+	if err = json.Unmarshal(merged, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 // Post subscriber by IMSI(ueId) and PlmnID(servingPlmnId)
 // PostSubscriberByID godoc
 // @Summary     CreateSubscriberByID
@@ -1334,6 +1448,9 @@ func PostSubscriberByID(c *gin.Context) {
 	}
 
 	if !validateSubscriberStaticIPsForWrite(c, &subsData, getDnnStaticIpPools) {
+		return
+	}
+	if !validateSubscriberSMPolicyForWrite(c, &subsData) {
 		return
 	}
 
@@ -1778,6 +1895,9 @@ func PutSubscriberByID(c *gin.Context) {
 	if !validateSubscriberStaticIPsForWrite(c, &subsData, getDnnStaticIpPools) {
 		return
 	}
+	if !validateSubscriberSMPolicyForWrite(c, &subsData) {
+		return
+	}
 
 	// modify a gpsi-supi map
 	gpsi := getMsisdn(toBsonM(subsData.AccessAndMobilitySubscriptionData)["gpsis"])
@@ -1839,6 +1959,27 @@ func PatchSubscriberByID(c *gin.Context) {
 	if !validateSubscriberStaticIPsForWrite(c, &subsData, getDnnStaticIpPools) {
 		return
 	}
+	if !validateSubscriberSMPolicyForWrite(c, &subsData) {
+		return
+	}
+	smPolicyDataBsonM := toBsonM(subsData.SmPolicyData)
+	if subsData.SmPolicyData.SmPolicySnssaiData != nil {
+		stored, err := mongoapi.RestfulAPIGetOne(smPolicyDataColl, filterUeIdOnly)
+		if err != nil {
+			logger.ProcLog.Errorf("Read SM policy before patch: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{})
+			return
+		}
+		patch, err := smPolicyUpdate(stored, subsData.SmPolicyData)
+		if err != nil {
+			logger.ProcLog.Errorf("Normalize stored SM policy: %v", err)
+			c.JSON(http.StatusConflict, gin.H{"cause": "Stored SM policy requires repair"})
+			return
+		}
+		smPolicyDataBsonM = patch
+	}
+	smPolicyDataBsonM["ueId"] = supi
+
 	tenantId, _ := subscriberTenantID(amData)
 
 	webAuthSubsBsonM := toBsonM(subsData.WebAuthenticationSubscription)
@@ -1889,8 +2030,6 @@ func PatchSubscriberByID(c *gin.Context) {
 	smfSelSubsBsonM["servingPlmnId"] = servingPlmnId
 	amPolicyDataBsonM := toBsonM(subsData.AmPolicyData)
 	amPolicyDataBsonM["ueId"] = supi
-	smPolicyDataBsonM := toBsonM(subsData.SmPolicyData)
-	smPolicyDataBsonM["ueId"] = supi
 
 	if err := mongoapi.RestfulAPIMergePatch(authWebSubsDataColl, filterUeIdOnly, webAuthSubsBsonM); err != nil {
 		logger.ProcLog.Errorf("PatchSubscriberByID err: %+v", err)
@@ -1917,7 +2056,14 @@ func PatchSubscriberByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
-	if err := mongoapi.RestfulAPIMergePatch(smPolicyDataColl, filterUeIdOnly, smPolicyDataBsonM); err != nil {
+	var smPolicyErr error
+	if subsData.SmPolicyData.SmPolicySnssaiData != nil {
+		// Set the complete, merged policy map atomically to remove old aliases.
+		_, smPolicyErr = mongoapi.RestfulAPIPutOne(smPolicyDataColl, filterUeIdOnly, smPolicyDataBsonM)
+	} else {
+		smPolicyErr = mongoapi.RestfulAPIMergePatch(smPolicyDataColl, filterUeIdOnly, smPolicyDataBsonM)
+	}
+	if err := smPolicyErr; err != nil {
 		logger.ProcLog.Errorf("PatchSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
