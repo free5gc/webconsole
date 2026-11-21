@@ -41,11 +41,12 @@ func TestGetNfOamUri(t *testing.T) {
 			want: "http://10.0.0.18:8000",
 		},
 		{
-			name: "Legacy_absolute_apiPrefix",
+			// TS 29.510 6.1.6.2.3 NOTE 8: apiPrefix is a path, not a URL.
+			name: "Absolute_apiPrefix_rejected",
 			profile: models.Nrf_NFDisc_NFProfile{NfServices: service(models.Nrf_NFDisc_NFService{
 				ApiPrefix: "http://amf.free5gc.org:8000",
 			})},
-			want: "http://amf.free5gc.org:8000",
+			want: "",
 		},
 		{
 			name:    "No_OAM_service",

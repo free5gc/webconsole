@@ -138,9 +138,7 @@ func (context *WEBUIContext) NfProfileAlreadyExists(nfProfile *models.Nrf_NFDisc
 
 // getNfOamUri returns the API root of the OAM service in nfProfile, or "".
 func getNfOamUri(nfProfile *models.Nrf_NFDisc_NFProfile, serviceName models.Nrf_NFMgmt_ServiceName) string {
-	// NFs that still register a full URL as apiPrefix remain reachable.
-	uri, err := serviceuri.ResolveNFServiceURI(nfProfile, serviceName,
-		serviceuri.Options{AllowLegacyAbsoluteAPIPrefix: true})
+	uri, err := serviceuri.ResolveNFServiceURI(nfProfile, serviceName, serviceuri.Options{})
 	if err != nil {
 		logger.CtxLog.Warnf("NF service %s API root resolution failed: %v", serviceName, err)
 		return ""
