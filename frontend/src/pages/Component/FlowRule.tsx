@@ -44,6 +44,10 @@ const FlowRule = ({
                                 <TableCell>{flow.filter}</TableCell>
                             </TableRow>
                             <TableRow>
+                                <TableCell style={{ width: "40%" }}>Direction</TableCell>
+                                <TableCell>{flow.flowDirection ?? "BIDIRECTIONAL"}</TableCell>
+                            </TableRow>
+                            <TableRow>
                                 <TableCell style={{ width: "40%" }}>Precedence</TableCell>
                                 <TableCell>{flow.precedence}</TableCell>
                             </TableRow>

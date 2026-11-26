@@ -35,6 +35,7 @@ export const chargingDataDTOSchema = z.object({
 })
 
 interface FlowRulesDTO {
+    flowDirection?: FlowRules["flowDirection"];
     filter: string;
     precedence: number;
     "5qi": number;
@@ -46,6 +47,7 @@ interface FlowRulesDTO {
 }
 
 export const flowRulesDTOSchema = z.object({
+    flowDirection: z.enum(["DOWNLINK", "UPLINK", "BIDIRECTIONAL"]).default("BIDIRECTIONAL"),
     filter: z.string(),
     precedence: z.number(),
     "5qi": z.number(),
@@ -173,6 +175,7 @@ class FlowsMapperImpl implements FlowsMapper {
 
                 this.flowRules.push({
                     filter: flow.filter,
+                    flowDirection: flow.flowDirection ?? "BIDIRECTIONAL",
                     precedence: flow.precedence,
                     snssai: snssai,
                     dnn: dnn.dnn,
@@ -334,6 +337,7 @@ class ProfileMapperImpl implements ProfileMapper {
         
             return {
                 filter: flowRule?.filter ?? "",
+                flowDirection: flowRule?.flowDirection ?? "BIDIRECTIONAL",
                 precedence: flowRule?.precedence ?? 0,
                 "5qi": f["5qi"] ?? DEFAULT_5QI,
                 gbrUL: f.gbrUL ?? "",
@@ -439,6 +443,7 @@ export const defaultProfileDTO = (): ProfileDTO => ({
                     flowRules: [
                         {
                             filter: "1.1.1.1/32",
+                            flowDirection: "BIDIRECTIONAL",
                             precedence: 128,
                             "5qi": 8,
                             gbrUL: "108 Mbps",
@@ -475,6 +480,7 @@ export const defaultProfileDTO = (): ProfileDTO => ({
                     flowRules: [
                         {
                             filter: "1.1.1.1/32",
+                            flowDirection: "BIDIRECTIONAL",
                             precedence: 127,
                             "5qi": 7,
                             gbrUL: "207 Mbps",
@@ -519,6 +525,7 @@ export const defaultDnnConfig = (): DnnConfigurationDTO => ({
 });
 
 export const defaultFlowRule = (): FlowRulesDTO => ({
+    flowDirection: "BIDIRECTIONAL",
     filter: "1.1.1.1/32",
     precedence: 128,
     "5qi": 9,

@@ -345,6 +345,8 @@ export interface FlowChargingRecord {
  * @interface FlowRules
  */
 export interface FlowRules {
+    /** Direction in which this flow filter applies. Omitted values retain BIDIRECTIONAL behavior. */
+    'flowDirection'?: 'DOWNLINK' | 'UPLINK' | 'BIDIRECTIONAL';
     /**
      * 
      * @type {string}

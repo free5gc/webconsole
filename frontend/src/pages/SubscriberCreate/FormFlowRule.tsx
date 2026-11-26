@@ -3,6 +3,7 @@ import {
   Box,
   Card,
   Grid,
+  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -13,7 +14,7 @@ import type { Nssai } from "../../api";
 import { useSubscriptionForm } from "../../hooks/subscription-form";
 import { toHex } from "../../lib/utils";
 import FormChargingConfig from "./FormCharingConfig";
-import { useFieldArray } from "react-hook-form";
+import { Controller, useFieldArray } from "react-hook-form";
 import { defaultFlowRule } from "../../lib/dtos/subscription";
 
 interface FormFlowRuleProps {
@@ -61,6 +62,29 @@ export default function FormFlowRule({ snssaiIndex, dnn, snssai }: FormFlowRuleP
             <Card variant="outlined">
               <Table>
                 <TableBody>
+                  <TableRow>
+                    <TableCell colSpan={4}>
+                      <Controller
+                        name={`SnssaiConfigurations.${snssaiIndex}.dnnConfigurations.${dnn}.flowRules.${index}.flowDirection`}
+                        control={control}
+                        render={({ field, fieldState }) => (
+                          <TextField
+                            {...field}
+                            value={field.value ?? "BIDIRECTIONAL"}
+                            select
+                            label="Direction"
+                            fullWidth
+                            error={!!fieldState.error}
+                            helperText={fieldState.error?.message}
+                          >
+                            <MenuItem value="DOWNLINK">Downlink (DN → UE)</MenuItem>
+                            <MenuItem value="UPLINK">Uplink (UE → DN)</MenuItem>
+                            <MenuItem value="BIDIRECTIONAL">Bidirectional</MenuItem>
+                          </TextField>
+                        )}
+                      />
+                    </TableCell>
+                  </TableRow>
                   <TableRow>
                     <TableCell style={{ width: "25%" }}>
                       <TextField
