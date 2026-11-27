@@ -9,6 +9,7 @@ import (
 	"github.com/free5gc/openapi"
 	"github.com/free5gc/openapi/models"
 	Nnrf_NFManagement "github.com/free5gc/openapi/nrf/NFMgmt"
+	"github.com/free5gc/openapi/oauth"
 	"github.com/free5gc/util/nfheartbeat"
 	"github.com/free5gc/webconsole/backend/logger"
 )
@@ -48,7 +49,13 @@ func SendNFRegistration(ctx context.Context, startup bool) error {
 			NFManagementClient.
 			NFInstanceIDDocumentApi.RegisterNFInstance(ctx, registrationRequest)
 		if err == nil && res != nil && res.Nrf_NFMgmt_NFProfile != nil {
-			processRegisterResponse(res.Nrf_NFMgmt_NFProfile, startup)
+			if err = processRegisterResponse(res.Nrf_NFMgmt_NFProfile, startup); err != nil {
+				// A misconfigured OAuth2 setup does not heal by retrying. The NRF already
+				// holds the profile, and without a heartbeat or a shutdown deregistration it
+				// would linger until the heartbeat expires, so withdraw it now.
+				withdrawRegistration()
+				return fmt.Errorf("apply NRF OAuth2 setting: %w", err)
+			}
 			logger.InitLog.Infof("Webconsole-AF Registration to NRF success")
 			return nil
 		}
@@ -73,7 +80,7 @@ func SendNFRegistration(ctx context.Context, startup bool) error {
 
 // processRegisterResponse adopts what the NRF answered to the NFRegister PUT: the
 // heartbeat interval and the oauth2 custom info.
-func processRegisterResponse(nf *models.Nrf_NFMgmt_NFProfile, applyOAuth2 bool) {
+func processRegisterResponse(nf *models.Nrf_NFMgmt_NFProfile, applyOAuth2 bool) error {
 	GetSelf().heartbeatTimer = nf.HeartBeatTimer
 
 	oauth2 := false
@@ -84,10 +91,12 @@ func processRegisterResponse(nf *models.Nrf_NFMgmt_NFProfile, applyOAuth2 bool) 
 		}
 	}
 	if applyOAuth2 {
-		GetSelf().OAuth2Required.Store(oauth2)
-	} else if oauth2 != GetSelf().OAuth2Required.Load() {
+		return GetSelf().SetOAuth2Required(oauth2)
+	}
+	if oauth2 != GetSelf().OAuth2Required.Load() {
 		logger.ConsumerLog.Warnf("NRF OAuth2 setting changed to %v, restart the webconsole to apply it", oauth2)
 	}
+	return nil
 }
 
 // SendUpdateNFInstance sends an NFUpdate PATCH to the NRF, honoring ctx and heartbeatRequestTimeout.
@@ -96,11 +105,11 @@ func SendUpdateNFInstance(ctx context.Context, patchItems []models.PatchItem) (
 	nf models.Nrf_NFMgmt_NFProfile, problemDetails *models.ProblemDetails, err error,
 ) {
 	afSelf := GetSelf()
-	tokCtx, pd, err := afSelf.GetTokenCtx(models.Nrf_NFMgmt_ServiceName_NNRF_NFM, models.Nrf_NFMgmt_NFType_NRF)
+	tokCtx, pd, err := afSelf.GetTokenCtxForNRF(models.Nrf_NFMgmt_ServiceName_NNRF_NFM)
 	if err != nil {
 		return nf, pd, err
 	}
-	// GetTokenCtx takes no parent, so the token request stays uncancelable;
+	// GetTokenCtxForNRF takes no parent, so the token request stays uncancelable;
 	// transplanting the token lets at least the PATCH honor ctx.
 	if tok := tokCtx.Value(openapi.ContextOAuth2); tok != nil {
 		ctx = context.WithValue(ctx, openapi.ContextOAuth2, tok)
@@ -132,20 +141,45 @@ func SendUpdateNFInstance(ctx context.Context, patchItems []models.PatchItem) (
 	return nf, nil, nil
 }
 
-func SendDeregisterNFInstance() (*models.ProblemDetails, error) {
-	logger.ConsumerLog.Infof("Send Deregister NFInstance")
+// withdrawRegistration deregisters a profile the NRF accepted before the webconsole
+// failed to apply the NRF OAuth2 setting. OAuth2Required stays false then and the
+// trusted NRF instance ID is unknown, yet the NRF still checks the NFDeregister
+// token, so a type-level token (audience: NRF type, which the NRF also accepts)
+// authorizes the request. Failures are only logged; the heartbeat expiry remains
+// the fallback.
+func withdrawRegistration() {
+	afSelf := GetSelf()
+	ctx, _, err := oauth.GetTokenCtx(afSelf.tokenRequest(
+		models.Nrf_NFMgmt_ServiceName_NNRF_NFM, models.Nrf_NFMgmt_NFType_NRF))
+	if err != nil {
+		logger.InitLog.Errorf("Withdraw Webconsole-AF registration: request NRF token: %v", err)
+		return
+	}
+	if _, err = sendDeregisterNFInstance(ctx); err != nil {
+		logger.InitLog.Errorf("Withdraw Webconsole-AF registration: %v", err)
+		return
+	}
+	logger.InitLog.Infof("Withdrew Webconsole-AF registration from NRF")
+}
 
-	ctx, pd, err := GetSelf().GetTokenCtx(models.Nrf_NFMgmt_ServiceName_NNRF_NFM, models.Nrf_NFMgmt_NFType_NRF)
+func SendDeregisterNFInstance() (*models.ProblemDetails, error) {
+	ctx, pd, err := GetSelf().GetTokenCtxForNRF(models.Nrf_NFMgmt_ServiceName_NNRF_NFM)
 	if err != nil {
 		return pd, err
 	}
+	return sendDeregisterNFInstance(ctx)
+}
 
+func sendDeregisterNFInstance(ctx context.Context) (*models.ProblemDetails, error) {
+	logger.ConsumerLog.Infof("Send Deregister NFInstance")
+
+	var pd *models.ProblemDetails
 	afSelf := GetSelf()
 	req := &Nnrf_NFManagement.DeregisterNFInstanceRequest{
 		NfInstanceID: &afSelf.NfInstanceID,
 	}
 
-	_, err = afSelf.NFManagementClient.NFInstanceIDDocumentApi.DeregisterNFInstance(ctx, req)
+	_, err := afSelf.NFManagementClient.NFInstanceIDDocumentApi.DeregisterNFInstance(ctx, req)
 	if err != nil {
 		switch apiErr := err.(type) {
 		case openapi.GenericOpenAPIError:

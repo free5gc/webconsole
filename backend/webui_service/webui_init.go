@@ -133,8 +133,13 @@ func (a *WebuiApp) Start(tlsKeyLogPath string) {
 	go func() {
 		defer close(a.registrationDone)
 		if err := webui_context.SendNFRegistration(a.ctx, true); err != nil {
-			// Only shutdown ends the startup registration early.
-			logger.InitLog.Debugln(err)
+			// Shutdown ends the startup registration early; anything else is an
+			// OAuth2 misconfiguration that leaves the webconsole unregistered.
+			if a.ctx.Err() != nil {
+				logger.InitLog.Debugln(err)
+			} else {
+				logger.InitLog.Errorf("Webconsole-AF NRF registration failed: %v", err)
+			}
 			return
 		}
 		a.webuiCtx.IsRegistered = true
