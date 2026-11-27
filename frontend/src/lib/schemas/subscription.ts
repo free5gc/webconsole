@@ -52,6 +52,7 @@ export const flowRulesSchema = z.object({
   snssai: z.string().optional(),
   dnn: z.string().optional(),
   qosRef: z.number().optional(),
+  chargingRequired: z.boolean().optional(),
 });
 
 export const ipAddressSchema = z.object({

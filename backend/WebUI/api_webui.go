@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -19,7 +17,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/free5gc/openapi"
@@ -1163,7 +1160,8 @@ func GetSubscriberByID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
-	chargingDatasInterface, err := mongoapi.RestfulAPIGetMany(chargingDataColl, filter)
+	chargingFilter := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId, "ratingGroup": nil}
+	chargingDatasInterface, err := mongoapi.RestfulAPIGetMany(chargingDataColl, chargingFilter)
 	if err != nil {
 		logger.ProcLog.Errorf("GetSubscriberByID err: %+v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{})
@@ -1374,6 +1372,35 @@ func smPolicyUpdate(stored map[string]interface{}, incoming models.Udr_DR_SmPoli
 	return result, nil
 }
 
+func validateRequiredFlowCharging(subsData *SubsData) error {
+	for _, flow := range subsData.FlowRules {
+		if flow.ChargingRequired == nil || !*flow.ChargingRequired {
+			continue
+		}
+		if flow.Snssai == "" || flow.Dnn == "" || strings.TrimSpace(flow.Filter) == "" {
+			return fmt.Errorf("a flow with chargingRequired must specify snssai, dnn and filter")
+		}
+		matches := 0
+		for _, charging := range subsData.ChargingDatas {
+			if charging.QosRef != flow.QosRef ||
+				!strings.EqualFold(charging.Snssai, flow.Snssai) ||
+				!strings.EqualFold(charging.Dnn, flow.Dnn) ||
+				!strings.EqualFold(charging.Filter, flow.Filter) {
+				continue
+			}
+			if charging.ChargingMethod != ChargingOnline && charging.ChargingMethod != ChargingOffline {
+				return fmt.Errorf("required charging for flow %q on DNN %q must use Online or Offline", flow.Filter, flow.Dnn)
+			}
+			matches++
+		}
+		if matches != 1 {
+			return fmt.Errorf("required charging for flow %q on DNN %q needs exactly one matching configuration",
+				flow.Filter, flow.Dnn)
+		}
+	}
+	return nil
+}
+
 // Post subscriber by IMSI(ueId) and PlmnID(servingPlmnId)
 // PostSubscriberByID godoc
 // @Summary     CreateSubscriberByID
@@ -1447,6 +1474,10 @@ func PostSubscriberByID(c *gin.Context) {
 		return
 	}
 
+	if validationErr := validateRequiredFlowCharging(&subsData); validationErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"cause": validationErr.Error()})
+		return
+	}
 	if !validateSubscriberStaticIPsForWrite(c, &subsData, getDnnStaticIpPools) {
 		return
 	}
@@ -1529,50 +1560,6 @@ func identityDataOperation(supi string, gpsi string, method string) {
 	}
 }
 
-func sendRechargeNotification(ueId string, rg int32) {
-	logger.ProcLog.Infoln("Send Notification to CHF due to quota change")
-	webuiSelf := webui_context.GetSelf()
-	webuiSelf.UpdateNfProfiles()
-
-	requestUri := fmt.Sprintf("%s/nchf-convergedcharging/v3/recharging/%s?ratingGroup=%d",
-		"http://127.0.0.113:8000", ueId, rg)
-	ctx, pd, tokenErr := webuiSelf.GetTokenCtx(
-		models.Nrf_NFMgmt_ServiceName_NCHF_CONVERGEDCHARGING, models.Nrf_NFMgmt_NFType_CHF)
-	if tokenErr != nil {
-		logger.ProcLog.Errorf("GetTokenCtx for CHF recharge err: %+v", pd)
-		return
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, requestUri, nil)
-	if err != nil {
-		logger.ProcLog.Error(err)
-		return
-	}
-	defer func() {
-		if req.Body != nil {
-			if closeErr := req.Body.Close(); closeErr != nil {
-				logger.ProcLog.Error(closeErr)
-			}
-		}
-	}()
-	req.Header.Add("Content-Type", "application/json")
-	if err = webuiSelf.RequestBindToken(req, ctx); err != nil {
-		logger.ProcLog.Errorf("RequestBindToken err: %+v", err)
-		return
-	}
-
-	resp, err1 := httpsClient.Do(req)
-	if err1 != nil {
-		logger.ProcLog.Errorf("Send Charging Notification err: %+v", err1)
-		return
-	}
-	if resp != nil && resp.Body != nil {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			logger.ProcLog.Error(closeErr)
-		}
-	}
-}
-
 func dbOperation(
 	ueId string,
 	servingPlmnId string,
@@ -1584,6 +1571,7 @@ func dbOperation(
 ) {
 	filterUeIdOnly := bson.M{"ueId": ueId}
 	filter := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId}
+	chargingTemplateFilter := bson.M{"ueId": ueId, "servingPlmnId": servingPlmnId, "ratingGroup": nil}
 
 	// Replace all data with new one
 	switch method {
@@ -1594,7 +1582,7 @@ func dbOperation(
 		if err := mongoapi.RestfulAPIDeleteMany(qosFlowDataColl, filter); err != nil {
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
 		}
-		if err := mongoapi.RestfulAPIDeleteMany(chargingDataColl, filter); err != nil {
+		if err := mongoapi.RestfulAPIDeleteMany(chargingDataColl, chargingTemplateFilter); err != nil {
 			logger.ProcLog.Errorf("PutSubscriberByID err: %+v", err)
 		}
 	case "delete":
@@ -1645,7 +1633,9 @@ func dbOperation(
 			if err := mongoapi.RestfulAPIDeleteMany(qosFlowDataColl, multipleFliter); err != nil {
 				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
 			}
-			if err := mongoapi.RestfulAPIDeleteMany(chargingDataColl, multipleFliter); err != nil {
+			// PCF owns assigned rating groups until final charging settlement completes.
+			chargingFilter := bson.M{"$or": multipleFliterConditions, "ratingGroup": nil}
+			if err := mongoapi.RestfulAPIDeleteMany(chargingDataColl, chargingFilter); err != nil {
 				logger.ProcLog.Errorf("DeleteMultipleSubscribers err: %+v", err)
 			}
 			if err := mongoapi.RestfulAPIDeleteMany(identityDataColl, multipleFliterUeIdOnly); err != nil {
@@ -1682,7 +1672,7 @@ func dbOperation(
 			if err := mongoapi.RestfulAPIDeleteMany(qosFlowDataColl, filter); err != nil {
 				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
 			}
-			if err := mongoapi.RestfulAPIDeleteMany(chargingDataColl, filter); err != nil {
+			if err := mongoapi.RestfulAPIDeleteMany(chargingDataColl, chargingTemplateFilter); err != nil {
 				logger.ProcLog.Errorf("DeleteSubscriberByID err: %+v", err)
 			}
 			if err := mongoapi.RestfulAPIDeleteOne(identityDataColl, filterUeIdOnly); err != nil {
@@ -1779,60 +1769,34 @@ func dbOperation(
 			logger.ProcLog.Infoln("No Charging Data")
 		} else {
 			for _, chargingData := range subsData.ChargingDatas {
-				var previousChargingData ChargingData
-				var chargingFilter primitive.M
+				if chargingData.Dnn == "" || chargingData.Filter == "" {
+					// Slice-level charging applies without a DNN or flow filter.
+					chargingData.Dnn = ""
+					chargingData.Filter = ""
+				}
+				if chargingData.ChargingMethod == ChargingOffline {
+					chargingData.Quota = "0"
+				}
 
 				chargingDataBsonM := toBsonM(chargingData)
-				// Clear quota for offline charging flow
-				if chargingData.ChargingMethod == ChargingOffline {
-					chargingDataBsonM["quota"] = "0"
-				}
-
-				if chargingData.Dnn != "" && chargingData.Filter != "" {
-					// Flow-level charging
-					chargingFilter = bson.M{
-						"ueId": ueId, "servingPlmnId": servingPlmnId,
-						"snssai": chargingData.Snssai,
-						"dnn":    chargingData.Dnn,
-						"qosRef": chargingData.QosRef,
-						"filter": chargingData.Filter,
-					}
-				} else {
-					// Slice-level charging
-					chargingFilter = bson.M{
-						"ueId": ueId, "servingPlmnId": servingPlmnId,
-						"snssai": chargingData.Snssai,
-						"qosRef": chargingData.QosRef,
-						"dnn":    "",
-						"filter": "",
-					}
-					chargingDataBsonM["dnn"] = ""
-					chargingDataBsonM["filter"] = ""
-				}
-
-				previousChargingDataInterface, err := mongoapi.RestfulAPIGetOne(chargingDataColl, chargingFilter)
-				if err != nil {
-					logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err)
-				}
-				err = json.Unmarshal(mapToByte(previousChargingDataInterface), &previousChargingData)
-				if err != nil {
-					logger.ProcLog.Error(err)
-				}
-
-				ratingGroup := previousChargingDataInterface["ratingGroup"]
-				if ratingGroup != nil {
-					rg := ratingGroup.(int32)
-					chargingDataBsonM["ratingGroup"] = rg
-					if previousChargingData.Quota != chargingData.Quota {
-						sendRechargeNotification(ueId, rg)
-					}
-				}
-
 				chargingDataBsonM["ueId"] = ueId
 				chargingDataBsonM["servingPlmnId"] = servingPlmnId
+				chargingDataBsonM["qosRef"] = chargingData.QosRef
 
-				if _, err_put := mongoapi.RestfulAPIPutOne(chargingDataColl, chargingFilter, chargingDataBsonM); err_put != nil {
-					logger.ProcLog.Errorf("PostSubscriberByID err: %+v", err_put)
+				chargingFilter := bson.M{
+					"ueId": ueId, "servingPlmnId": servingPlmnId,
+					"snssai":      chargingData.Snssai,
+					"dnn":         chargingData.Dnn,
+					"qosRef":      chargingData.QosRef,
+					"filter":      chargingData.Filter,
+					"ratingGroup": nil,
+				}
+				// Older templates omit qosRef when it is zero.
+				if chargingData.QosRef == 0 {
+					chargingFilter["qosRef"] = bson.M{"$in": bson.A{nil, 0}}
+				}
+				if _, err := mongoapi.RestfulAPIPutOne(chargingDataColl, chargingFilter, chargingDataBsonM); err != nil {
+					logger.ProcLog.Errorf("Write subscriber charging template: %v", err)
 				}
 			}
 		}
@@ -1892,6 +1856,10 @@ func PutSubscriberByID(c *gin.Context) {
 		writeClaims = claimsWithTenant(claims, tenantId)
 	}
 
+	if validationErr := validateRequiredFlowCharging(&subsData); validationErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"cause": validationErr.Error()})
+		return
+	}
 	if !validateSubscriberStaticIPsForWrite(c, &subsData, getDnnStaticIpPools) {
 		return
 	}
@@ -2072,22 +2040,6 @@ func PatchSubscriberByID(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-func removeCdrFile(cdrFilePath string) {
-	files, err := filepath.Glob(cdrFilePath + "*.cdr")
-	if err != nil {
-		logger.BillingLog.Warnf("CDR file not found in %s", cdrFilePath)
-	}
-
-	for _, file := range files {
-		if _, err = os.Stat(file); err == nil {
-			logger.BillingLog.Infof("Remove CDR file: %s", file)
-			if err = os.Remove(file); err != nil {
-				logger.BillingLog.Warnf("Failed to remove CDR file: %s\n", file)
-			}
-		}
-	}
-}
-
 // Delete subscriber by IMSI(ueId) and PlmnID(servingPlmnId)
 func DeleteSubscriberByID(c *gin.Context) {
 	setCorsHeader(c)
@@ -2119,9 +2071,6 @@ func DeleteSubscriberByID(c *gin.Context) {
 	}
 
 	dbOperation(supi, servingPlmnId, "delete", nil, nil, claims, false)
-
-	CdrFilePath := "/tmp/webconsole/"
-	removeCdrFile(CdrFilePath)
 
 	c.Status(http.StatusNoContent)
 }

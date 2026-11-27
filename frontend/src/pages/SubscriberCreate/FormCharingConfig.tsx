@@ -1,5 +1,6 @@
 import {
   FormControl,
+  FormHelperText,
   InputLabel,
   MenuItem,
   Select,
@@ -108,84 +109,72 @@ function FormFlowChargingConfig({ snssaiIndex, dnn, filterIndex }: FormCharginCo
     throw new Error("filterIndex is undefined");
   }
 
-  const isOnlineCharging =
-    watch(
-      `SnssaiConfigurations.${snssaiIndex}.dnnConfigurations.${dnn}.flowRules.${filterIndex}.chargingData.chargingMethod`,
-    ) === "Online";
+  const flowPath =
+    `SnssaiConfigurations.${snssaiIndex}.dnnConfigurations.${dnn}.flowRules.${filterIndex}` as const;
+  const chargingMethod = watch(`${flowPath}.chargingData.chargingMethod`);
+  const hasCharging = chargingMethod === "Online" || chargingMethod === "Offline";
+  const errors =
+    validationErrors.SnssaiConfigurations?.[snssaiIndex]?.dnnConfigurations?.[dnn]?.flowRules?.[
+      filterIndex
+    ]?.chargingData;
+  const labelId = `${snssaiIndex}-${dnn}-${filterIndex}-charging-method-label`;
 
   return (
     <Table>
       <TableBody id={`${snssaiIndex}-${dnn}-${filterIndex}-charging-config`}>
         <TableRow>
           <TableCell style={{ width: "33%" }}>
-            <FormControl variant="outlined" fullWidth>
-              <InputLabel>Charging Method</InputLabel>
+            <FormControl variant="outlined" fullWidth error={Boolean(errors?.chargingMethod)}>
+              <InputLabel id={labelId}>Charging Method</InputLabel>
               <Controller
                 control={control}
-                name={`SnssaiConfigurations.${snssaiIndex}.dnnConfigurations.${dnn}.flowRules.${filterIndex}.chargingData.chargingMethod`}
-                rules={{ required: true }}
-                render={(props) => (
+                name={`${flowPath}.chargingData.chargingMethod`}
+                render={({ field }) => (
                   <Select
-                    {...props.field}
-                    error={props.fieldState.error !== undefined}
+                    {...field}
+                    value={field.value ?? ""}
+                    labelId={labelId}
                     label="Charging Method"
-                    variant="outlined"
                     required
-                    fullWidth
-                    defaultValue=""
                   >
+                    <MenuItem value="None">Do not charge</MenuItem>
                     <MenuItem value="Offline">Offline</MenuItem>
                     <MenuItem value="Online">Online</MenuItem>
                   </Select>
                 )}
               />
+              {errors?.chargingMethod && (
+                <FormHelperText>{errors.chargingMethod.message}</FormHelperText>
+              )}
             </FormControl>
           </TableCell>
-          <TableCell style={{ width: "33%" }}>
-            <TextField
-              {...register(
-                `SnssaiConfigurations.${snssaiIndex}.dnnConfigurations.${dnn}.flowRules.${filterIndex}.chargingData.quota`,
-                {
-                  required: true,
-                },
-              )}
-              error={
-                validationErrors.SnssaiConfigurations?.[snssaiIndex]?.dnnConfigurations?.[dnn]
-                  ?.flowRules?.[filterIndex]?.chargingData?.quota !== undefined
-              }
-              helperText={
-                validationErrors.SnssaiConfigurations?.[snssaiIndex]?.dnnConfigurations?.[dnn]
-                  ?.flowRules?.[filterIndex]?.chargingData?.quota?.message
-              }
-              label="Quota (monetary)"
-              variant="outlined"
-              required={isOnlineCharging}
-              disabled={!isOnlineCharging}
-              fullWidth
-            />
-          </TableCell>
-          <TableCell style={{ width: "33%" }}>
-            <TextField
-              {...register(
-                `SnssaiConfigurations.${snssaiIndex}.dnnConfigurations.${dnn}.flowRules.${filterIndex}.chargingData.unitCost`,
-                {
-                  required: true,
-                },
-              )}
-              error={
-                validationErrors.SnssaiConfigurations?.[snssaiIndex]?.dnnConfigurations?.[dnn]
-                  ?.flowRules?.[filterIndex]?.chargingData?.unitCost !== undefined
-              }
-              helperText={
-                validationErrors.SnssaiConfigurations?.[snssaiIndex]?.dnnConfigurations?.[dnn]
-                  ?.flowRules?.[filterIndex]?.chargingData?.unitCost?.message
-              }
-              label="Unit Cost (money per byte)"
-              variant="outlined"
-              required
-              fullWidth
-            />
-          </TableCell>
+          {hasCharging && (
+            <>
+              <TableCell style={{ width: "33%" }}>
+                <TextField
+                  {...register(`${flowPath}.chargingData.quota`)}
+                  error={Boolean(errors?.quota)}
+                  helperText={errors?.quota?.message}
+                  label="Quota (monetary)"
+                  variant="outlined"
+                  required={chargingMethod === "Online"}
+                  disabled={chargingMethod !== "Online"}
+                  fullWidth
+                />
+              </TableCell>
+              <TableCell style={{ width: "33%" }}>
+                <TextField
+                  {...register(`${flowPath}.chargingData.unitCost`)}
+                  error={Boolean(errors?.unitCost)}
+                  helperText={errors?.unitCost?.message}
+                  label="Unit Cost (money per byte)"
+                  variant="outlined"
+                  required
+                  fullWidth
+                />
+              </TableCell>
+            </>
+          )}
         </TableRow>
       </TableBody>
     </Table>

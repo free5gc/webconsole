@@ -614,6 +614,9 @@ components:
         qosRef:
           type: integer
           format: int64
+        chargingRequired:
+          type: boolean
+          description: Whether this flow requires charging. Omit to use any matching charging configuration.
     # github.com/free5gc/webconsole/backend/WebUI/model_qos_flow.go:QosFlow
     QosFlows:
       type: object

@@ -375,6 +375,12 @@ export interface FlowRules {
      * @memberof FlowRules
      */
     'qosRef'?: number;
+    /**
+     * Whether this flow requires charging. Omit to use any matching charging configuration.
+     * @type {boolean}
+     * @memberof FlowRules
+     */
+    'chargingRequired'?: boolean;
 }
 /**
  * 

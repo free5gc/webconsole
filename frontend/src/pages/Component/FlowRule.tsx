@@ -69,7 +69,9 @@ const FlowRule = ({
                             </TableRow>
                             <TableRow>
                                 <TableCell style={{ width: "40%" }}>Charging Characteristics</TableCell>
-                                <TableCell>{chargingConfig(dnn, flow.snssai, flow.filter)}</TableCell>
+                                <TableCell>
+                                    {flow.chargingRequired === false ? "Not charged" : chargingConfig(dnn, flow.snssai, flow.filter)}
+                                </TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
