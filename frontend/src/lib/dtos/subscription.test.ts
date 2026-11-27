@@ -1,4 +1,5 @@
 import { test, describe } from "vitest";
+import { resolveSubscriberForm } from "../../hooks/subscription-form";
 import { Subscription } from "../../api";
 import {
   FlowsMapperImpl,
@@ -175,6 +176,7 @@ const defaultSubscription = (): Subscription => ({
       snssai: "01010203",
       dnn: "internet",
       qosRef: 1,
+      chargingRequired: true,
     },
     {
       filter: "1.1.1.1/32",
@@ -182,6 +184,7 @@ const defaultSubscription = (): Subscription => ({
       snssai: "01112233",
       dnn: "internet",
       qosRef: 2,
+      chargingRequired: true,
     },
   ],
   QosFlows: [
@@ -370,4 +373,85 @@ describe("SM policy S-NSSAI map keys", () => {
       );
     });
   }
+});
+
+
+test("subscriber charging choices survive the API round trip", ({ expect }) => {
+  const subscription = defaultSubscription();
+  const [required, free] = subscription.FlowRules;
+  free.chargingRequired = false;
+  // A remaining template must not change an explicit "Do not charge" selection.
+
+  const mapper = new SubscriptionMapperImpl(new FlowsMapperImpl());
+  const dto = mapper.mapFromSubscription(subscription);
+  const result = mapper.mapFromDto(dto);
+
+  expect(result.FlowRules.map((flow) => flow.chargingRequired)).toEqual([true, false]);
+  expect(result.ChargingDatas.find((data) => data.qosRef === free.qosRef)).toBeUndefined();
+  expect(result.ChargingDatas.find((data) => data.qosRef === required.qosRef)).toEqual(
+    subscription.ChargingDatas.find((data) => data.qosRef === required.qosRef),
+  );
+});
+
+test("editing a legacy flow without a template preserves that choice", ({ expect }) => {
+  const subscription = defaultSubscription();
+  const [legacy] = subscription.FlowRules;
+  delete legacy.chargingRequired;
+  subscription.ChargingDatas = subscription.ChargingDatas.filter((data) => data.qosRef !== legacy.qosRef);
+
+  const mapper = new SubscriptionMapperImpl(new FlowsMapperImpl());
+  const dto = mapper.mapFromSubscription(subscription);
+  const flow = dto.SnssaiConfigurations[0].dnnConfigurations.internet.flowRules[0];
+
+  expect(flow.chargingData.chargingMethod).toBe("None");
+
+  const result = mapper.mapFromDto(dto);
+  expect(result.FlowRules[0].chargingRequired).toBe(false);
+  expect(result.ChargingDatas.find((data) => data.qosRef === legacy.qosRef)).toBeUndefined();
+});
+
+test("missing required charging method is reported by the subscriber form resolver", async ({ expect }) => {
+  const subscription = defaultSubscription();
+  const [required] = subscription.FlowRules;
+  subscription.ChargingDatas = subscription.ChargingDatas.filter((data) => data.qosRef !== required.qosRef);
+  const mapper = new SubscriptionMapperImpl(new FlowsMapperImpl());
+  const dto = mapper.mapFromSubscription(subscription);
+  const flow = dto.SnssaiConfigurations[0].dnnConfigurations.internet.flowRules[0];
+  expect(flow.chargingData.chargingMethod).toBe("");
+
+  const result = await resolveSubscriberForm(dto, undefined, {
+    fields: {},
+    shouldUseNativeValidation: false,
+  });
+
+  expect(result.errors).toMatchObject({
+    SnssaiConfigurations: {
+      0: {
+        dnnConfigurations: {
+          internet: {
+            flowRules: {
+              0: { chargingData: { chargingMethod: { message: "Select a charging method for this flow" } } },
+            },
+          },
+        },
+      },
+    },
+  });
+  flow.chargingData.chargingMethod = "None";
+  const accepted = await resolveSubscriberForm(dto, undefined, { fields: {}, shouldUseNativeValidation: false });
+  expect(accepted.errors).toEqual({});
+});
+
+
+test("editing a legacy flow with a template keeps its method and marks it as required", ({ expect }) => {
+  const subscription = defaultSubscription();
+  const [legacy] = subscription.FlowRules;
+  delete legacy.chargingRequired;
+
+  const mapper = new SubscriptionMapperImpl(new FlowsMapperImpl());
+  const result = mapper.mapFromDto(mapper.mapFromSubscription(subscription));
+  expect(result.FlowRules[0].chargingRequired).toBe(true);
+  expect(result.ChargingDatas.find((data) => data.qosRef === legacy.qosRef)).toEqual(
+    subscription.ChargingDatas.find((data) => data.qosRef === legacy.qosRef),
+  );
 });

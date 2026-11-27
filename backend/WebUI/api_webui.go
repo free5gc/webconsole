@@ -1372,6 +1372,35 @@ func smPolicyUpdate(stored map[string]interface{}, incoming models.Udr_DR_SmPoli
 	return result, nil
 }
 
+func validateRequiredFlowCharging(subsData *SubsData) error {
+	for _, flow := range subsData.FlowRules {
+		if flow.ChargingRequired == nil || !*flow.ChargingRequired {
+			continue
+		}
+		if flow.Snssai == "" || flow.Dnn == "" || strings.TrimSpace(flow.Filter) == "" {
+			return fmt.Errorf("a flow with chargingRequired must specify snssai, dnn and filter")
+		}
+		matches := 0
+		for _, charging := range subsData.ChargingDatas {
+			if charging.QosRef != flow.QosRef ||
+				!strings.EqualFold(charging.Snssai, flow.Snssai) ||
+				!strings.EqualFold(charging.Dnn, flow.Dnn) ||
+				!strings.EqualFold(charging.Filter, flow.Filter) {
+				continue
+			}
+			if charging.ChargingMethod != ChargingOnline && charging.ChargingMethod != ChargingOffline {
+				return fmt.Errorf("required charging for flow %q on DNN %q must use Online or Offline", flow.Filter, flow.Dnn)
+			}
+			matches++
+		}
+		if matches != 1 {
+			return fmt.Errorf("required charging for flow %q on DNN %q needs exactly one matching configuration",
+				flow.Filter, flow.Dnn)
+		}
+	}
+	return nil
+}
+
 // Post subscriber by IMSI(ueId) and PlmnID(servingPlmnId)
 // PostSubscriberByID godoc
 // @Summary     CreateSubscriberByID
@@ -1445,6 +1474,10 @@ func PostSubscriberByID(c *gin.Context) {
 		return
 	}
 
+	if validationErr := validateRequiredFlowCharging(&subsData); validationErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"cause": validationErr.Error()})
+		return
+	}
 	if !validateSubscriberStaticIPsForWrite(c, &subsData, getDnnStaticIpPools) {
 		return
 	}
@@ -1823,6 +1856,10 @@ func PutSubscriberByID(c *gin.Context) {
 		writeClaims = claimsWithTenant(claims, tenantId)
 	}
 
+	if validationErr := validateRequiredFlowCharging(&subsData); validationErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"cause": validationErr.Error()})
+		return
+	}
 	if !validateSubscriberStaticIPsForWrite(c, &subsData, getDnnStaticIpPools) {
 		return
 	}

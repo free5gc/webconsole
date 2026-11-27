@@ -53,6 +53,12 @@ interface ChargingDataDTO {
   unitCost: string;
 }
 
+const flowChargingDataDTOSchema = chargingDataDTOSchema.extend({
+  chargingMethod: z.enum(["", "None", "Offline", "Online"]).refine((method) => method !== "", {
+    message: "Select a charging method for this flow",
+  }),
+});
+
 export const flowRulesDTOSchema = z.object({
   filter: z.string(),
   precedence: z.number(),
@@ -61,8 +67,8 @@ export const flowRulesDTOSchema = z.object({
   gbrDL: z.string(),
   mbrUL: z.string(),
   mbrDL: z.string(),
-  chargingData: chargingDataDTOSchema,
-})
+  chargingData: flowChargingDataDTOSchema,
+});
 
 interface FlowRulesDTO {
   filter: string;
@@ -72,7 +78,7 @@ interface FlowRulesDTO {
   gbrDL: string;
   mbrUL: string;
   mbrDL: string;
-  chargingData: ChargingDataDTO;
+  chargingData: z.infer<typeof flowChargingDataDTOSchema>;
 }
 
 export const upSecurityDTOSchema = z.object({
@@ -109,7 +115,7 @@ export const SnssaiConfigurationDTOSchema = z.object({
   sd: z.string().optional(),
   isDefault: z.boolean(),
   chargingData: chargingDataDTOSchema,
-  dnnConfigurations: z.record(DnnConfigurationDTOSchema),
+  dnnConfigurations: z.record(z.string(), DnnConfigurationDTOSchema),
 });
 
 interface SnssaiConfigurationDTO {
@@ -199,6 +205,8 @@ class FlowsMapperImpl implements FlowsMapper {
 
       dnn.flowRules.forEach((flow) => {
         const qosRef = this.refNumber++;
+        const { chargingMethod } = flow.chargingData;
+        const chargingRequired = chargingMethod === "Online" || chargingMethod === "Offline";
 
         this.flowRules.push({
           filter: flow.filter,
@@ -206,6 +214,7 @@ class FlowsMapperImpl implements FlowsMapper {
           snssai: snssai,
           dnn: dnn.dnn,
           qosRef,
+          chargingRequired,
         });
 
         this.qosFlows.push({
@@ -219,13 +228,15 @@ class FlowsMapperImpl implements FlowsMapper {
           gbrDL: flow.gbrDL,
         });
 
-        this.chargingDatas.push({
-          ...flow.chargingData,
-          snssai: snssai,
-          dnn: dnn.dnn,
-          filter: flow.filter,
-          qosRef,
-        });
+        if (chargingRequired) {
+          this.chargingDatas.push({
+            ...flow.chargingData,
+            snssai: snssai,
+            dnn: dnn.dnn,
+            filter: flow.filter,
+            qosRef,
+          });
+        }
       });
     });
 
@@ -390,13 +401,24 @@ class SubscriptionMapperImpl implements SubscriptionMapper {
     dnn: string,
     subscription: Subscription,
   ): FlowRulesDTO[] {
-    const qosFlows = subscription.QosFlows.filter(
-      (f) => f.dnn === dnn && f.snssai === snssai.sst.toString().padStart(2, "0") + snssai.sd,
-    );
+    const sliceKey = snssai.sst.toString().padStart(2, "0") + (snssai.sd ?? "");
+    const qosFlows = subscription.QosFlows.filter((f) => f.dnn === dnn && f.snssai === sliceKey);
 
     return qosFlows.map((f) => {
-      const flowRule = subscription.FlowRules.find((r) => r.qosRef === f.qosRef);
-      const chargingData = subscription.ChargingDatas.find((c) => c.qosRef === f.qosRef);
+      const flowRule = subscription.FlowRules.find(
+        (r) => r.dnn === dnn && r.snssai === sliceKey && r.qosRef === f.qosRef,
+      );
+      const chargingData = subscription.ChargingDatas.find(
+        (c) => c.dnn === dnn && c.snssai === sliceKey && c.qosRef === f.qosRef && c.filter === flowRule?.filter,
+      );
+      let chargingMethod: FlowRulesDTO["chargingData"]["chargingMethod"] = "";
+      if (flowRule?.chargingRequired === false) {
+        chargingMethod = "None";
+      } else if (chargingData?.chargingMethod === "Online" || chargingData?.chargingMethod === "Offline") {
+        chargingMethod = chargingData.chargingMethod;
+      } else if (chargingData === undefined && flowRule?.chargingRequired !== true) {
+        chargingMethod = "None";
+      }
 
       return {
         filter: flowRule?.filter ?? "",
@@ -407,7 +429,7 @@ class SubscriptionMapperImpl implements SubscriptionMapper {
         mbrUL: f.mbrUL ?? "",
         mbrDL: f.mbrDL ?? "",
         chargingData: {
-          chargingMethod: chargingData?.chargingMethod === "Online" ? "Online" : "Offline",
+          chargingMethod,
           quota: chargingData?.quota ?? "",
           unitCost: chargingData?.unitCost ?? "",
         },
